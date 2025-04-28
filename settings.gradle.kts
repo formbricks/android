@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "formbricks-android-sdk"
-include(":formbricksSDK")
+include(":android")
