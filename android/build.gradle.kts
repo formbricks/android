@@ -1,15 +1,17 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
     id("com.android.library")
     kotlin("android")
     kotlin("kapt")
     kotlin("plugin.serialization") version "2.1.0"
     id("org.jetbrains.dokka") version "1.9.10"
-    id("jacoco")
-    id("maven-publish")      
-    signing
+    id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
-version = "0.0.1"
+version = "0.0.2"
+val groupId = "com.formbricks"
+val artifactId = "android"
 
 android {
     namespace = "com.formbricks.android"
@@ -93,53 +95,34 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("release") {
-            groupId    = "com.formbricks"
-            artifactId = "android"
-            version    = version.toString()
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
-            afterEvaluate { from(components["release"]) }
+    signAllPublications()
 
-            pom {
-                name.set("Formbricks Android SDK")
-                description.set("Formbricks anroid SDK")
-                url.set("https://github.com/formbricks/android")
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-                developers {
-                    developer {
-                        id.set("formbricks")
-                        name.set("Formbricks")
-                        email.set("hola@formbricks.com")
-                    }
-                }
-                scm {
-                    connection.set("scm:git:git://github.com/formbricks/android.git")
-                    developerConnection.set("scm:git:ssh://github.com:formbricks/android.git")
-                    url.set("https://github.com/formbricks/android")
-                }
+    coordinates(groupId, artifactId, version.toString())
+
+    pom {
+        name = "Formbricks Android SDK"
+        description = "Formbricks anroid SDK"
+        url = "https://github.com/formbricks/android"
+        licenses {
+            license {
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
             }
         }
-    }
-
-    repositories {
-        maven {
-            name = "OSSRH-release"
-            url  = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            credentials {
-                username = findProperty("ossrhUsername") as String?
-                password = findProperty("ossrhPassword") as String?
-             }
+        developers {
+            developer {
+                id = "formbricks"
+                name = "Formbricks"
+                email = "hola@formbricks.com"
+            }
         }
-    }
-
-    signing {
-        sign(publishing.publications["release"])
+        scm {
+            connection = "scm:git:git://github.com/formbricks/android.git"
+            developerConnection = "scm:git:ssh://github.com:formbricks/android.git"
+            url = "https://github.com/formbricks/android"
+        }
     }
 }
