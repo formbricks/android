@@ -1,0 +1,5 @@
+-keep class com.formbricks.android.DataBinderMapperImpl { *; }
+-keep class com.formbricks.android.Formbricks { *; }
+-keep class com.formbricks.android.helper.FormbricksConfig { *; }
+-keep class com.formbricks.android.model.error.SDKError { *; }
+-keep interface com.formbricks.android.FormbricksCallback { *; }
