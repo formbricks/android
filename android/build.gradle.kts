@@ -6,10 +6,11 @@ plugins {
     kotlin("kapt")
     kotlin("plugin.serialization") version "2.1.0"
     id("org.jetbrains.dokka") version "1.9.10"
+    id("jacoco")
     id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
-version = "0.0.2"
+version = "0.1.0"
 val groupId = "com.formbricks"
 val artifactId = "android"
 

@@ -1,27 +1,27 @@
 [versions]
-agp = "8.9.0"
+agp = "8.9.2"
 kotlin = "2.1.0"
-coreKtx = "1.13.1"
+coreKtx = "1.16.0"
 
 junit = "4.13.2"
-junitVersion = "1.1.5"
-espressoCore = "3.5.1"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
 
-appcompat = "1.6.1"
-material = "1.10.0"
+appcompat = "1.7.0"
+material = "1.12.0"
 
-androidx-annotation = "1.8.0"
+androidx-annotation = "1.9.1"
 
 kotlinx-serialization-json = "1.8.0"
 
-retrofit = "2.9.0"
+retrofit = "2.11.0"
 okhttp3 = "4.11.0"
 gson = "2.10.1"
 legacySupportV4 = "1.0.0"
 lifecycleLivedataKtx = "2.8.7"
 lifecycleViewmodelKtx = "2.8.7"
-fragmentKtx = "1.8.5"
-databindingCommon = "8.9.0"
+fragmentKtx = "1.8.6"
+databindingCommon = "8.9.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -49,4 +49,3 @@ androidx-databinding-common = { group = "androidx.databinding", name = "databind
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-
