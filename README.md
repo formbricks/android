@@ -27,24 +27,25 @@ repositories {
 dependencies {
     implementation("com.formbricks.android:android:0.1.0") // replace with latest version
 }
+```
+
 Enable ViewBinding (and DataBinding if needed) in your app’s module build.gradle.kts:
 
-kotlin
-Copy
-Edit
+```kotlin
 android {
   buildFeatures {
     viewBinding = true
     // dataBinding = true  // only if your own layouts use DataBinding
   }
 }
-Usage
-1. Initialize the SDK
-In your Activity’s onCreate, configure and initialize Formbricks. You must supply the host’s supportFragmentManager:
+```
 
-kotlin
-Copy
-Edit
+## Usage
+
+1. Initialize the SDK
+   In your Activity’s onCreate, configure and initialize Formbricks. You must supply the host’s supportFragmentManager:
+
+```kotlin
 val config = FormbricksConfig.Builder(
     "https://your-formbricks-server.com",
     "YOUR_ENVIRONMENT_ID"
@@ -55,47 +56,31 @@ val config = FormbricksConfig.Builder(
 
 Formbricks.setup(this, config, true)
 Formbricks.setUserId("user-12345")
-2. Open (trigger) a survey
-To display a survey, simply call Formbricks.track(...) with your survey URL. The SDK will handle launching its WebView internally:
+```
 
-kotlin
-Copy
-Edit
+2. Open (trigger) a survey
+   To display a survey, simply call Formbricks.track(...) with your survey URL. The SDK will handle launching its WebView internally:
+
+```kotlin
 Formbricks.track(
     event = "survey",
     properties = mapOf("url" to "https://your-formbricks-server.com/survey/abc123")
 )
+```
+
 This will open the survey in the SDK’s built-in WebView.
 
 3. Track Custom Events
-You can also log arbitrary analytics events without UI:
+   You can also log arbitrary analytics events without UI:
 
-kotlin
-Copy
-Edit
+```kotlin
 Formbricks.track("button_clicked")
-Configuration Options
+```
 
-Option	Description
-setLoggingEnabled(...)	Enable verbose SDK logs for debugging
-setFragmentManager(...)	Required if you embed via Fragment
-setUserId(...)	Identify app users for analytics
-The full FormbricksConfig.Builder API provides additional hooks for customizing headers, timeouts, and callbacks.
+## Contributing
 
-ProGuard / R8
-If you use ProGuard or R8, the SDK includes a consumer-rules.pro that keeps required DataBinding classes. Ensure your app’s build.gradle references it:
-
-kotlin
-Copy
-Edit
-android {
-  defaultConfig {
-    consumerProguardFiles("consumer-rules.pro")
-  }
-}
-Contributing
 We welcome issues and pull requests on our GitHub repository.
 
-License
+## License
+
 This SDK is released under the MIT License.
-```
