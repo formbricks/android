@@ -1,18 +1,6 @@
 # Formbricks Android SDK
 
-**Formbricks Android SDK** provides an easy way to embed Formbricks surveys and feedback forms in your Android applications via a WebView or Fragment. It handles survey loading, analytics tracking, and secure communication with your Formbricks server.
-
----
-
-## Features
-
-- Full-screen survey support via a dedicated `Activity`.
-- Embedded survey support via a `Fragment` with `ViewBinding`.
-- Automatic JavaScript configuration and WebViewClient handling.
-- Optional analytics tracking integration.
-- Easy setup with Gradle and Maven Central.
-
----
+**Formbricks Android SDK** provides an easy way to embed Formbricks surveys and feedback forms in your Android applications via a WebView.
 
 ## Installation
 
@@ -25,27 +13,24 @@ repositories {
 }
 
 dependencies {
-    implementation("com.formbricks.android:android:0.1.0") // replace with latest version
+    implementation("com.formbricks.android:android:1.0.0") // replace with latest version
 }
 ```
 
-Enable ViewBinding (and DataBinding if needed) in your app’s module build.gradle.kts:
+Enable DataBinding in your app’s module build.gradle.kts:
 
 ```kotlin
 android {
   buildFeatures {
-    viewBinding = true
-    // dataBinding = true  // only if your own layouts use DataBinding
+    dataBinding = true
   }
 }
 ```
 
 ## Usage
 
-1. Initialize the SDK
-   In your Activity’s onCreate, configure and initialize Formbricks. You must supply the host’s supportFragmentManager:
-
 ```kotlin
+// 1. Initialize the SDK
 val config = FormbricksConfig.Builder(
     "https://your-formbricks-server.com",
     "YOUR_ENVIRONMENT_ID"
@@ -54,27 +39,24 @@ val config = FormbricksConfig.Builder(
   .setFragmentManager(supportFragmentManager)
   .build()
 
-Formbricks.setup(this, config, true)
-Formbricks.setUserId("user-12345")
-```
+// 2. Setup Formbricks
+Formbricks.setup(this, config)
 
-2. Open (trigger) a survey
-   To display a survey, simply call Formbricks.track(...) with your survey URL. The SDK will handle launching its WebView internally:
+// 3. Identify the user
+Formbricks.setUserId("user‑123")
 
-```kotlin
-Formbricks.track(
-    event = "survey",
-    properties = mapOf("url" to "https://your-formbricks-server.com/survey/abc123")
-)
-```
+// 4. Track events
+Formbricks.track("button_pressed")
 
-This will open the survey in the SDK’s built-in WebView.
+// 5. Set or add user attributes
+Formbricks.setAttribute("test@web.com", "email")
+Formbricks.setAttributes(mapOf(Pair("attr1", "val1"), Pair("attr2", "val2")))
 
-3. Track Custom Events
-   You can also log arbitrary analytics events without UI:
+// 6. Change language (no userId required):
+Formbricks.setLanguage("de")
 
-```kotlin
-Formbricks.track("button_clicked")
+// 7. Log out:
+Formbricks.logout()
 ```
 
 ## Contributing
