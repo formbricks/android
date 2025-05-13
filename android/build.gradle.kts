@@ -10,7 +10,7 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
-version = "1.0.0"
+version = "1.1.0"
 val groupId = "com.formbricks"
 val artifactId = "android"
 
