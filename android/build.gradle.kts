@@ -8,6 +8,7 @@ plugins {
     id("org.jetbrains.dokka") version "1.9.10"
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.31.0"
+    id("org.sonarqube") version "4.4.1.3373"
 }
 
 // Import JaCoCo configuration
@@ -172,4 +173,16 @@ tasks.register<JacocoReport>("jacocoAndroidTestReport") {
             "outputs/code_coverage/debugAndroidTest/connected/**/*.exec"
         )
     )))
+}
+
+// Configure Sonar
+sonar {
+    properties {
+        property("sonar.coverage.jacoco.xmlReportPaths", 
+            layout.buildDirectory.file("reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml").get().asFile.path)
+    }
+}
+
+tasks.sonar {
+    dependsOn("jacocoAndroidTestReport")
 }

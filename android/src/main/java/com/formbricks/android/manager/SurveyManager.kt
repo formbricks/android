@@ -136,7 +136,7 @@ object SurveyManager {
         val firstSurveyWithActionClass = filteredSurveys.firstOrNull { survey ->
             val triggers = survey.triggers ?: listOf()
             triggers.firstOrNull { trigger -> 
-                trigger.actionClass?.id == actionClass?.id
+                trigger.actionClass?.name == actionClass?.name
             } != null
         }
 
