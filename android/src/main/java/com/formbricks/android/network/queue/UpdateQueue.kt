@@ -11,7 +11,8 @@ import kotlin.concurrent.timer
  * The given properties will be sent to the backend and updated in
  * the user object when the debounce interval is reached.
  */
-class UpdateQueue private constructor() {
+object UpdateQueue {
+    private const val DEBOUNCE_INTERVAL: Long = 500 // 500 ms
 
     private var userId: String? = null
     private var attributes: MutableMap<String, String>? = null
@@ -73,10 +74,5 @@ class UpdateQueue private constructor() {
 
         Logger.d("UpdateQueue - commit() called on UpdateQueue with $effectiveUserId and $attributes")
         UserManager.syncUser(effectiveUserId, attributes)
-    }
-
-    companion object {
-        private const val DEBOUNCE_INTERVAL: Long = 500 // 500 ms
-        val current: UpdateQueue = UpdateQueue()
     }
 }
