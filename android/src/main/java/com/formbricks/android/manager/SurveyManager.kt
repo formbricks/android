@@ -82,26 +82,16 @@ object SurveyManager {
         val responses = UserManager.responses ?: listOf()
         val segments = UserManager.segments ?: listOf()
 
-        Logger.d("Starting survey filtering with ${surveys.size} surveys")
-        Logger.d("User has ${displays.size} displays, ${responses.size} responses, and ${segments.size} segments")
-        Logger.d("User segments: $segments")
-
         filteredSurveys = filterSurveysBasedOnDisplayType(surveys, displays, responses).toMutableList()
-        Logger.d("After display type filtering: ${filteredSurveys.size} surveys")
-
         filteredSurveys = filterSurveysBasedOnRecontactDays(filteredSurveys, environmentDataHolder?.data?.data?.project?.recontactDays?.toInt()).toMutableList()
-        Logger.d("After recontact days filtering: ${filteredSurveys.size} surveys")
 
         if (UserManager.userId != null) {
             if (segments.isEmpty()) {
-                Logger.d("User has no segments, clearing filtered surveys")
                 filteredSurveys = mutableListOf()
                 return
             }
 
             filteredSurveys = filterSurveysBasedOnSegments(filteredSurveys, segments).toMutableList()
-            Logger.d("After segment filtering: ${filteredSurveys.size} surveys")
-            Logger.d("Remaining surveys: ${filteredSurveys.map { "${it.id}:${it.name}" }}")
         }
     }
 
@@ -142,20 +132,10 @@ object SurveyManager {
     fun track(action: String) {
         val actionClasses = environmentDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
-        Logger.d("Found ${codeActionClasses.size} code action classes")
-        Logger.d("Action classes: ${codeActionClasses.map { "${it.key}:${it.id}" }}")
-        
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
-        Logger.d("Found action class for $action: ${actionClass?.name} with id ${actionClass?.id}")
-        
-        Logger.d("Current filtered surveys: ${filteredSurveys.map { "${it.id}:${it.name}" }}")
-        
         val firstSurveyWithActionClass = filteredSurveys.firstOrNull { survey ->
             val triggers = survey.triggers ?: listOf()
-            Logger.d("Survey ${survey.id} has ${triggers.size} triggers")
-            Logger.d("Survey triggers: ${triggers.map { "${it.actionClass?.id}" }}")
             triggers.firstOrNull { trigger -> 
-                Logger.d("Comparing trigger action class id ${trigger.actionClass?.id} with action class id ${actionClass?.id}")
                 trigger.actionClass?.id == actionClass?.id
             } != null
         }
@@ -165,8 +145,6 @@ object SurveyManager {
             Logger.e(error)
             return
         }
-
-        Logger.d("Found matching survey: ${firstSurveyWithActionClass.id}:${firstSurveyWithActionClass.name}")
 
         val isMultiLangSurvey = (firstSurveyWithActionClass.languages?.size ?: 0) > 1
         if(isMultiLangSurvey) {
