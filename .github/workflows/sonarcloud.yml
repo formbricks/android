@@ -65,17 +65,7 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on -no-snapshot
           disable-animations: true
-          script: |
-            adb start-server && \
-            adb wait-for-device && \
-            until adb shell getprop sys.boot_completed 2>/dev/null | grep -q '^1$'; do
-              echo "Waiting for boot completion..."
-              sleep 5
-            done && \
-            adb devices && \
-            ./gradlew jacocoAndroidTestReport && \
-            (adb emu kill || true) && \
-            sleep 5
+          script: adb start-server && adb wait-for-device && until adb shell getprop sys.boot_completed 2>/dev/null | grep -q '^1$'; do echo "Waiting for boot completion..."; sleep 5; done && adb devices && ./gradlew jacocoAndroidTestReport && (adb emu kill || true) && sleep 5
 
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8 # v5.0.0
