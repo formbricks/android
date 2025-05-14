@@ -19,7 +19,7 @@ val artifactId = "android"
 
 // Configure JaCoCo version
 jacoco {
-    toolVersion = "0.8.10"
+    toolVersion = "0.8.11"
 }
 
 android {
@@ -125,4 +125,51 @@ mavenPublishing {
             url = "https://github.com/formbricks/android"
         }
     }
+}
+
+// Add JaCoCo tasks
+tasks.register<JacocoReport>("jacocoAndroidTestReport") {
+    dependsOn("connectedDebugAndroidTest")
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R\$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/databinding/**/*.class",
+        "android/databinding/*Binding.*",
+        "android/BuildConfig.*",
+        "**/*\$*.*",
+        "**/Lambda\$*.class",
+        "**/Lambda.class",
+        "**/*Lambda.class",
+        "**/*Lambda*.class",
+        "**/*_MembersInjector.class",
+        "**/Dagger*Component.class",
+        "**/Dagger*Component\$*.class",
+        "**/*Module_*Factory.class"
+    )
+
+    val debugTree = fileTree(mapOf(
+        "dir" to layout.buildDirectory.dir("tmp/kotlin-classes/debug").get().asFile,
+        "excludes" to fileFilter
+    ))
+
+    val mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(fileTree(mapOf(
+        "dir" to layout.buildDirectory.get().asFile,
+        "includes" to listOf(
+            "outputs/code_coverage/debugAndroidTest/connected/**/*.ec",
+            "outputs/code_coverage/debugAndroidTest/connected/**/*.exec"
+        )
+    )))
 }
