@@ -5,5 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ActionClassReference(
+    @SerializedName("id") val id: String?,
     @SerializedName("name") val name: String?
 )

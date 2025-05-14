@@ -10,9 +10,17 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.31.0"
 }
 
+// Import JaCoCo configuration
+// apply(from = "../jacoco.gradle.kts")
+
 version = "1.1.0"
 val groupId = "com.formbricks"
 val artifactId = "android"
+
+// Configure JaCoCo version
+jacoco {
+    toolVersion = "0.8.10"
+}
 
 android {
     namespace = "com.formbricks.android"
@@ -28,6 +36,7 @@ android {
     buildTypes {
         getByName("debug") {
             enableAndroidTestCoverage = true
+            isTestCoverageEnabled = true  // For backward compatibility
         }
         release {
             isMinifyEnabled = true
@@ -62,15 +71,6 @@ android {
     }
 }
 
-tasks.withType<Test>().configureEach {
-    extensions.configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf(
-            "jdk.internal.*",
-        )
-    }
-}
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.annotation)
@@ -91,7 +91,6 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.databinding.common)
 
-    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

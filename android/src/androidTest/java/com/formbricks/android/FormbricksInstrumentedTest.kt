@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.helper.FormbricksConfig
+import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import org.junit.Assert.assertEquals
@@ -44,7 +45,7 @@ class FormbricksInstrumentedTest {
     @Test
     fun testFormbricks() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.formbricks.formbrickssdk.test", appContext.packageName)
+        assertEquals("com.formbricks.android.test", appContext.packageName)
 
         // Everything should be in the default state
         assertFalse(Formbricks.isInitialized)
@@ -90,7 +91,7 @@ class FormbricksInstrumentedTest {
         (FormbricksApi.service as MockFormbricksApiService).isErrorResponseNeeded = true
         assertFalse(SurveyManager.hasApiError)
         SurveyManager.refreshEnvironmentIfNeeded(true)
-        waitForSeconds(1)
+        waitForSeconds(3) // Increased wait time to 3 seconds
         assertTrue(SurveyManager.hasApiError)
         (FormbricksApi.service as MockFormbricksApiService).isErrorResponseNeeded = false
 
@@ -113,9 +114,32 @@ class FormbricksInstrumentedTest {
 
         // Track a known event, thus, the survey should be shown.
         SurveyManager.isShowingSurvey = false
+        Logger.d("DEBUG: Before tracking click_demo_button")
+        Logger.d("DEBUG: Current filtered surveys: ${SurveyManager.filteredSurveys.map { "${it.id}:${it.name}" }}")
+        Logger.d("DEBUG: Current user segments: ${UserManager.segments}")
+        Logger.d("DEBUG: Current user displays: ${UserManager.displays}")
+        Logger.d("DEBUG: Current user responses: ${UserManager.responses}")
+        
+        // Track the event but don't show the survey
+        val firstSurveyBeforeTrack = SurveyManager.filteredSurveys.firstOrNull()
+        assertNotNull("Should have a survey before tracking", firstSurveyBeforeTrack)
+        assertEquals("Should have the correct survey ID", surveyID, firstSurveyBeforeTrack?.id)
+        
+        val actionClasses = SurveyManager.environmentDataHolder?.data?.data?.actionClasses ?: listOf()
+        val clickDemoButtonAction = actionClasses.firstOrNull { it.key == "click_demo_button" }
+        assertNotNull("Should have click_demo_button action class", clickDemoButtonAction)
+        
+        val triggers = firstSurveyBeforeTrack?.triggers ?: listOf()
+        val matchingTrigger = triggers.firstOrNull { it.actionClass?.id == clickDemoButtonAction?.id }
+        assertNotNull("Survey should have matching trigger", matchingTrigger)
+        
+        // Now track the event
         Formbricks.track("click_demo_button")
         waitForSeconds(1)
-        assertTrue(SurveyManager.isShowingSurvey)
+        Logger.d("DEBUG: After tracking click_demo_button")
+        Logger.d("DEBUG: isShowingSurvey = ${SurveyManager.isShowingSurvey}")
+        Logger.d("DEBUG: Current filtered surveys: ${SurveyManager.filteredSurveys.map { "${it.id}:${it.name}" }}")
+        assertTrue("Survey should be marked as showing", SurveyManager.isShowingSurvey)
 
         // Validate display and response
         SurveyManager.onNewDisplay(surveyID)
