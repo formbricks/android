@@ -66,14 +66,32 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on -no-snapshot
           disable-animations: true
           script: |
-            # Wait for ADB
-            adb wait-for-device
+            # Start ADB server
+            adb start-server
+
             # Wait for device to be ready
-            while [[ $(adb shell getprop sys.boot_completed 2>/dev/null) != "1" ]]; do
+            adb wait-for-device
+
+            # Use a more robust boot check
+            while true; do
+              if adb shell getprop sys.boot_completed | grep -q "1"; then
+                break
+              fi
+              echo "Waiting for boot completion..."
               sleep 5
             done
-            # Run tests
+
+            # Ensure ADB connection is stable
+            adb devices
+
+            # Run the tests
             ./gradlew jacocoAndroidTestReport
+
+            # Properly shutdown the emulator
+            adb emu kill || true
+
+            # Wait for emulator to completely shutdown
+            sleep 5
 
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@ffc3010689be73b8e5ae0c57ce35968afd7909e8 # v5.0.0
