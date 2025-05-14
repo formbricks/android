@@ -8,11 +8,20 @@ plugins {
     id("org.jetbrains.dokka") version "1.9.10"
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.31.0"
+    id("org.sonarqube") version "4.4.1.3373"
 }
+
+// Import JaCoCo configuration
+// apply(from = "../jacoco.gradle.kts")
 
 version = "1.1.0"
 val groupId = "com.formbricks"
 val artifactId = "android"
+
+// Configure JaCoCo version
+jacoco {
+    toolVersion = "0.8.11"
+}
 
 android {
     namespace = "com.formbricks.android"
@@ -28,6 +37,7 @@ android {
     buildTypes {
         getByName("debug") {
             enableAndroidTestCoverage = true
+            isTestCoverageEnabled = true  // For backward compatibility
         }
         release {
             isMinifyEnabled = true
@@ -62,15 +72,6 @@ android {
     }
 }
 
-tasks.withType<Test>().configureEach {
-    extensions.configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf(
-            "jdk.internal.*",
-        )
-    }
-}
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.annotation)
@@ -91,7 +92,6 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.databinding.common)
 
-    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
@@ -126,4 +126,63 @@ mavenPublishing {
             url = "https://github.com/formbricks/android"
         }
     }
+}
+
+// Add JaCoCo tasks
+tasks.register<JacocoReport>("jacocoAndroidTestReport") {
+    dependsOn("connectedDebugAndroidTest")
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R\$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/databinding/**/*.class",
+        "android/databinding/*Binding.*",
+        "android/BuildConfig.*",
+        "**/*\$*.*",
+        "**/Lambda\$*.class",
+        "**/Lambda.class",
+        "**/*Lambda.class",
+        "**/*Lambda*.class",
+        "**/*_MembersInjector.class",
+        "**/Dagger*Component.class",
+        "**/Dagger*Component\$*.class",
+        "**/*Module_*Factory.class"
+    )
+
+    val debugTree = fileTree(mapOf(
+        "dir" to layout.buildDirectory.dir("tmp/kotlin-classes/debug").get().asFile,
+        "excludes" to fileFilter
+    ))
+
+    val mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(fileTree(mapOf(
+        "dir" to layout.buildDirectory.get().asFile,
+        "includes" to listOf(
+            "outputs/code_coverage/debugAndroidTest/connected/**/*.ec",
+            "outputs/code_coverage/debugAndroidTest/connected/**/*.exec"
+        )
+    )))
+}
+
+// Configure Sonar
+sonar {
+    properties {
+        property("sonar.coverage.jacoco.xmlReportPaths", 
+            layout.buildDirectory.file("reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml").get().asFile.path)
+    }
+}
+
+tasks.sonar {
+    dependsOn("jacocoAndroidTestReport")
 }

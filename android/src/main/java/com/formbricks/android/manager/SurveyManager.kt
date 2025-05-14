@@ -135,7 +135,9 @@ object SurveyManager {
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
         val firstSurveyWithActionClass = filteredSurveys.firstOrNull { survey ->
             val triggers = survey.triggers ?: listOf()
-            triggers.firstOrNull { it.actionClass?.name.equals(actionClass?.name) } != null
+            triggers.firstOrNull { trigger -> 
+                trigger.actionClass?.name == actionClass?.name
+            } != null
         }
 
         if (firstSurveyWithActionClass == null) {

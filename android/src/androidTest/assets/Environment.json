@@ -346,6 +346,7 @@
           "triggers": [
             {
               "actionClass": {
+                "id": "cm6ow6hht000isf0k39hbmi5f",
                 "name": "Clicked the demo button"
               }
             }
