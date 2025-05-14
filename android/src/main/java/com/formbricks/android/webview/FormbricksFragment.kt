@@ -25,6 +25,7 @@ import android.widget.FrameLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
+import com.formbricks.android.Formbricks
 import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
 import com.formbricks.android.logger.Logger
@@ -36,22 +37,26 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.gson.JsonObject
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.util.Timer
 
 
-class FormbricksFragment : BottomSheetDialogFragment() {
+class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentFormbricksBinding
     private lateinit var surveyId: String
+    private val closeTimer = Timer()
     private val viewModel: FormbricksViewModel by viewModels()
 
     private var webAppInterface = WebAppInterface(object : WebAppInterface.WebAppCallback {
         override fun onClose() {
             Handler(Looper.getMainLooper()).post {
+                Formbricks.callback?.onSurveyClosed()
                 dismiss()
             }
         }
 
         override fun onDisplayCreated() {
+            Formbricks.callback?.onSurveyStarted()
             SurveyManager.onNewDisplay(surveyId)
         }
 
@@ -69,8 +74,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         }
 
         override fun onSurveyLibraryLoadError() {
-            val error = SDKError.unableToLoadFormbicksJs
-            Logger.e(error)
+            Formbricks.callback?.onError(SDKError.unableToLoadFormbicksJs)
             dismiss()
         }
     })
@@ -151,9 +155,10 @@ class FormbricksFragment : BottomSheetDialogFragment() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     consoleMessage?.let { cm ->
                         if (cm.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-                            val error = SDKError.surveyDisplayFetchError
-                            Logger.e(error)
-                            dismiss()
+                            Formbricks.callback?.onError(SDKError.surveyDisplayFetchError)
+                            if (Formbricks.autoDismissErrors) {
+                                dismiss()
+                            }
                         }
                         val log = "[CONSOLE:${cm.messageLevel()}] \"${cm.message()}\", source: ${cm.sourceId()} (${cm.lineNumber()})"
                         Logger.d(log)
@@ -196,7 +201,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
         }
 
-        viewModel.loadHtml(surveyId)
+        viewModel.loadHtml(surveyId = surveyId, hiddenFields = hiddenFields)
     }
 
     private fun getFileName(uri: Uri): String? {
@@ -234,8 +239,12 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
 
-        fun show(childFragmentManager: FragmentManager, surveyId: String) {
-            val fragment = FormbricksFragment()
+        fun show(
+            childFragmentManager: FragmentManager,
+            surveyId: String,
+            hiddenFields: Map<String, Any>? = null
+        ) {
+            val fragment = FormbricksFragment(hiddenFields)
             fragment.surveyId = surveyId
             fragment.show(childFragmentManager, TAG)
         }

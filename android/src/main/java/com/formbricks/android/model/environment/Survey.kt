@@ -30,5 +30,5 @@ data class Survey(
     @SerializedName("displayOption") val displayOption: String?,
     @SerializedName("segment") val segment: Segment?,
     @SerializedName("styling") val styling: Styling?,
-    @SerializedName("languages") val languages: List<SurveyLanguage>?,
+    @SerializedName("languages") val languages: List<SurveyLanguage>?
 )

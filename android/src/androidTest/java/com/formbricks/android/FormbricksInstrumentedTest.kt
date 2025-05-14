@@ -44,7 +44,7 @@ class FormbricksInstrumentedTest {
     @Test
     fun testFormbricks() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.formbricks.formbrickssdk.test", appContext.packageName)
+        assertEquals("com.formbricks.android.test", appContext.packageName)
 
         // Everything should be in the default state
         assertFalse(Formbricks.isInitialized)
