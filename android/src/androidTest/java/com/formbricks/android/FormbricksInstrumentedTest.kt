@@ -114,11 +114,6 @@ class FormbricksInstrumentedTest {
 
         // Track a known event, thus, the survey should be shown.
         SurveyManager.isShowingSurvey = false
-        Logger.d("DEBUG: Before tracking click_demo_button")
-        Logger.d("DEBUG: Current filtered surveys: ${SurveyManager.filteredSurveys.map { "${it.id}:${it.name}" }}")
-        Logger.d("DEBUG: Current user segments: ${UserManager.segments}")
-        Logger.d("DEBUG: Current user displays: ${UserManager.displays}")
-        Logger.d("DEBUG: Current user responses: ${UserManager.responses}")
         
         // Track the event but don't show the survey
         val firstSurveyBeforeTrack = SurveyManager.filteredSurveys.firstOrNull()
@@ -136,9 +131,6 @@ class FormbricksInstrumentedTest {
         // Now track the event
         Formbricks.track("click_demo_button")
         waitForSeconds(1)
-        Logger.d("DEBUG: After tracking click_demo_button")
-        Logger.d("DEBUG: isShowingSurvey = ${SurveyManager.isShowingSurvey}")
-        Logger.d("DEBUG: Current filtered surveys: ${SurveyManager.filteredSurveys.map { "${it.id}:${it.name}" }}")
         assertTrue("Survey should be marked as showing", SurveyManager.isShowingSurvey)
 
         // Validate display and response

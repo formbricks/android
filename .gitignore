@@ -8,3 +8,19 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# IDE
+.vscode/
+.settings/
+
+# Coverage
+/tools/
+*.exec
+*.ec
+/coverage/
+/reports/
+generate-*-coverage.sh
+
+# Generated files
+**/build/
+**/reports/
