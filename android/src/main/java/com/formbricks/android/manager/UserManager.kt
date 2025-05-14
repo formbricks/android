@@ -48,7 +48,7 @@ object UserManager {
      * @param userId
      */
     fun set(userId: String) {
-        UpdateQueue.current.setUserId(userId)
+        UpdateQueue.setUserId(userId)
     }
 
     /**
@@ -58,7 +58,7 @@ object UserManager {
      * @param key
      */
     fun addAttribute(attribute: String, key: String) {
-        UpdateQueue.current.addAttribute(key, attribute)
+        UpdateQueue.addAttribute(key, attribute)
     }
 
     /**
@@ -67,7 +67,7 @@ object UserManager {
      * @param attributes
      */
     fun setAttributes(attributes: Map<String, String>) {
-        UpdateQueue.current.setAttributes(attributes)
+        UpdateQueue.setAttributes(attributes)
     }
 
     /**
@@ -76,7 +76,7 @@ object UserManager {
      * @param language
      */
     fun setLanguage(language: String) {
-        UpdateQueue.current.setLanguage(language)
+        UpdateQueue.setLanguage(language)
     }
 
     /**
@@ -143,7 +143,7 @@ object UserManager {
                     Formbricks.language = languageFromUserResponse
                 }
 
-                UpdateQueue.current.reset()
+                UpdateQueue.reset()
                 SurveyManager.filterSurveys()
                 startSyncTimer()
             } catch (e: Exception) {
@@ -183,7 +183,7 @@ object UserManager {
         backingLastDisplayedAt = null
         backingExpiresAt = null
         Formbricks.language = "default"
-        UpdateQueue.current.reset()
+        UpdateQueue.reset()
 
         if(isUserIdDefined) {
             Logger.d("User logged out successfully!")
