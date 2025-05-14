@@ -17,7 +17,7 @@ dependencies {
 }
 ```
 
-Enable DataBinding in your app’s module build.gradle.kts:
+Enable DataBinding in your app's module build.gradle.kts:
 
 ```kotlin
 android {
@@ -62,6 +62,42 @@ Formbricks.logout()
 ## Contributing
 
 We welcome issues and pull requests on our GitHub repository.
+
+## Testing and Code Coverage
+
+### Running Tests
+
+To run the instrumented tests, make sure you have an Android emulator running or a physical device connected, then execute:
+
+```bash
+./gradlew connectedDebugAndroidTest
+```
+
+### Generating Coverage Reports
+
+The SDK uses JaCoCo for code coverage reporting. To generate a coverage report for instrumented tests:
+
+1. Make sure you have an Android emulator running or a physical device connected
+2. Run the provided script:
+   ```bash
+   ./generate-instrumented-coverage.sh
+   ```
+   This will:
+   - Run the instrumented tests
+   - Generate a JaCoCo coverage report
+   - Open the HTML report in your default browser
+
+Alternatively, you can run the Gradle task directly:
+
+```bash
+./gradlew jacocoAndroidTestReport
+```
+
+The coverage report will be generated at:
+
+```
+android/build/reports/jacoco/jacocoAndroidTestReport/html/index.html
+```
 
 ## License
 
