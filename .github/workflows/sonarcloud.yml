@@ -36,9 +36,18 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
 
+      # Setup KVM for hardware acceleration
+      - name: Setup KVM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+          sudo adduser $USER kvm
+          sudo chown $USER /dev/kvm
+          sudo chmod 777 /dev/kvm
+
       # Accept Android SDK licenses
       - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
+        run: yes | sdkmanager --licenses || true
 
       # Install required SDK components
       - name: Install SDK components
@@ -54,10 +63,16 @@ jobs:
           arch: x86_64
           profile: pixel_6
           force-avd-creation: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on -no-snapshot
           disable-animations: true
           script: |
-            adb devices
+            # Wait for ADB
+            adb wait-for-device
+            # Wait for device to be ready
+            while [[ $(adb shell getprop sys.boot_completed 2>/dev/null) != "1" ]]; do
+              sleep 5
+            done
+            # Run tests
             ./gradlew jacocoAndroidTestReport
 
       - name: SonarCloud Scan
