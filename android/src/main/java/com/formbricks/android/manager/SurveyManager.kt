@@ -302,8 +302,13 @@ object SurveyManager {
     }
 
     /**
-     * Decides if the survey should be displayed based on the display percentage.
+     * Test helper method to invoke shouldDisplayBasedOnPercentage
      */
+    @JvmStatic
+    fun invokeShouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean {
+        return shouldDisplayBasedOnPercentage(displayPercentage)
+    }
+
     private fun shouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean {
         val percentage = displayPercentage.guard { return true }
         val randomNum = (0 until 10000).random() / 100.0
