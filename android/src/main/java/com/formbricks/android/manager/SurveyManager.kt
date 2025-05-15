@@ -241,8 +241,13 @@ object SurveyManager {
 
     /**
      * Filters the surveys based on the display type and limit.
+     * @param surveys List of surveys to filter
+     * @param displays List of displays to check against
+     * @param responses List of survey responses
+     * @return Filtered list of surveys
      */
-    private fun filterSurveysBasedOnDisplayType(surveys: List<Survey>, displays: List<Display>, responses: List<String>): List<Survey> {
+    @JvmStatic
+    fun filterSurveysBasedOnDisplayType(surveys: List<Survey>, displays: List<Display>, responses: List<String>): List<Survey> {
         return surveys.filter { survey ->
             when (survey.displayOption) {
                 "respondMultiple" -> true
@@ -315,7 +320,14 @@ object SurveyManager {
         return randomNum <= percentage
     }
 
-    private fun getLanguageCode(survey: Survey, language: String?): String? {
+    /**
+     * Gets the language code for a survey based on the requested language.
+     * Returns "default" for null, empty, or explicitly requested default language.
+     * Returns the matching language code if found and enabled.
+     * Returns null if language is not found or disabled.
+     */
+    @JvmStatic
+    fun getLanguageCode(survey: Survey, language: String?): String? {
         // 1) Gather all valid codes
         val availableLanguageCodes = survey.languages
             ?.map { it.language.code }
