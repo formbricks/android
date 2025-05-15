@@ -33,6 +33,23 @@ class FormbricksApiServiceInstrumentedTest {
         }
     }
 
+    @Test
+    fun testGetEnvironmentStateObject_handlesErrorGracefully() {
+        val result = apiService.getEnvironmentStateObject("dummy-environment-id")
+        assertTrue(result.isFailure)
+        result.exceptionOrNull()?.let { e ->
+            println("Exception caught as expected: ${e.message}")
+        }
+    }
+
+    @Test
+    fun testPostUser_handlesErrorGracefully() {
+        // This should fail gracefully since the URL is unreachable
+        val dummyBody = PostUserBody("dummy-user-id", null)
+        val result = apiService.postUser("dummy-environment-id", dummyBody)
+        assertTrue(result.isFailure)
+    }
+
     // Add more integration-style tests as needed, e.g.:
     // - testGetEnvironmentStateObject_withMockServer
     // - testPostUser_withMockServer
