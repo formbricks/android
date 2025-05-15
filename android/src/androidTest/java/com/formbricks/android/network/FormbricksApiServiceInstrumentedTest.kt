@@ -50,6 +50,23 @@ class FormbricksApiServiceInstrumentedTest {
         assertTrue(result.isFailure)
     }
 
+    @Test
+    fun testPostUser_withNullAttributes_handlesErrorGracefully() {
+        val dummyBody = PostUserBody("dummy-user-id", null)
+        val result = apiService.postUser("dummy-environment-id", dummyBody)
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun testInitialize_multipleTimes_noCrash() {
+        try {
+            apiService.initialize("https://example.com", isLoggingEnabled = false)
+            apiService.initialize("https://another-url.com", isLoggingEnabled = true)
+        } catch (e: Exception) {
+            fail("Multiple initializations should not throw: ${e.message}")
+        }
+    }
+
     // Add more integration-style tests as needed, e.g.:
     // - testGetEnvironmentStateObject_withMockServer
     // - testPostUser_withMockServer
