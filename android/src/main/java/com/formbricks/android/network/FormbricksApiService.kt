@@ -24,16 +24,20 @@ open class FormbricksApiService {
     }
 
     open fun getEnvironmentStateObject(environmentId: String): Result<EnvironmentDataHolder> {
-        val result = execute {
-            retrofit.create(FormbricksService::class.java)
-                .getEnvironmentState(environmentId)
+        return try {
+            val result = execute {
+                retrofit.create(FormbricksService::class.java)
+                    .getEnvironmentState(environmentId)
+            }
+            val json = Json { ignoreUnknownKeys = true }
+            val resultMap = result.getOrThrow()
+            val resultJson = mapToJsonElement(resultMap).jsonObject
+            val environmentResponse = json.decodeFromJsonElement<EnvironmentResponse>(resultJson)
+            val data = EnvironmentDataHolder(environmentResponse.data, resultMap)
+            Result.success(data)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        val json = Json { ignoreUnknownKeys = true }
-        val resultMap = result.getOrThrow()
-        val resultJson = mapToJsonElement(resultMap).jsonObject
-        val environmentResponse = json.decodeFromJsonElement<EnvironmentResponse>(resultJson)
-        val data = EnvironmentDataHolder(environmentResponse.data, resultMap)
-        return Result.success(data)
     }
 
     open fun postUser(environmentId: String, body: PostUserBody): Result<UserResponse> {
