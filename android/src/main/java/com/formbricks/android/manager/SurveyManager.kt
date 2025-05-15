@@ -241,8 +241,13 @@ object SurveyManager {
 
     /**
      * Filters the surveys based on the display type and limit.
+     * @param surveys List of surveys to filter
+     * @param displays List of displays to check against
+     * @param responses List of survey responses
+     * @return Filtered list of surveys
      */
-    private fun filterSurveysBasedOnDisplayType(surveys: List<Survey>, displays: List<Display>, responses: List<String>): List<Survey> {
+    @JvmStatic
+    fun filterSurveysBasedOnDisplayType(surveys: List<Survey>, displays: List<Display>, responses: List<String>): List<Survey> {
         return surveys.filter { survey ->
             when (survey.displayOption) {
                 "respondMultiple" -> true
@@ -275,8 +280,12 @@ object SurveyManager {
 
     /**
      * Filters the surveys based on the recontact days and the [UserManager.lastDisplayedAt] date.
+     * @param surveys List of surveys to filter
+     * @param defaultRecontactDays Default recontact days if not specified in survey
+     * @return Filtered list of surveys
      */
-    private fun filterSurveysBasedOnRecontactDays(surveys: List<Survey>, defaultRecontactDays: Int?): List<Survey> {
+    @JvmStatic
+    fun filterSurveysBasedOnRecontactDays(surveys: List<Survey>, defaultRecontactDays: Int?): List<Survey> {
         return surveys.filter { survey ->
             val lastDisplayedAt = UserManager.lastDisplayedAt.guard { return@filter true }
 
@@ -302,15 +311,27 @@ object SurveyManager {
     }
 
     /**
-     * Decides if the survey should be displayed based on the display percentage.
+     * Test helper method to invoke shouldDisplayBasedOnPercentage
      */
+    @JvmStatic
+    fun invokeShouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean {
+        return shouldDisplayBasedOnPercentage(displayPercentage)
+    }
+
     private fun shouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean {
         val percentage = displayPercentage.guard { return true }
         val randomNum = (0 until 10000).random() / 100.0
         return randomNum <= percentage
     }
 
-    private fun getLanguageCode(survey: Survey, language: String?): String? {
+    /**
+     * Gets the language code for a survey based on the requested language.
+     * Returns "default" for null, empty, or explicitly requested default language.
+     * Returns the matching language code if found and enabled.
+     * Returns null if language is not found or disabled.
+     */
+    @JvmStatic
+    fun getLanguageCode(survey: Survey, language: String?): String? {
         // 1) Gather all valid codes
         val availableLanguageCodes = survey.languages
             ?.map { it.language.code }
