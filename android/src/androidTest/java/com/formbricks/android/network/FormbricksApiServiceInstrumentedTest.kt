@@ -67,6 +67,14 @@ class FormbricksApiServiceInstrumentedTest {
         }
     }
 
+    @Test
+    fun testGetEnvironmentStateObject_beforeInitialize_returnsFailure() {
+        val uninitializedService = FormbricksApiService()
+        val result = uninitializedService.getEnvironmentStateObject("dummy")
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is UninitializedPropertyAccessException)
+    }
+
     // Add more integration-style tests as needed, e.g.:
     // - testGetEnvironmentStateObject_withMockServer
     // - testPostUser_withMockServer
