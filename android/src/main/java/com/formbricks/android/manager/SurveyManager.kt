@@ -280,8 +280,12 @@ object SurveyManager {
 
     /**
      * Filters the surveys based on the recontact days and the [UserManager.lastDisplayedAt] date.
+     * @param surveys List of surveys to filter
+     * @param defaultRecontactDays Default recontact days if not specified in survey
+     * @return Filtered list of surveys
      */
-    private fun filterSurveysBasedOnRecontactDays(surveys: List<Survey>, defaultRecontactDays: Int?): List<Survey> {
+    @JvmStatic
+    fun filterSurveysBasedOnRecontactDays(surveys: List<Survey>, defaultRecontactDays: Int?): List<Survey> {
         return surveys.filter { survey ->
             val lastDisplayedAt = UserManager.lastDisplayedAt.guard { return@filter true }
 

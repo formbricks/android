@@ -247,10 +247,15 @@ object UserManager {
 
     var lastDisplayedAt: Date?
         get() = backingLastDisplayedAt ?: prefManager.getLong(LAST_DISPLAYED_AT_KEY, 0L).takeIf { it > 0 }?.let { Date(it) }.also { backingLastDisplayedAt = it }
-        private set(value) {
+        internal set(value) {
             backingLastDisplayedAt = value
             prefManager.edit().putLong(LAST_DISPLAYED_AT_KEY, value?.time ?: 0L).apply()
         }
+
+    /**
+     * Test-only getter for lastDisplayedAt
+     */
+    internal fun getLastDisplayedAtForTesting(): Date? = lastDisplayedAt
 
     var expiresAt: Date?
         get() = backingExpiresAt ?: prefManager.getLong(EXPIRES_AT_KEY, 0L).takeIf { it > 0 }?.let { Date(it) }.also { backingExpiresAt = it }
