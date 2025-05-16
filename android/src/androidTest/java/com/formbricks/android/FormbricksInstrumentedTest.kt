@@ -125,7 +125,7 @@ class FormbricksInstrumentedTest {
         assertNotNull("Should have click_demo_button action class", clickDemoButtonAction)
         
         val triggers = firstSurveyBeforeTrack?.triggers ?: listOf()
-        val matchingTrigger = triggers.firstOrNull { it.actionClass?.id == clickDemoButtonAction?.id }
+        val matchingTrigger = triggers.firstOrNull { it.actionClass?.name == clickDemoButtonAction?.name }
         assertNotNull("Survey should have matching trigger", matchingTrigger)
         
         // Now track the event

@@ -1,7 +1,6 @@
 package com.formbricks.android.manager
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.formbricks.android.Formbricks
 import com.formbricks.android.model.environment.*
 import com.formbricks.android.model.user.Display
 import org.junit.Assert.*
@@ -9,7 +8,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class SurveyManagerInstrumentedTest {
