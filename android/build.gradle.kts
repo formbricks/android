@@ -14,7 +14,7 @@ plugins {
 // Import JaCoCo configuration
 // apply(from = "../jacoco.gradle.kts")
 
-version = "1.1.0"
+version = "1.0.2"
 val groupId = "com.formbricks"
 val artifactId = "android"
 
