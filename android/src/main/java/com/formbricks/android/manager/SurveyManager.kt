@@ -7,10 +7,13 @@ import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.environment.EnvironmentDataHolder
+import com.formbricks.android.model.environment.SegmentFilterResource
+import com.formbricks.android.model.environment.SegmentFilterResourceDeserializer
 import com.formbricks.android.model.environment.Survey
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.Display
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +39,16 @@ object SurveyManager {
     private val prefManager by lazy { Formbricks.applicationContext.getSharedPreferences(FORMBRICKS_PREFS, Context.MODE_PRIVATE) }
     internal var filteredSurveys: MutableList<Survey> = mutableListOf()
 
+    // 1) Build your Gson once, registering only the SegmentFilterResource adapter:
+    val gson = GsonBuilder()
+        .registerTypeAdapter(
+            SegmentFilterResource::class.java,
+            SegmentFilterResourceDeserializer()
+        )
+        .create()
+
+
+
     private var environmentDataHolderJson: String?
         get() {
             return prefManager.getString(PREF_FORMBRICKS_DATA_HOLDER, "")
@@ -57,7 +70,7 @@ object SurveyManager {
             synchronized(this) {
                 backingEnvironmentDataHolder = environmentDataHolderJson?.let { json ->
                     try {
-                        Gson().fromJson(json, EnvironmentDataHolder::class.java)
+                        gson.fromJson(json, EnvironmentDataHolder::class.java)
                     } catch (e: Exception) {
                         Logger.e(RuntimeException("Unable to retrieve environment data from the local storage."))
                         null
