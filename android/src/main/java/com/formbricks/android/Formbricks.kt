@@ -94,7 +94,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setUserId(userId: String, allowOverrideUserId: Boolean) {
+    fun setUserId(userId: String, allowOverrideUserId: Boolean = false) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             callback?.onError(error)
