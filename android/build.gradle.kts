@@ -9,6 +9,7 @@ plugins {
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.24.0"
     id("org.sonarqube") version "4.4.1.3373"
+    id("maven-publish")
 }
 
 // Import JaCoCo configuration
@@ -107,7 +108,7 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation(enforcedPlatform("org.jetbrains.kotlin:kotlin-bom:1.7.20"))
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.7.20"))
 }
 
 mavenPublishing {
@@ -200,4 +201,10 @@ sonar {
 
 tasks.sonar {
     dependsOn("jacocoAndroidTestReport")
+}
+
+afterEvaluate {
+    tasks.withType<Sign>().configureEach {
+        enabled = false
+    }
 }
