@@ -73,6 +73,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
 
         override fun onSurveyLibraryLoadError() {
             val error = SDKError.unableToLoadFormbicksJs
+            Formbricks.callback?.onError(error)
             Logger.e(error)
             dismiss()
         }
