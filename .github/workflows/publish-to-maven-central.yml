@@ -1,6 +1,8 @@
 # .github/workflows/publish-to-maven-central.yml
 
 name: Publish to Maven Central
+permissions:
+  contents: read
 on:
   release:
     types: [released]
