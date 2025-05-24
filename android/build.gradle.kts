@@ -2,13 +2,14 @@ import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     id("com.android.library")
-    kotlin("android")
-    kotlin("kapt")
-    kotlin("plugin.serialization") version "2.1.0"
+    id("kotlin-android")
+    id("kotlin-kapt")
+    kotlin("plugin.serialization") version "1.7.20"
     id("org.jetbrains.dokka") version "1.9.10"
     id("jacoco")
-    id("com.vanniktech.maven.publish") version "0.31.0"
+    id("com.vanniktech.maven.publish") version "0.24.0"
     id("org.sonarqube") version "4.4.1.3373"
+    id("maven-publish")
 }
 
 // Import JaCoCo configuration
@@ -25,7 +26,7 @@ jacoco {
 
 android {
     namespace = "com.formbricks.android"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 24
@@ -36,11 +37,11 @@ android {
 
     buildTypes {
         getByName("debug") {
-            enableAndroidTestCoverage = true
+//            enableAndroidTestCoverage = true
             isTestCoverageEnabled = true  // For backward compatibility
         }
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -48,17 +49,30 @@ android {
         }
     }
 
-    packaging {
+
+    packagingOptions {
         resources {
-            excludes += "META-INF/library_release.kotlin_module"
-            excludes += "classes.dex"
-            excludes += "**.**"
-            pickFirsts += "**/DataBinderMapperImpl.java"
-            pickFirsts += "**/DataBinderMapperImpl.class"
-            pickFirsts += "**/formbrickssdk/DataBinderMapperImpl.java"
-            pickFirsts += "**/formbrickssdk/DataBinderMapperImpl.class"
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module",
+                "classes.dex"
+            )
+            pickFirsts += setOf(
+                "**/DataBinderMapperImpl.class",
+                "**/DataBinderMapperImpl.java",
+                "**/formbrickssdk/DataBinderMapperImpl.java",
+                "**/formbrickssdk/DataBinderMapperImpl.class"
+            )
         }
     }
+
     buildFeatures {
         dataBinding = true
         viewBinding = true
@@ -94,36 +108,38 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.7.20"))
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+//    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
 
     signAllPublications()
 
     coordinates(groupId, artifactId, version.toString())
 
     pom {
-        name = "Formbricks Android SDK"
-        description = "Formbricks anroid SDK"
-        url = "https://github.com/formbricks/android"
+        name.set("Formbricks Android SDK")
+        description.set("Formbricks anroid SDK")
+        url.set("https://github.com/formbricks/android")
         licenses {
             license {
-                name = "MIT License"
-                url = "https://opensource.org/licenses/MIT"
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
             }
         }
         developers {
             developer {
-                id = "formbricks"
-                name = "Formbricks"
-                email = "hola@formbricks.com"
+                id.set("formbricks")
+                name.set("Formbricks")
+                email.set("hola@formbricks.com")
             }
         }
         scm {
-            connection = "scm:git:git://github.com/formbricks/android.git"
-            developerConnection = "scm:git:ssh://github.com:formbricks/android.git"
-            url = "https://github.com/formbricks/android"
+            connection.set("scm:git:git://github.com/formbricks/android.git")
+            developerConnection.set("scm:git:ssh://github.com:formbricks/android.git")
+            url.set("https://github.com/formbricks/android")
         }
     }
 }
@@ -185,4 +201,10 @@ sonar {
 
 tasks.sonar {
     dependsOn("jacocoAndroidTestReport")
+}
+
+afterEvaluate {
+    tasks.withType<Sign>().configureEach {
+        enabled = false
+    }
 }

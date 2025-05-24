@@ -6,6 +6,7 @@ import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
+import com.formbricks.android.model.enums.SuccessType
 import com.formbricks.android.model.environment.EnvironmentDataHolder
 import com.formbricks.android.model.environment.SegmentFilterResource
 import com.formbricks.android.model.environment.SegmentFilterResourceDeserializer
@@ -72,6 +73,7 @@ object SurveyManager {
                     try {
                         gson.fromJson(json, EnvironmentDataHolder::class.java)
                     } catch (e: Exception) {
+                        Formbricks.callback?.onError(e)
                         Logger.e(RuntimeException("Unable to retrieve environment data from the local storage."))
                         null
                     }
@@ -129,9 +131,11 @@ object SurveyManager {
                 startRefreshTimer(environmentDataHolder?.expiresAt())
                 filterSurveys()
                 hasApiError = false
+                Formbricks.callback?.onSuccess(SuccessType.GET_ENVIRONMENT_SUCCESS)
             } catch (e: Exception) {
                 hasApiError = true
                 val error = SDKError.unableToRefreshEnvironment
+                Formbricks.callback?.onError(error)
                 Logger.e(error)
                 startErrorTimer()
             }
@@ -142,7 +146,7 @@ object SurveyManager {
      * Checks if there are any surveys to display, based in the track action, and if so, displays the first one.
      * Handles the display percentage and the delay of the survey.
      */
-    fun track(action: String) {
+    fun track(action: String, hiddenFields: Map<String, Any>? = null) {
         val actionClasses = environmentDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
@@ -156,6 +160,7 @@ object SurveyManager {
         if (firstSurveyWithActionClass == null) {
             val error = SDKError.surveyNotFoundError
             Logger.e(error)
+            Formbricks.callback?.onError(error)
             return
         }
 
@@ -166,6 +171,7 @@ object SurveyManager {
 
             if (languageCode == null) {
                 val error = RuntimeException("Survey “${firstSurveyWithActionClass.name}” is not available in language “$currentLanguage”. Skipping.")
+                Formbricks.callback?.onError(error)
                 Logger.e(error)
                 return
             }
@@ -182,7 +188,7 @@ object SurveyManager {
                 stopDisplayTimer()
                 displayTimer.schedule(object : TimerTask() {
                     override fun run() {
-                        Formbricks.showSurvey(it)
+                        Formbricks.showSurvey(it, hiddenFields = hiddenFields)
                     }
 
                 }, Date(System.currentTimeMillis() + timeout.toLong() * 1000))
@@ -190,6 +196,7 @@ object SurveyManager {
         } else {
             val error = SDKError.surveyNotDisplayedError
             Logger.e(error)
+            Formbricks.callback?.onError(error)
         }
     }
 
@@ -204,6 +211,7 @@ object SurveyManager {
     fun postResponse(surveyId: String?) {
         val id = surveyId.guard {
             val error = SDKError.missingSurveyId
+            Formbricks.callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -217,6 +225,7 @@ object SurveyManager {
     fun onNewDisplay(surveyId: String?) {
         val id = surveyId.guard {
             val error = SDKError.missingSurveyId
+            Formbricks.callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -284,6 +293,7 @@ object SurveyManager {
 
                 else -> {
                     val error = SDKError.invalidDisplayOption
+                    Formbricks.callback?.onError(error)
                     Logger.e(error)
                     false
                 }

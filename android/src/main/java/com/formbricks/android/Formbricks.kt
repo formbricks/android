@@ -10,9 +10,20 @@ import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
+import com.formbricks.android.model.enums.SuccessType
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.webview.FormbricksFragment
 import java.lang.RuntimeException
+
+@Keep
+interface FormbricksCallback {
+    fun onSurveyStarted()
+    fun onSurveyFinished()
+    fun onSurveyClosed()
+    fun onPageCommitVisible()
+    fun onError(error: Exception)
+    fun onSuccess(successType: SuccessType)
+}
 
 @Keep
 object Formbricks {
@@ -22,8 +33,11 @@ object Formbricks {
     internal lateinit var appUrl: String
     internal var language: String = "default"
     internal var loggingEnabled: Boolean = true
+    internal var autoDismissErrors: Boolean = true
     private var fragmentManager: FragmentManager? = null
     internal var isInitialized = false
+
+    var callback: FormbricksCallback? = null
 
     /**
      * Initializes the Formbricks SDK with the given [Context] config [FormbricksConfig].
@@ -48,6 +62,7 @@ object Formbricks {
     fun setup(context: Context, config: FormbricksConfig, forceRefresh: Boolean = false) {
         if (isInitialized && !forceRefresh) {
             val error = SDKError.sdkIsAlreadyInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -58,7 +73,7 @@ object Formbricks {
         environmentId = config.environmentId
         loggingEnabled = config.loggingEnabled
         fragmentManager = config.fragmentManager
-
+        autoDismissErrors = config.autoDismissErrors
         config.userId?.let { UserManager.set(it) }
         config.attributes?.let { UserManager.setAttributes(it) }
         config.attributes?.get("language")?.let { UserManager.setLanguage(it) }
@@ -79,15 +94,17 @@ object Formbricks {
      * ```
      *
      */
-    fun setUserId(userId: String) {
+    fun setUserId(userId: String, allowOverrideUserId: Boolean = false) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
 
-        if(UserManager.userId != null) {
+        if (UserManager.userId != null && !allowOverrideUserId) {
             val error = RuntimeException("A userId is already set ${UserManager.userId} - please call logout first before setting a new one")
+            callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -107,6 +124,7 @@ object Formbricks {
     fun setAttribute(attribute: String, key: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -125,6 +143,7 @@ object Formbricks {
     fun setAttributes(attributes: Map<String, String>) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -143,6 +162,7 @@ object Formbricks {
     fun setLanguage(language: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
@@ -159,20 +179,22 @@ object Formbricks {
      * ```
      *
      */
-    fun track(action: String) {
+    fun track(action: String, hiddenFields: Map<String, Any>? = null) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
 
         if (!isInternetAvailable()) {
             val error = SDKError.connectionIsNotAvailable
+            callback?.onError(error)
             Logger.e(error)
             return
         }
 
-        SurveyManager.track(action)
+        SurveyManager.track(action = action, hiddenFields = hiddenFields)
     }
 
     /**
@@ -187,10 +209,12 @@ object Formbricks {
     fun logout() {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
+            callback?.onError(error)
             Logger.e(error)
             return
         }
 
+        callback?.onSuccess(SuccessType.LOGOUT_SUCCESS)
         UserManager.logout()
     }
 
@@ -209,15 +233,16 @@ object Formbricks {
     }
 
     /// Assembles the survey fragment and presents it
-    internal fun showSurvey(id: String) {
+    internal fun showSurvey(id: String, hiddenFields: Map<String, Any>? = null) {
         if (fragmentManager == null) {
             val error = SDKError.fragmentManagerIsNotSet
+            callback?.onError(error)
             Logger.e(error)
             return
         }
 
         fragmentManager?.let {
-            FormbricksFragment.show(it, surveyId = id)
+            FormbricksFragment.show(it, surveyId = id, hiddenFields = hiddenFields)
         }
     }
 

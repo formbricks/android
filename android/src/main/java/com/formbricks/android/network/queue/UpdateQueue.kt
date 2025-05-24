@@ -1,5 +1,6 @@
 package com.formbricks.android.network.queue
 
+import com.formbricks.android.Formbricks
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.error.SDKError
@@ -68,6 +69,7 @@ object UpdateQueue {
             ?: UserManager.userId
         if (effectiveUserId == null) {
             val error = SDKError.noUserIdSetError
+            Formbricks.callback?.onError(error)
             Logger.e(error)
             return
         }

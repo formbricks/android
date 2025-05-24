@@ -8,6 +8,7 @@ import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.extensions.lastDisplayAt
 import com.formbricks.android.logger.Logger
+import com.formbricks.android.model.enums.SuccessType
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.Display
 import com.formbricks.android.network.queue.UpdateQueue
@@ -146,8 +147,10 @@ object UserManager {
                 UpdateQueue.reset()
                 SurveyManager.filterSurveys()
                 startSyncTimer()
+                Formbricks.callback?.onSuccess(SuccessType.SET_USER_SUCCESS)
             } catch (e: Exception) {
                 val error = SDKError.unableToPostResponse
+                Formbricks.callback?.onError(error)
                 Logger.e(error)
             }
         }
@@ -161,6 +164,7 @@ object UserManager {
 
         if (!isUserIdDefined) {
             val error = SDKError.noUserIdSetError
+            Formbricks.callback?.onError(error)
             Logger.e(error)
         }
 
