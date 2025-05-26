@@ -11,9 +11,6 @@ plugins {
     id("org.sonarqube") version "4.4.1.3373"
 }
 
-// Import JaCoCo configuration
-// apply(from = "../jacoco.gradle.kts")
-
 version = "1.0.2"
 val groupId = "com.formbricks"
 val artifactId = "android"
@@ -86,7 +83,6 @@ dependencies {
     implementation(libs.material)
 
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.fragment.ktx)
