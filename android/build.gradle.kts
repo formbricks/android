@@ -5,14 +5,11 @@ plugins {
     kotlin("android")
     kotlin("kapt")
     kotlin("plugin.serialization") version "2.1.0"
-    id("org.jetbrains.dokka") version "1.9.10"
+    id("org.jetbrains.dokka") version "1.9.20"
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.31.0"
     id("org.sonarqube") version "4.4.1.3373"
 }
-
-// Import JaCoCo configuration
-// apply(from = "../jacoco.gradle.kts")
 
 version = "1.0.2"
 val groupId = "com.formbricks"
@@ -86,7 +83,6 @@ dependencies {
     implementation(libs.material)
 
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.fragment.ktx)
