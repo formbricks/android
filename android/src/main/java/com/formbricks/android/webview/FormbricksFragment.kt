@@ -214,7 +214,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
     }
 
     private fun handleBackPressIfEnable() {
-        if (Formbricks.autoDismissErrors) {
+        if (Formbricks.isBackPressEnable) {
             dialog?.setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
                     dismissAllowingStateLoss()
