@@ -12,9 +12,6 @@ plugins {
     id("maven-publish")
 }
 
-// Import JaCoCo configuration
-// apply(from = "../jacoco.gradle.kts")
-
 version = "1.0.2"
 val groupId = "com.formbricks"
 val artifactId = "android"
