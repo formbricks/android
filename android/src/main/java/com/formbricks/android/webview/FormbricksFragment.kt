@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
 import android.util.Base64
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -49,7 +50,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         override fun onClose() {
             Handler(Looper.getMainLooper()).post {
                 Formbricks.callback?.onSurveyClosed()
-                dismiss()
+                dismissAllowingStateLoss()
             }
         }
 
@@ -75,7 +76,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             val error = SDKError.unableToLoadFormbicksJs
             Formbricks.callback?.onError(error)
             Logger.e(error)
-            dismiss()
+            dismissAllowingStateLoss()
         }
     })
 
@@ -163,7 +164,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
                         if (cm.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
                             Formbricks.callback?.onError(SDKError.surveyDisplayFetchError)
                             if (Formbricks.autoDismissErrors) {
-                                dismiss()
+                                dismissAllowingStateLoss()
                             }
                         }
                         val log = "[CONSOLE:${cm.messageLevel()}] \"${cm.message()}\", source: ${cm.sourceId()} (${cm.lineNumber()})"
@@ -209,6 +210,21 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         }
 
         viewModel.loadHtml(surveyId = surveyId, hiddenFields = hiddenFields)
+        handleBackPressIfEnable()
+    }
+
+    private fun handleBackPressIfEnable() {
+        if (Formbricks.autoDismissErrors) {
+            dialog?.setOnKeyListener { _, keyCode, event ->
+                if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                    dismissAllowingStateLoss()
+                    Formbricks.callback?.onSurveyDismissByBack()
+                    true
+                } else {
+                    false
+                }
+            }
+        }
     }
 
     private fun getFileName(uri: Uri): String? {
@@ -241,6 +257,14 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             e.printStackTrace()
             null
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding.formbricksWebview.removeJavascriptInterface(WebAppInterface.INTERFACE_NAME)
+        binding.formbricksWebview.webChromeClient = null
+        (binding.formbricksWebview.parent as? ViewGroup)?.removeView(binding.formbricksWebview)
+        binding.formbricksWebview.destroy()
     }
 
     companion object {

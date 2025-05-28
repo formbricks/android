@@ -17,6 +17,7 @@ class FormbricksConfig private constructor(
     val loggingEnabled: Boolean,
     val fragmentManager: FragmentManager?,
     val autoDismissErrors: Boolean = true,
+    val isBackPressEnable: Boolean = false,
 ) {
     class Builder(private val appUrl: String, private val environmentId: String) {
         private var userId: String? = null
@@ -24,6 +25,7 @@ class FormbricksConfig private constructor(
         private var loggingEnabled = false
         private var fragmentManager: FragmentManager? = null
         private var autoDismissErrors = true
+        private var isBackPressEnable = false
 
         fun setUserId(userId: String): Builder {
             this.userId = userId
@@ -55,6 +57,11 @@ class FormbricksConfig private constructor(
             return this
         }
 
+        fun setIsBackPressEnable(isBackPressEnable: Boolean): Builder{
+            this.isBackPressEnable = isBackPressEnable
+            return this
+        }
+
         fun build(): FormbricksConfig {
             return FormbricksConfig(
                 appUrl = appUrl,
@@ -63,7 +70,8 @@ class FormbricksConfig private constructor(
                 attributes = attributes,
                 loggingEnabled = loggingEnabled,
                 fragmentManager = fragmentManager,
-                autoDismissErrors = autoDismissErrors
+                autoDismissErrors = autoDismissErrors,
+                isBackPressEnable = isBackPressEnable
             )
         }
     }
