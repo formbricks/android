@@ -54,7 +54,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             try {
                 SurveyManager.onNewDisplay(surveyId)
             } catch (e: Exception) {
-                Logger.e(e as RuntimeException)
+                val error = SDKError.couldNotCreateDisplayError
+                Logger.e(error)
             }
         }
 
@@ -62,7 +63,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             try {
                 SurveyManager.postResponse(surveyId)
             } catch (e: Exception) {
-                Logger.e(e as RuntimeException)
+                val error = SDKError.couldNotCreateResponseError
+                Logger.e(error)
             }
         }
 
@@ -256,7 +258,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
                 activity?.finish()
             }
         } catch (e: Exception) {
-            Logger.e(e as RuntimeException)
+            val error = SDKError.somethingWentWrongError
+            Logger.e(error)
             activity?.finish()
         }
     }
