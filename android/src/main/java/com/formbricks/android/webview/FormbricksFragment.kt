@@ -37,26 +37,33 @@ import com.google.gson.JsonObject
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
-
 class FormbricksFragment : BottomSheetDialogFragment() {
-
     private lateinit var binding: FragmentFormbricksBinding
     private lateinit var surveyId: String
     private val viewModel: FormbricksViewModel by viewModels()
+    private var isDismissing = false
 
     private var webAppInterface = WebAppInterface(object : WebAppInterface.WebAppCallback {
         override fun onClose() {
             Handler(Looper.getMainLooper()).post {
-                dismiss()
+                safeDismiss()
             }
         }
 
         override fun onDisplayCreated() {
-            SurveyManager.onNewDisplay(surveyId)
+            try {
+                SurveyManager.onNewDisplay(surveyId)
+            } catch (e: Exception) {
+                Logger.e(e as RuntimeException)
+            }
         }
 
         override fun onResponseCreated() {
-            SurveyManager.postResponse(surveyId)
+            try {
+                SurveyManager.postResponse(surveyId)
+            } catch (e: Exception) {
+                Logger.e(e as RuntimeException)
+            }
         }
 
         override fun onFilePick(data: FileUploadData) {
@@ -71,7 +78,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         override fun onSurveyLibraryLoadError() {
             val error = SDKError.unableToLoadFormbicksJs
             Logger.e(error)
-            dismiss()
+            safeDismiss()
         }
     })
 
@@ -107,6 +114,13 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             binding.formbricksWebview.evaluateJavascript("""window.formbricksSurveys.onFilePick($jsonArray)""") { result ->
                 print(result)
             }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            surveyId = it.getString(ARG_SURVEY_ID) ?: throw IllegalArgumentException("Survey ID is required")
         }
     }
 
@@ -147,26 +161,27 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         dialog?.window?.setDimAmount(0.0f)
         binding.formbricksWebview.setBackgroundColor(Color.TRANSPARENT)
         binding.formbricksWebview.let {
+            // First configure the WebView
+            it.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                loadWithOverviewMode = true
+                useWideViewPort = true
+            }
+
             it.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     consoleMessage?.let { cm ->
                         if (cm.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
                             val error = SDKError.surveyDisplayFetchError
                             Logger.e(error)
-                            dismiss()
+                            safeDismiss()
                         }
                         val log = "[CONSOLE:${cm.messageLevel()}] \"${cm.message()}\", source: ${cm.sourceId()} (${cm.lineNumber()})"
                         Logger.d(log)
                     }
                     return super.onConsoleMessage(consoleMessage)
                 }
-            }
-
-            it.settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                loadWithOverviewMode = true
-                useWideViewPort = true
             }
 
             it.webViewClient = object : WebViewClient() {
@@ -192,11 +207,9 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             }
 
             it.setInitialScale(1)
-
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
+            viewModel.loadHtml(surveyId)
         }
-
-        viewModel.loadHtml(surveyId)
     }
 
     private fun getFileName(uri: Uri): String? {
@@ -231,15 +244,39 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         }
     }
 
+    private fun safeDismiss() {
+        if (isDismissing) return
+        isDismissing = true
+        
+        try {
+            if (isAdded && !isStateSaved) {
+                dismiss()
+            } else {
+                // If we can't dismiss safely, just finish the activity
+                activity?.finish()
+            }
+        } catch (e: Exception) {
+            Logger.e(e as RuntimeException)
+            activity?.finish()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isDismissing = false
+    }
+
     companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
+        private const val ARG_SURVEY_ID = "survey_id"
 
         fun show(childFragmentManager: FragmentManager, surveyId: String) {
-            val fragment = FormbricksFragment()
-            fragment.surveyId = surveyId
+            val fragment = FormbricksFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_SURVEY_ID, surveyId)
+                }
+            }
             fragment.show(childFragmentManager, TAG)
         }
-
-        private const val CLOSING_TIMEOUT_IN_SECONDS = 5L
     }
 }
