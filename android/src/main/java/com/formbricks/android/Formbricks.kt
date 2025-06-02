@@ -21,6 +21,7 @@ interface FormbricksCallback {
     fun onSurveyFinished()
     fun onSurveyClosed()
     fun onPageCommitVisible()
+    fun onSurveyDismissByBack()
     fun onError(error: Exception)
     fun onSuccess(successType: SuccessType)
 }
@@ -34,6 +35,7 @@ object Formbricks {
     internal var language: String = "default"
     internal var loggingEnabled: Boolean = true
     internal var autoDismissErrors: Boolean = true
+    internal var isBackPressEnable: Boolean = false
     private var fragmentManager: FragmentManager? = null
     internal var isInitialized = false
 
@@ -74,6 +76,7 @@ object Formbricks {
         loggingEnabled = config.loggingEnabled
         fragmentManager = config.fragmentManager
         autoDismissErrors = config.autoDismissErrors
+        isBackPressEnable = config.isBackPressEnable
         config.userId?.let { UserManager.set(it) }
         config.attributes?.let { UserManager.setAttributes(it) }
         config.attributes?.get("language")?.let { UserManager.setLanguage(it) }
