@@ -16,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.animation.AccelerateInterpolator
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -233,8 +234,15 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         if (Formbricks.isBackPressEnable) {
             dialog?.setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                    dismissAllowingStateLoss()
-                    Formbricks.callback?.onSurveyDismissByBack()
+                    binding.formbricksWebview.animate()
+                        .translationY(binding.formbricksWebview.height.toFloat())
+                        .alpha(ALPHA_TRANSPARENT).setDuration(ANIMATION_TRANSPARENT_MS)
+                        .setInterpolator(
+                            AccelerateInterpolator()
+                        ).withEndAction {
+                            dismissAllowingStateLoss()
+                            Formbricks.callback?.onSurveyDismissByBack()
+                        }.start()
                     true
                 } else {
                     false
@@ -309,6 +317,8 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
     companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
         private const val ARG_SURVEY_ID = "survey_id"
+        private const val ALPHA_TRANSPARENT = 0f
+        private const val ANIMATION_TRANSPARENT_MS = 250L
 
         fun show(
             childFragmentManager: FragmentManager,
