@@ -224,7 +224,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
 
             it.setInitialScale(1)
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
-            viewModel.loadHtml(surveyId)
+            viewModel.loadHtml(surveyId, hiddenFields = hiddenFields)
         }
         handleBackPressIfEnable()
     }
