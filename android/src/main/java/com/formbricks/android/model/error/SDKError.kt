@@ -24,4 +24,7 @@ object SDKError {
     val surveyNotFoundError = RuntimeException("No survey found matching the action class.")
     val noUserIdSetError = RuntimeException("No userId is set, please set a userId first using the setUserId function")
 
+    val couldNotCreateDisplayError = RuntimeException("Something went wrong while creating a display. Please try again later")
+    val couldNotCreateResponseError = RuntimeException("Something went wrong while creating a response. Please try again later")
+    val somethingWentWrongError = RuntimeException("Something went wrong. Please try again later")
 }
