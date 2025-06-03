@@ -150,11 +150,6 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             it.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     consoleMessage?.let { cm ->
-                        if (cm.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-                            val error = SDKError.surveyDisplayFetchError
-                            Logger.e(error)
-                            dismiss()
-                        }
                         val log = "[CONSOLE:${cm.messageLevel()}] \"${cm.message()}\", source: ${cm.sourceId()} (${cm.lineNumber()})"
                         Logger.d(log)
                     }

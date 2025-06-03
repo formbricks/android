@@ -51,11 +51,17 @@ class FormbricksViewModel : ViewModel() {
                 function onResponseCreated() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onResponseCreated" }));
                 };
+                
+                let setResponseFinished = null;
+                function getSetIsResponseSendingFinished(callback) {
+                    setResponseFinished = callback;
+                }                
                   
                 function loadSurvey() {
                     const options = JSON.parse(json);
                     const surveyProps = {
                         ...options,
+                        getSetIsResponseSendingFinished,
                         onDisplayCreated,
                         onResponseCreated,
                         onClose,
@@ -97,7 +103,6 @@ class FormbricksViewModel : ViewModel() {
               });
         
               observer.observe(document.body, { childList: true, subtree: true });
-
                 const script = document.createElement("script");
                 script.src = "${Formbricks.appUrl}/js/surveys.umd.cjs";
                 script.async = true;
