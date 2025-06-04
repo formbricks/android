@@ -52,11 +52,17 @@ class FormbricksViewModel : ViewModel() {
                 function onResponseCreated() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onResponseCreated" }));
                 };
+                
+                let setResponseFinished = null;
+                function getSetIsResponseSendingFinished(callback) {
+                    setResponseFinished = callback;
+                }                
                   
                 function loadSurvey() {
                     const options = JSON.parse(json);
                     const surveyProps = {
                         ...options,
+                        getSetIsResponseSendingFinished,
                         onDisplayCreated,
                         onResponseCreated,
                         onClose,
