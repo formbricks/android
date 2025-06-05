@@ -35,11 +35,11 @@ class FormbricksViewModel : ViewModel() {
             </head>
 
             <body style="overflow: hidden; height: 100vh; display: flex; flex-direction: column; justify-content: flex-end;">
-                <div id="formbricks-react-native" style="width: 100%;"></div>
+                <div id="formbricks-android" style="width: 100%;"></div>
             </body>
 
             <script type="text/javascript">
-                var json = `{{WEBVIEW_DATA}}`
+                const json = `{{WEBVIEW_DATA}}`;
 
                 function onClose() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onClose" }));
@@ -52,20 +52,25 @@ class FormbricksViewModel : ViewModel() {
                 function onResponseCreated() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onResponseCreated" }));
                 };
+                
+                let setResponseFinished = null;
+                function getSetIsResponseSendingFinished(callback) {
+                    setResponseFinished = callback;
+                }                
                   
                 function loadSurvey() {
                     const options = JSON.parse(json);
                     const surveyProps = {
                         ...options,
+                        getSetIsResponseSendingFinished,
                         onDisplayCreated,
                         onResponseCreated,
                         onClose,
                     };
 
                     window.formbricksSurveys.renderSurvey(surveyProps);
-                }
+                };
 
-              // Function to attach click listener to file inputs
               function attachFilePickerOverride() {
                 const inputs = document.querySelectorAll('input[type="file"]');
                   inputs.forEach(input => {
@@ -82,23 +87,20 @@ class FormbricksViewModel : ViewModel() {
                           fileUploadParams: {
                             allowedFileExtensions: allowedFileExtensions,
                             allowMultipleFiles: allowMultipleFiles === "true",
-                          },
+                          }
                         }));
                       });
                     }
                   });
-              }
+                };
         
-              // Initially attach the override
               attachFilePickerOverride();
         
-              // Set up a MutationObserver to catch dynamically added file inputs
               const observer = new MutationObserver(function (mutations) {
                 attachFilePickerOverride();
               });
         
               observer.observe(document.body, { childList: true, subtree: true });
-
                 const script = document.createElement("script");
                 script.src = "${Formbricks.appUrl}/js/surveys.umd.cjs";
                 script.async = true;
@@ -159,8 +161,6 @@ class FormbricksViewModel : ViewModel() {
             .replace("#", "%23") // Hex color code's # breaks the JSON
             .replace("\\\"","'") // " is replaced to ' in the html codes in the JSON
     }
-
-
 }
 
 @BindingAdapter("htmlText")

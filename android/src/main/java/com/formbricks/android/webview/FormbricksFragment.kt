@@ -16,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.animation.AccelerateInterpolator
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -39,28 +40,38 @@ import com.google.gson.JsonObject
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
-
 class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentFormbricksBinding
     private lateinit var surveyId: String
     private val viewModel: FormbricksViewModel by viewModels()
+    private var isDismissing = false
 
     private var webAppInterface = WebAppInterface(object : WebAppInterface.WebAppCallback {
         override fun onClose() {
             Handler(Looper.getMainLooper()).post {
                 Formbricks.callback?.onSurveyClosed()
-                dismissAllowingStateLoss()
+                safeDismiss()
             }
         }
 
         override fun onDisplayCreated() {
-            Formbricks.callback?.onSurveyStarted()
-            SurveyManager.onNewDisplay(surveyId)
+            try {
+                Formbricks.callback?.onSurveyStarted()
+                SurveyManager.onNewDisplay(surveyId)
+            } catch (e: Exception) {
+                val error = SDKError.couldNotCreateDisplayError
+                Logger.e(error)
+            }
         }
 
         override fun onResponseCreated() {
-            SurveyManager.postResponse(surveyId)
+            try {
+                SurveyManager.postResponse(surveyId)
+            } catch (e: Exception) {
+                val error = SDKError.couldNotCreateResponseError
+                Logger.e(error)
+            }
         }
 
         override fun onFilePick(data: FileUploadData) {
@@ -76,7 +87,7 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             val error = SDKError.unableToLoadFormbicksJs
             Formbricks.callback?.onError(error)
             Logger.e(error)
-            dismissAllowingStateLoss()
+            safeDismiss()
         }
     })
 
@@ -112,6 +123,13 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             binding.formbricksWebview.evaluateJavascript("""window.formbricksSurveys.onFilePick($jsonArray)""") { result ->
                 print(result)
             }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let {
+            surveyId = it.getString(ARG_SURVEY_ID) ?: throw IllegalArgumentException("Survey ID is required")
         }
     }
 
@@ -158,6 +176,14 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         dialog?.window?.setDimAmount(0.0f)
         binding.formbricksWebview.setBackgroundColor(Color.TRANSPARENT)
         binding.formbricksWebview.let {
+            // First configure the WebView
+            it.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                loadWithOverviewMode = true
+                useWideViewPort = true
+            }
+
             it.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     consoleMessage?.let { cm ->
@@ -172,13 +198,6 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
                     }
                     return super.onConsoleMessage(consoleMessage)
                 }
-            }
-
-            it.settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                loadWithOverviewMode = true
-                useWideViewPort = true
             }
 
             it.webViewClient = object : WebViewClient() {
@@ -205,11 +224,9 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             }
 
             it.setInitialScale(1)
-
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
+            viewModel.loadHtml(surveyId, hiddenFields = hiddenFields)
         }
-
-        viewModel.loadHtml(surveyId = surveyId, hiddenFields = hiddenFields)
         handleBackPressIfEnable()
     }
 
@@ -217,8 +234,15 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         if (Formbricks.isBackPressEnable) {
             dialog?.setOnKeyListener { _, keyCode, event ->
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-                    dismissAllowingStateLoss()
-                    Formbricks.callback?.onSurveyDismissByBack()
+                    binding.formbricksWebview.animate()
+                        .translationY(binding.formbricksWebview.height.toFloat())
+                        .alpha(ALPHA_TRANSPARENT).setDuration(ANIMATION_TRANSPARENT_MS)
+                        .setInterpolator(
+                            AccelerateInterpolator()
+                        ).withEndAction {
+                            dismissAllowingStateLoss()
+                            Formbricks.callback?.onSurveyDismissByBack()
+                        }.start()
                     true
                 } else {
                     false
@@ -259,6 +283,29 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         }
     }
 
+    private fun safeDismiss() {
+        if (isDismissing) return
+        isDismissing = true
+
+        try {
+            if (isAdded && !isStateSaved) {
+                dismiss()
+            } else {
+                // If we can't dismiss safely, just finish the activity
+                activity?.finish()
+            }
+        } catch (e: Exception) {
+            val error = SDKError.somethingWentWrongError
+            Logger.e(error)
+            activity?.finish()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isDismissing = false
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         binding.formbricksWebview.removeJavascriptInterface(WebAppInterface.INTERFACE_NAME)
@@ -269,17 +316,21 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
 
     companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
+        private const val ARG_SURVEY_ID = "survey_id"
+        private const val ALPHA_TRANSPARENT = 0f
+        private const val ANIMATION_TRANSPARENT_MS = 250L
 
         fun show(
             childFragmentManager: FragmentManager,
             surveyId: String,
             hiddenFields: Map<String, Any>? = null
         ) {
-            val fragment = FormbricksFragment(hiddenFields)
-            fragment.surveyId = surveyId
+            val fragment = FormbricksFragment(hiddenFields).apply {
+                arguments = Bundle().apply {
+                    putString(ARG_SURVEY_ID, surveyId)
+                }
+            }
             fragment.show(childFragmentManager, TAG)
         }
-
-        private const val CLOSING_TIMEOUT_IN_SECONDS = 5L
     }
 }

@@ -5,8 +5,10 @@ import com.formbricks.android.model.environment.EnvironmentDataHolder
 import com.formbricks.android.model.user.PostUserBody
 import com.formbricks.android.model.user.UserResponse
 import com.formbricks.android.network.FormbricksApiService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 object FormbricksApi {
@@ -31,6 +33,12 @@ object FormbricksApi {
             appUrl = Formbricks.appUrl,
             isLoggingEnabled = Formbricks.loggingEnabled
         )
+    }
+
+    fun cancelCallApi(){
+        CoroutineScope(Dispatchers.IO).launch {
+            service.cancelCallApi()
+        }
     }
 
     suspend fun getEnvironmentState(): Result<EnvironmentDataHolder> = withContext(Dispatchers.IO) {

@@ -88,6 +88,10 @@ object Formbricks {
         isInitialized = true
     }
 
+    fun cancelCallApi(){
+        FormbricksApi.cancelCallApi()
+    }
+
     /**
      * Sets the user id for the current user with the given [String].
      * The SDK must be initialized before calling this method.

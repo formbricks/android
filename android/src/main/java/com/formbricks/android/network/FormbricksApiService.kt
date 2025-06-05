@@ -16,6 +16,7 @@ import retrofit2.Retrofit
 open class FormbricksApiService {
 
     private lateinit var retrofit: Retrofit
+    private val callProvider = mutableListOf<Call<*>>()
 
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
         retrofit = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled)
@@ -48,7 +49,9 @@ open class FormbricksApiService {
     }
 
     private inline fun <T> execute(apiCall: () -> Call<T>): Result<T> {
-        val call = apiCall().execute()
+        val callInstance = apiCall()
+        callProvider.add(callInstance)
+        val call = callInstance.execute()
         return if (call.isSuccessful) {
             val body = call.body()
             if (body == null) {
@@ -66,5 +69,10 @@ open class FormbricksApiService {
                 Result.failure(e)
             }
         }
+    }
+
+    fun cancelCallApi() {
+        callProvider.map { it.cancel() }
+        callProvider.clear()
     }
 }
