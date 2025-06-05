@@ -2,6 +2,7 @@ package com.formbricks.android.network
 
 import com.formbricks.android.api.error.FormbricksAPIError
 import com.formbricks.android.helper.mapToJsonElement
+import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.environment.EnvironmentDataHolder
 import com.formbricks.android.model.environment.EnvironmentResponse
 import com.formbricks.android.model.user.PostUserBody
@@ -18,9 +19,15 @@ open class FormbricksApiService {
     private lateinit var retrofit: Retrofit
 
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
-        retrofit = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled)
-            .getBuilder()
-            .build()
+        val builder = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled).getBuilder()
+        if (builder != null) {
+            retrofit = builder.build()
+        } else {
+            // Builder returned null due to HTTP URL - log error and skip initialization
+            val error = RuntimeException("Failed to initialize API service due to invalid URL configuration. Only HTTPS URLs are allowed.")
+            Logger.e(error)
+            // Don't initialize retrofit - it will remain uninitialized and API calls will fail gracefully
+        }
     }
 
     open fun getEnvironmentStateObject(environmentId: String): Result<EnvironmentDataHolder> {
