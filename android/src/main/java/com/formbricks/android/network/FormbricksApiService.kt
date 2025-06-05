@@ -15,8 +15,7 @@ import retrofit2.Call
 import retrofit2.Retrofit
 
 open class FormbricksApiService {
-
-    private lateinit var retrofit: Retrofit
+    private var retrofit: Retrofit? = null
 
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
         val builder = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled).getBuilder()
@@ -26,14 +25,15 @@ open class FormbricksApiService {
             // Builder returned null due to HTTP URL - log error and skip initialization
             val error = RuntimeException("Failed to initialize API service due to invalid URL configuration. Only HTTPS URLs are allowed.")
             Logger.e(error)
-            // Don't initialize retrofit - it will remain uninitialized and API calls will fail gracefully
+            retrofit = null
         }
     }
 
     open fun getEnvironmentStateObject(environmentId: String): Result<EnvironmentDataHolder> {
         return try {
+            val retrofitInstance = retrofit ?: return Result.failure(RuntimeException("API service not initialized due to invalid URL"))
             val result = execute {
-                retrofit.create(FormbricksService::class.java)
+                retrofitInstance.create(FormbricksService::class.java)
                     .getEnvironmentState(environmentId)
             }
             val json = Json { ignoreUnknownKeys = true }
@@ -48,8 +48,9 @@ open class FormbricksApiService {
     }
 
     open fun postUser(environmentId: String, body: PostUserBody): Result<UserResponse> {
+        val retrofitInstance = retrofit ?: return Result.failure(RuntimeException("API service not initialized due to invalid URL"))
         return execute {
-            retrofit.create(FormbricksService::class.java)
+            retrofitInstance.create(FormbricksService::class.java)
                 .postUser(environmentId, body)
         }
     }
