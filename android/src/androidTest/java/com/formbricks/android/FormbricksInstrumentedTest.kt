@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit
 class FormbricksInstrumentedTest {
 
     private val environmentId = "environmentId"
-    private val appUrl = "http://appUrl"
+    private val appUrl = "https://example.com"
     private val userId = "6CCCE716-6783-4D0F-8344-9C7DFA43D8F7"
     private val surveyID = "cm6ovw6j7000gsf0kduf4oo4i"
 
