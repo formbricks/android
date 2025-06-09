@@ -15,9 +15,9 @@ import retrofit2.Call
 import retrofit2.Retrofit
 
 open class FormbricksApiService {
+
     private var retrofit: Retrofit? = null
     private val callProvider = mutableListOf<Call<*>>()
-
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
         val builder = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled).getBuilder()
         if (builder != null) {
