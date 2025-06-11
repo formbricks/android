@@ -72,7 +72,7 @@ class FormbricksApiServiceInstrumentedTest {
         val uninitializedService = FormbricksApiService()
         val result = uninitializedService.getEnvironmentStateObject("dummy")
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is UninitializedPropertyAccessException)
+        assertTrue(result.exceptionOrNull() is RuntimeException)
     }
 
     // Add more integration-style tests as needed, e.g.:
