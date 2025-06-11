@@ -123,7 +123,7 @@ class FormbricksViewModel : ViewModel() {
     private fun getJson(environmentDataHolder: EnvironmentDataHolder, surveyId: String): String {
         val jsonObject = JsonObject()
         environmentDataHolder.getSurveyJson(surveyId).let { jsonObject.add("survey", it) }
-        jsonObject.addProperty("isBrandingEnabled", true)
+        jsonObject.addProperty("isBrandingEnabled", environmentDataHolder.data?.data?.project?.inAppSurveyBranding ?: true)
         jsonObject.addProperty("appUrl", Formbricks.appUrl)
         jsonObject.addProperty("environmentId", Formbricks.environmentId)
         jsonObject.addProperty("contactId", UserManager.contactId)
