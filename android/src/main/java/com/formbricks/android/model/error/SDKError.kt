@@ -19,6 +19,7 @@ object SDKError {
     val surveyNotDisplayedError = RuntimeException("Survey was not displayed due to display percentage restrictions.")
     val unableToRefreshEnvironment = RuntimeException("Unable to refresh environment state.")
     val missingSurveyId = RuntimeException("Survey id is mandatory to set.")
+    val surveyIsStateSaved = RuntimeException("app is not resumed")
     val invalidDisplayOption = RuntimeException("Invalid Display Option.")
     val unableToPostResponse = RuntimeException("Unable to post survey response.")
     val surveyNotFoundError = RuntimeException("No survey found matching the action class.")
