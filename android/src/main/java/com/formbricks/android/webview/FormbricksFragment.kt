@@ -27,6 +27,7 @@ import android.widget.FrameLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import com.formbricks.android.Formbricks
 import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
@@ -325,12 +326,16 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             surveyId: String,
             hiddenFields: Map<String, Any>? = null
         ) {
-            val fragment = FormbricksFragment(hiddenFields).apply {
-                arguments = Bundle().apply {
-                    putString(ARG_SURVEY_ID, surveyId)
+            if (childFragmentManager.isStateSaved) {
+                Formbricks.callback?.onError(SDKError.surveyIsStateSaved)
+            } else {
+                val fragment = FormbricksFragment(hiddenFields).apply {
+                    arguments = Bundle().apply {
+                        putString(ARG_SURVEY_ID, surveyId)
+                    }
                 }
+                fragment.show(childFragmentManager, TAG)
             }
-            fragment.show(childFragmentManager, TAG)
         }
     }
 }
