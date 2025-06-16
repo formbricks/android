@@ -27,10 +27,10 @@ import android.widget.FrameLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import com.formbricks.android.Formbricks
 import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
+import com.formbricks.android.extensions.launchWhenResumed
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.model.error.SDKError
@@ -51,8 +51,10 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
     private var webAppInterface = WebAppInterface(object : WebAppInterface.WebAppCallback {
         override fun onClose() {
             Handler(Looper.getMainLooper()).post {
-                Formbricks.callback?.onSurveyClosed()
-                safeDismiss()
+                launchWhenResumed {
+                    Formbricks.callback?.onSurveyClosed()
+                    safeDismiss()
+                }
             }
         }
 
@@ -85,10 +87,12 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         }
 
         override fun onSurveyLibraryLoadError() {
-            val error = SDKError.unableToLoadFormbicksJs
-            Formbricks.callback?.onError(error)
-            Logger.e(error)
-            safeDismiss()
+            launchWhenResumed {
+                val error = SDKError.unableToLoadFormbicksJs
+                Formbricks.callback?.onError(error)
+                Logger.e(error)
+                safeDismiss()
+            }
         }
     })
 
@@ -293,12 +297,12 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
                 dismiss()
             } else {
                 // If we can't dismiss safely, just finish the activity
-                activity?.finish()
+                dismissAllowingStateLoss()
             }
         } catch (e: Exception) {
             val error = SDKError.somethingWentWrongError
             Logger.e(error)
-            activity?.finish()
+            dismissAllowingStateLoss()
         }
     }
 
