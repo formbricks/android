@@ -27,7 +27,6 @@ import android.widget.FrameLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import com.formbricks.android.Formbricks
 import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
@@ -293,12 +292,12 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
                 dismiss()
             } else {
                 // If we can't dismiss safely, just finish the activity
-                activity?.finish()
+                dismissAllowingStateLoss()
             }
         } catch (e: Exception) {
             val error = SDKError.somethingWentWrongError
             Logger.e(error)
-            activity?.finish()
+            dismissAllowingStateLoss()
         }
     }
 
