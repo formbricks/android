@@ -30,6 +30,7 @@ import androidx.fragment.app.viewModels
 import com.formbricks.android.Formbricks
 import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
+import com.formbricks.android.extensions.launchWhenResumed
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.model.error.SDKError
@@ -50,8 +51,10 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
     private var webAppInterface = WebAppInterface(object : WebAppInterface.WebAppCallback {
         override fun onClose() {
             Handler(Looper.getMainLooper()).post {
-                Formbricks.callback?.onSurveyClosed()
-                safeDismiss()
+                launchWhenResumed {
+                    Formbricks.callback?.onSurveyClosed()
+                    safeDismiss()
+                }
             }
         }
 
@@ -84,10 +87,12 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
         }
 
         override fun onSurveyLibraryLoadError() {
-            val error = SDKError.unableToLoadFormbicksJs
-            Formbricks.callback?.onError(error)
-            Logger.e(error)
-            safeDismiss()
+            launchWhenResumed {
+                val error = SDKError.unableToLoadFormbicksJs
+                Formbricks.callback?.onError(error)
+                Logger.e(error)
+                safeDismiss()
+            }
         }
     })
 
