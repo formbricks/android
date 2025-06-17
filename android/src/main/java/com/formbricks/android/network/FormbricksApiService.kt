@@ -13,11 +13,12 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import retrofit2.Call
 import retrofit2.Retrofit
+import java.util.concurrent.CopyOnWriteArrayList
 
 open class FormbricksApiService {
 
     private var retrofit: Retrofit? = null
-    private val callProvider = mutableListOf<Call<*>>()
+    private val callProvider = CopyOnWriteArrayList<Call<*>>()
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
         val builder = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled).getBuilder()
         if (builder != null) {
@@ -80,7 +81,11 @@ open class FormbricksApiService {
     }
 
     fun cancelCallApi() {
-        callProvider.map { it.cancel() }
-        callProvider.clear()
+        try {
+            callProvider.map { it.cancel() }
+            callProvider.clear()
+        } catch (e: Exception) {
+            Logger.d(e.message ?: "")
+        }
     }
 }
