@@ -5,7 +5,9 @@ import android.app.Activity.RESULT_OK
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -176,6 +178,25 @@ class FormbricksFragment(val hiddenFields: Map<String, Any>? = null) : BottomShe
             Formbricks.callback?.onError(SDKError.missingSurveyId)
             dismissAllowingStateLoss()
             return
+        }
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            val rootView = dialog?.window?.decorView?.findViewById<View>(android.R.id.content)
+            rootView?.viewTreeObserver?.addOnGlobalLayoutListener {
+                val r = Rect()
+                rootView.getWindowVisibleDisplayFrame(r)
+                val screenHeight = rootView.rootView.height
+                val keyboardHeight = screenHeight - r.bottom
+                if (keyboardHeight > screenHeight * 0.15) {
+                    // Keyboard is open – minimize WebView
+                    binding.formbricksWebview.layoutParams.height = r.bottom -  binding.formbricksWebview.top
+                    binding.formbricksWebview.requestLayout()
+                } else {
+                    // Keyboard closed
+                    binding.formbricksWebview.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
+                    binding.formbricksWebview.requestLayout()
+                }
+            }
         }
 
         dialog?.window?.setDimAmount(0.0f)
