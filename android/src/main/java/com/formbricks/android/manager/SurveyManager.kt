@@ -47,8 +47,6 @@ object SurveyManager {
         )
         .create()
 
-
-
     private var environmentDataHolderJson: String?
         get() {
             return prefManager.getString(PREF_FORMBRICKS_DATA_HOLDER, "")
@@ -97,6 +95,13 @@ object SurveyManager {
 
         filteredSurveys = filterSurveysBasedOnDisplayType(surveys, displays, responses).toMutableList()
         filteredSurveys = filterSurveysBasedOnRecontactDays(filteredSurveys, environmentDataHolder?.data?.data?.project?.recontactDays?.toInt()).toMutableList()
+
+        if (UserManager.userId == null) {
+            filteredSurveys = filteredSurveys.filter { survey ->
+                // Only include surveys that have no segment filters or null segment
+                survey.segment?.filters?.isEmpty() ?: true
+            }.toMutableList()
+        }
 
         if (UserManager.userId != null) {
             if (segments.isEmpty()) {
