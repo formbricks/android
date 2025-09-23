@@ -39,15 +39,12 @@ object SurveyManager {
     private val prefManager by lazy { Formbricks.applicationContext.getSharedPreferences(FORMBRICKS_PREFS, Context.MODE_PRIVATE) }
     internal var filteredSurveys: MutableList<Survey> = mutableListOf()
 
-    // 1) Build your Gson once, registering only the SegmentFilterResource adapter:
     val gson = GsonBuilder()
         .registerTypeAdapter(
             SegmentFilterResource::class.java,
             SegmentFilterResourceDeserializer()
         )
         .create()
-
-
 
     private var environmentDataHolderJson: String?
         get() {
@@ -97,6 +94,13 @@ object SurveyManager {
 
         filteredSurveys = filterSurveysBasedOnDisplayType(surveys, displays, responses).toMutableList()
         filteredSurveys = filterSurveysBasedOnRecontactDays(filteredSurveys, environmentDataHolder?.data?.data?.project?.recontactDays?.toInt()).toMutableList()
+
+        if (UserManager.userId == null) {
+            filteredSurveys = filteredSurveys.filter { survey ->
+                // Only include surveys that have no segment filters or null segment
+                survey.segment?.filters?.isEmpty() ?: true
+            }.toMutableList()
+        }
 
         if (UserManager.userId != null) {
             if (segments.isEmpty()) {

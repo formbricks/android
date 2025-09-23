@@ -185,6 +185,8 @@ object UserManager {
         Formbricks.language = "default"
         UpdateQueue.reset()
 
+        SurveyManager.filterSurveys()
+
         if(isUserIdDefined) {
             Logger.d("User logged out successfully!")
         }
