@@ -129,8 +129,11 @@ class FormbricksViewModel : ViewModel() {
         jsonObject.addProperty("contactId", UserManager.contactId)
         jsonObject.addProperty("isWebEnvironment", false)
 
+        val matchedSurvey = environmentDataHolder.data?.data?.surveys?.first { it.id == surveyId }
+        val project = environmentDataHolder.data?.data?.project
+
         val isMultiLangSurvey =
-            (environmentDataHolder.data?.data?.surveys?.first { it.id == surveyId }?.languages?.size
+            (matchedSurvey?.languages?.size
                 ?: 0) > 1
 
         if (isMultiLangSurvey) {
@@ -139,8 +142,15 @@ class FormbricksViewModel : ViewModel() {
             jsonObject.addProperty("languageCode", "default")
         }
 
-        val hasCustomStyling = environmentDataHolder.data?.data?.surveys?.first { it.id == surveyId }?.styling != null
-        val enabled = environmentDataHolder.data?.data?.project?.styling?.allowStyleOverwrite ?: false
+        val hasCustomStyling = matchedSurvey?.styling != null
+
+        val placement = matchedSurvey?.projectOverwrites?.placement ?: project?.placement
+        if (placement != null) jsonObject.addProperty("placement", placement)
+
+        val darkOverlay = matchedSurvey?.projectOverwrites?.darkOverlay ?: project?.darkOverlay
+        if (darkOverlay != null) jsonObject.addProperty("darkOverlay", darkOverlay)
+
+        val enabled = project?.styling?.allowStyleOverwrite ?: false
         if (hasCustomStyling && enabled) {
             environmentDataHolder.getStyling(surveyId)?.let { jsonObject.add("styling", it) }
         } else {
