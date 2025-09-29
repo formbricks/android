@@ -31,7 +31,7 @@ data class Survey(
     @SerializedName("segment") val segment: Segment?,
     @SerializedName("styling") val styling: Styling?,
     @SerializedName("languages") val languages: List<SurveyLanguage>?,
-    @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites?
+    @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites? = null
 )
 
 @Serializable
