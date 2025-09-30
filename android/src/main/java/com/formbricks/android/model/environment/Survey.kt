@@ -31,4 +31,14 @@ data class Survey(
     @SerializedName("segment") val segment: Segment?,
     @SerializedName("styling") val styling: Styling?,
     @SerializedName("languages") val languages: List<SurveyLanguage>?,
+    @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites? = null
+)
+
+@Serializable
+data class SurveyProjectOverwrites(
+    @SerializedName("brandColor") val brandColor: String? = null,
+    @SerializedName("highlightBorderColor") val highlightBorderColor: String? = null,
+    @SerializedName("clickOutsideClose") val clickOutsideClose: Boolean? = null,
+    @SerializedName("placement") val placement: String? = null,
+    @SerializedName("darkOverlay") val darkOverlay: Boolean? = null
 )

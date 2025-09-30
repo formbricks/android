@@ -150,6 +150,11 @@ object SurveyManager {
         val actionClasses = environmentDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
+        if (actionClass == null) {
+            val error = RuntimeException("\"$action\" action unknown. Please add this action in Formbricks first in order to use it in your code.")
+            Logger.e(error)
+            return
+        }
         val firstSurveyWithActionClass = filteredSurveys.firstOrNull { survey ->
             val triggers = survey.triggers ?: listOf()
             triggers.firstOrNull { trigger -> 
@@ -183,6 +188,10 @@ object SurveyManager {
             firstSurveyWithActionClass.id.let {
                 isShowingSurvey = true
                 val timeout = firstSurveyWithActionClass.delay ?: 0.0
+                if (timeout > 0.0) {
+                    val surveyName = firstSurveyWithActionClass.name
+                    Logger.d("Delaying survey \"$surveyName\" by $timeout seconds")
+                }
                 stopDisplayTimer()
                 displayTimer.schedule(object : TimerTask() {
                     override fun run() {
