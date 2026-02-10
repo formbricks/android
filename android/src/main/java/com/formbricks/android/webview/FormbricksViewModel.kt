@@ -9,6 +9,7 @@ import com.formbricks.android.extensions.guard
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.environment.EnvironmentDataHolder
+import com.formbricks.android.model.environment.SurveyOverlay
 import com.formbricks.android.model.environment.getProjectStylingJson
 import com.formbricks.android.model.environment.getStyling
 import com.formbricks.android.model.environment.getSurveyJson
@@ -147,8 +148,11 @@ class FormbricksViewModel : ViewModel() {
         val placement = matchedSurvey?.projectOverwrites?.placement ?: project?.placement
         if (placement != null) jsonObject.addProperty("placement", placement)
 
-        val darkOverlay = matchedSurvey?.projectOverwrites?.darkOverlay ?: project?.darkOverlay
-        if (darkOverlay != null) jsonObject.addProperty("darkOverlay", darkOverlay)
+        val clickOutside = matchedSurvey?.projectOverwrites?.clickOutsideClose ?: project?.clickOutsideClose ?: false
+        jsonObject.addProperty("clickOutside", clickOutside)
+
+        val overlay = (matchedSurvey?.projectOverwrites?.overlay ?: project?.overlay ?: SurveyOverlay.NONE).value
+        jsonObject.addProperty("overlay", overlay)
 
         val enabled = project?.styling?.allowStyleOverwrite ?: false
         if (hasCustomStyling && enabled) {

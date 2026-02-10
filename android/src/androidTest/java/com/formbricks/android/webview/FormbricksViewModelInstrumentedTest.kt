@@ -48,7 +48,7 @@ class FormbricksViewModelInstrumentedTest {
             id = "proj1",
             recontactDays = null,
             clickOutsideClose = null,
-            darkOverlay = null,
+            overlay = null,
             placement = null,
             inAppSurveyBranding = null,
             styling = null

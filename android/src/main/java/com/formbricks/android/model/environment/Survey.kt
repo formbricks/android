@@ -34,11 +34,18 @@ data class Survey(
     @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites? = null
 )
 
+/// Defines the overlay style displayed behind a survey modal.
+enum class SurveyOverlay(val value: String) {
+    @SerializedName("none") NONE("none"),
+    @SerializedName("light") LIGHT("light"),
+    @SerializedName("dark") DARK("dark");
+}
+
 @Serializable
 data class SurveyProjectOverwrites(
     @SerializedName("brandColor") val brandColor: String? = null,
     @SerializedName("highlightBorderColor") val highlightBorderColor: String? = null,
     @SerializedName("clickOutsideClose") val clickOutsideClose: Boolean? = null,
     @SerializedName("placement") val placement: String? = null,
-    @SerializedName("darkOverlay") val darkOverlay: Boolean? = null
+    @SerializedName("overlay") val overlay: SurveyOverlay? = null
 )
