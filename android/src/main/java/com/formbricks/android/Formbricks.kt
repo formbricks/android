@@ -10,6 +10,7 @@ import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
+import com.formbricks.android.model.environment.SurveyOverlay
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.webview.FormbricksFragment
 import java.lang.RuntimeException
@@ -216,7 +217,7 @@ object Formbricks {
     }
 
     /// Assembles the survey fragment and presents it
-    internal fun showSurvey(id: String) {
+    internal fun showSurvey(id: String, overlay: SurveyOverlay = SurveyOverlay.NONE) {
         if (fragmentManager == null) {
             val error = SDKError.fragmentManagerIsNotSet
             Logger.e(error)
@@ -224,7 +225,7 @@ object Formbricks {
         }
 
         fragmentManager?.let {
-            FormbricksFragment.show(it, surveyId = id)
+            FormbricksFragment.show(it, surveyId = id, overlay = overlay)
         }
     }
 
