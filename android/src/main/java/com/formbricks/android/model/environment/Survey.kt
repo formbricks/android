@@ -1,6 +1,7 @@
 package com.formbricks.android.model.environment
 
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -35,10 +36,11 @@ data class Survey(
 )
 
 /// Defines the overlay style displayed behind a survey modal.
+@Serializable
 enum class SurveyOverlay(val value: String) {
-    @SerializedName("none") NONE("none"),
-    @SerializedName("light") LIGHT("light"),
-    @SerializedName("dark") DARK("dark");
+    @SerialName("none") NONE("none"),
+    @SerialName("light") LIGHT("light"),
+    @SerialName("dark") DARK("dark");
 }
 
 @Serializable
