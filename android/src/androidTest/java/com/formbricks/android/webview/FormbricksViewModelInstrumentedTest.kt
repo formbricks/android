@@ -247,6 +247,56 @@ class FormbricksViewModelInstrumentedTest {
 
     // endregion
 
+    // region matchedSurvey null tests (surveys=null forces matchedSurvey to null)
+
+    @Test
+    fun testGetJson_noMatchedSurvey_clickOutsideFallsBackToProject() {
+        val json = invokeGetJsonWithNoSurveys(
+            projectClickOutsideClose = true,
+            projectOverlay = SurveyOverlay.NONE
+        )
+        assertTrue(json.contains("\"clickOutside\":true"))
+    }
+
+    @Test
+    fun testGetJson_noMatchedSurvey_clickOutsideProjectNull_returnsFalse() {
+        val json = invokeGetJsonWithNoSurveys(
+            projectClickOutsideClose = null,
+            projectOverlay = SurveyOverlay.NONE
+        )
+        assertTrue(json.contains("\"clickOutside\":false"))
+    }
+
+    @Test
+    fun testGetJson_noMatchedSurvey_overlayFallsBackToProject() {
+        val json = invokeGetJsonWithNoSurveys(
+            projectClickOutsideClose = null,
+            projectOverlay = SurveyOverlay.DARK
+        )
+        assertTrue(json.contains("\"overlay\":\"dark\""))
+    }
+
+    @Test
+    fun testGetJson_noMatchedSurvey_overlayProjectNull_returnsNone() {
+        val json = invokeGetJsonWithNoSurveys(
+            projectClickOutsideClose = null,
+            projectOverlay = null
+        )
+        assertTrue(json.contains("\"overlay\":\"none\""))
+    }
+
+    @Test
+    fun testGetJson_noMatchedSurvey_bothFallBackToProject() {
+        val json = invokeGetJsonWithNoSurveys(
+            projectClickOutsideClose = true,
+            projectOverlay = SurveyOverlay.LIGHT
+        )
+        assertTrue(json.contains("\"clickOutside\":true"))
+        assertTrue(json.contains("\"overlay\":\"light\""))
+    }
+
+    // endregion
+
     // region helpers
 
     private fun invokeGetJson(
@@ -291,6 +341,44 @@ class FormbricksViewModelInstrumentedTest {
             data = envResponseData,
             originalResponseMap = mapOf()
         )
+        return callGetJson(envHolder, surveyId)
+    }
+
+    /**
+     * Creates an environment with surveys=null so that matchedSurvey resolves to null.
+     * This forces clickOutside and overlay to fall through entirely to project-level values,
+     * covering the bytecode branches where matchedSurvey is null.
+     */
+    private fun invokeGetJsonWithNoSurveys(
+        projectClickOutsideClose: Boolean? = null,
+        projectOverlay: SurveyOverlay? = null
+    ): String {
+        val project = Project(
+            id = "proj1",
+            recontactDays = null,
+            clickOutsideClose = projectClickOutsideClose,
+            overlay = projectOverlay,
+            placement = null,
+            inAppSurveyBranding = null,
+            styling = null
+        )
+        val envData = EnvironmentData(
+            surveys = null,
+            actionClasses = null,
+            project = project
+        )
+        val envResponseData = EnvironmentResponseData(
+            data = envData,
+            expiresAt = null
+        )
+        val envHolder = EnvironmentDataHolder(
+            data = envResponseData,
+            originalResponseMap = mapOf()
+        )
+        return callGetJson(envHolder, "any-survey-id")
+    }
+
+    private fun callGetJson(envHolder: EnvironmentDataHolder, surveyId: String): String {
         val viewModel = FormbricksViewModel()
         return viewModel.javaClass.getDeclaredMethod(
             "getJson",

@@ -509,6 +509,24 @@ class SurveyManagerInstrumentedTest {
         assertEquals(SurveyOverlay.NONE, result)
     }
 
+    @Test
+    fun testResolveOverlay_environmentDataHolderDataNull_returnsNone() {
+        // data=null forces the ?.data?.project?.overlay chain to short-circuit at each null check
+        val envHolder = EnvironmentDataHolder(data = null, originalResponseMap = mapOf())
+        setBackingEnvironmentDataHolder(envHolder)
+        val result = SurveyManager.resolveOverlay(null)
+        assertEquals(SurveyOverlay.NONE, result)
+    }
+
+    @Test
+    fun testResolveOverlay_surveyWithOverwritesNoOverlay_environmentDataNull_returnsNone() {
+        val envHolder = EnvironmentDataHolder(data = null, originalResponseMap = mapOf())
+        setBackingEnvironmentDataHolder(envHolder)
+        val survey = createSurveyWithOverwrites(overlay = null)
+        val result = SurveyManager.resolveOverlay(survey)
+        assertEquals(SurveyOverlay.NONE, result)
+    }
+
     // endregion
 
     // region helper methods
