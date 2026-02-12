@@ -10,7 +10,6 @@ import com.formbricks.android.model.environment.EnvironmentDataHolder
 import com.formbricks.android.model.environment.SegmentFilterResource
 import com.formbricks.android.model.environment.SegmentFilterResourceDeserializer
 import com.formbricks.android.model.environment.Survey
-import com.formbricks.android.model.environment.SurveyOverlay
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.Display
 import com.google.gson.Gson
@@ -193,11 +192,10 @@ object SurveyManager {
                     val surveyName = firstSurveyWithActionClass.name
                     Logger.d("Delaying survey \"$surveyName\" by $timeout seconds")
                 }
-                val overlay = resolveOverlay(firstSurveyWithActionClass)
                 stopDisplayTimer()
                 displayTimer.schedule(object : TimerTask() {
                     override fun run() {
-                        Formbricks.showSurvey(it, overlay)
+                        Formbricks.showSurvey(it)
                     }
 
                 }, Date(System.currentTimeMillis() + timeout.toLong() * 1000))
@@ -394,12 +392,4 @@ object SurveyManager {
         return selected.language.code
     }
 
-    /**
-     * Resolves the overlay style for the given survey, falling back to the project-level default.
-     * Survey-level `projectOverwrites.overlay` takes precedence over `project.overlay`.
-     */
-    fun resolveOverlay(survey: Survey?): SurveyOverlay {
-        survey?.projectOverwrites?.overlay?.let { return it }
-        return environmentDataHolder?.data?.data?.project?.overlay ?: SurveyOverlay.NONE
-    }
 }
