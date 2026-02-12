@@ -29,7 +29,6 @@ import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
-import com.formbricks.android.model.environment.SurveyOverlay
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.javascript.FileUploadData
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -41,7 +40,6 @@ import java.io.InputStream
 class FormbricksFragment : BottomSheetDialogFragment() {
     private lateinit var binding: FragmentFormbricksBinding
     private lateinit var surveyId: String
-    private var overlay: SurveyOverlay = SurveyOverlay.NONE
     private val viewModel: FormbricksViewModel by viewModels()
     private var isDismissing = false
 
@@ -125,9 +123,6 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             surveyId = it.getString(ARG_SURVEY_ID) ?: throw IllegalArgumentException("Survey ID is required")
-            overlay = it.getString(ARG_OVERLAY)?.let { name ->
-                try { SurveyOverlay.valueOf(name) } catch (_: Exception) { SurveyOverlay.NONE }
-            } ?: SurveyOverlay.NONE
         }
     }
 
@@ -194,11 +189,6 @@ class FormbricksFragment : BottomSheetDialogFragment() {
                 ) {
                     super.onReceivedError(view, request, error)
                     Logger.d("WebView Error: ${error?.description}")
-                }
-
-                override fun onPageCommitVisible(view: WebView?, url: String?) {
-                    dialog?.window?.setDimAmount(dimAmountFor(overlay))
-                    super.onPageCommitVisible(view, url)
                 }
             }
 
@@ -272,22 +262,11 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
         private const val ARG_SURVEY_ID = "survey_id"
-        private const val ARG_OVERLAY = "overlay"
 
-        /// Returns the appropriate dim amount for the given overlay style.
-        fun dimAmountFor(overlay: SurveyOverlay): Float {
-            return when (overlay) {
-                SurveyOverlay.DARK -> 0.6f
-                SurveyOverlay.LIGHT -> 0.3f
-                SurveyOverlay.NONE -> 0.0f
-            }
-        }
-
-        fun show(childFragmentManager: FragmentManager, surveyId: String, overlay: SurveyOverlay = SurveyOverlay.NONE) {
+        fun show(childFragmentManager: FragmentManager, surveyId: String) {
             val fragment = FormbricksFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_SURVEY_ID, surveyId)
-                    putString(ARG_OVERLAY, overlay.name)
                 }
             }
             fragment.show(childFragmentManager, TAG)
