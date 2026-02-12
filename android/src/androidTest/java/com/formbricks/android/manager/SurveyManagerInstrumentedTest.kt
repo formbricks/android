@@ -434,6 +434,12 @@ class SurveyManagerInstrumentedTest {
 
     // region helper methods
 
+    private fun setBackingEnvironmentDataHolder(value: EnvironmentDataHolder?) {
+        val field = SurveyManager::class.java.getDeclaredField("backingEnvironmentDataHolder")
+        field.isAccessible = true
+        field.set(SurveyManager, value)
+    }
+
     private fun createTestSurvey(
         id: String = "test",
         displayOption: String? = null,
