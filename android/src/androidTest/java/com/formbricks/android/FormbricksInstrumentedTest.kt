@@ -9,6 +9,7 @@ import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.user.AttributeValue
+import com.formbricks.android.network.queue.UpdateQueue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -41,6 +42,7 @@ class FormbricksInstrumentedTest {
         Formbricks.isInitialized = false
         Formbricks.language = "default"
         UserManager.logout()
+        UpdateQueue.reset()
         SurveyManager.environmentDataHolder = null
         SurveyManager.filteredSurveys.clear()
         FormbricksApi.service = MockFormbricksApiService()
@@ -278,14 +280,85 @@ class FormbricksInstrumentedTest {
 
     @Test
     fun testLogoutWithoutUserIdDoesNotError() {
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
-        waitForSeconds(1)
+        // Mark SDK as initialized without triggering async operations
+        Formbricks.isInitialized = true
 
         // Logout without ever setting a userId — should not crash
         assertNull(UserManager.userId)
         Formbricks.logout()
         assertNull(UserManager.userId)
+    }
+
+    @Test
+    fun testSyncUserSetsLanguageFromResponse() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        assertEquals("default", Formbricks.language)
+
+        // Override the mock to return a user response that includes a language
+        val mockService = FormbricksApi.service as MockFormbricksApiService
+        val originalUser = mockService.user
+        mockService.user = originalUser.copy(
+            data = originalUser.data.copy(
+                state = originalUser.data.state.copy(
+                    data = originalUser.data.state.data.copy(
+                        language = "fr"
+                    )
+                )
+            )
+        )
+
+        // setUserId triggers syncUser, which should pick up the language from the response
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+
+        assertEquals(userId, UserManager.userId)
+        assertEquals("fr", Formbricks.language)
+    }
+
+    @Test
+    fun testSyncUserCatchBlockOnApiError() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        // Enable error mode so postUser returns a failure, exercising the catch block
+        (FormbricksApi.service as MockFormbricksApiService).isErrorResponseNeeded = true
+
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+
+        // The sync should have failed gracefully — userId should not be set from the response
+        assertNull(UserManager.expiresAt)
+    }
+
+    @Test
+    fun testLogoutClearsAllUserState() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        // Set up a user so we have state to clear
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+        assertNotNull(UserManager.expiresAt)
+        assertNotNull(UserManager.contactId)
+
+        // Set language to something other than default
+        Formbricks.setLanguage("de")
+        assertEquals("de", Formbricks.language)
+
+        // Logout should clear all user state
+        UserManager.logout()
+
+        assertNull(UserManager.userId)
+        assertNull(UserManager.contactId)
+        assertNull(UserManager.expiresAt)
+        assertNull(UserManager.lastDisplayedAt)
+        assertEquals("default", Formbricks.language)
     }
 
     private fun waitForSeconds(seconds: Long) {

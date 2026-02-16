@@ -12,7 +12,7 @@ import com.formbricks.android.model.error.SDKError
 class MockFormbricksApiService: FormbricksApiService() {
     private val gson = Gson()
     private val environment: EnvironmentResponse
-    private val user: UserResponse
+    internal var user: UserResponse
     var isErrorResponseNeeded = false
 
     init {
