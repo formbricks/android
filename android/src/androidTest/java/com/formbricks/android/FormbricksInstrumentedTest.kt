@@ -8,6 +8,7 @@ import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
+import com.formbricks.android.model.user.AttributeValue
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -57,7 +58,7 @@ class FormbricksInstrumentedTest {
         // Use methods before init should have no effect
         Formbricks.setUserId("userId")
         Formbricks.setLanguage("de")
-        Formbricks.setAttributes(mapOf("testA" to "testB"))
+        Formbricks.setAttributes(mapOf("testA" to AttributeValue.string("testB")))
         Formbricks.setAttribute("test", "testKey")
         assertNull(UserManager.userId)
         assertEquals("default", Formbricks.language)
@@ -73,7 +74,7 @@ class FormbricksInstrumentedTest {
         waitForSeconds(1)
 
         // Should be ignored, becuase we don't have user ID yet
-        Formbricks.setAttributes(mapOf("testA" to "testB"))
+        Formbricks.setAttributes(mapOf("testA" to AttributeValue.string("testB")))
         Formbricks.setAttribute("test", "testKey")
         assertNull(UserManager.userId)
 

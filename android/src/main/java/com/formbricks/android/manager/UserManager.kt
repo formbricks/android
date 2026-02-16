@@ -9,6 +9,7 @@ import com.formbricks.android.extensions.guard
 import com.formbricks.android.extensions.lastDisplayAt
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.error.SDKError
+import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.model.user.Display
 import com.formbricks.android.network.queue.UpdateQueue
 import com.google.gson.Gson
@@ -57,7 +58,7 @@ object UserManager {
      * @param attribute
      * @param key
      */
-    fun addAttribute(attribute: String, key: String) {
+    fun addAttribute(attribute: AttributeValue, key: String) {
         UpdateQueue.addAttribute(key, attribute)
     }
 
@@ -66,7 +67,7 @@ object UserManager {
      *
      * @param attributes
      */
-    fun setAttributes(attributes: Map<String, String>) {
+    fun setAttributes(attributes: Map<String, AttributeValue>) {
         UpdateQueue.setAttributes(attributes)
     }
 
@@ -126,7 +127,7 @@ object UserManager {
      * @param id
      * @param attributes
      */
-    fun syncUser(id: String, attributes: Map<String, String>? = null) {
+    fun syncUser(id: String, attributes: Map<String, AttributeValue>? = null) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val userResponse = FormbricksApi.postUser(id, attributes).getOrThrow()
@@ -139,8 +140,18 @@ object UserManager {
                 expiresAt = userResponse.data.state.expiresAt()
                 val languageFromUserResponse = userResponse.data.state.data.language
 
-                if(languageFromUserResponse != null) {
+                if (languageFromUserResponse != null) {
                     Formbricks.language = languageFromUserResponse
+                }
+
+                // Log errors (always visible) - e.g., invalid attribute keys, type mismatches
+                userResponse.data.errors?.forEach { error ->
+                    Logger.e(RuntimeException(error))
+                }
+
+                // Log informational messages (debug only)
+                userResponse.data.messages?.forEach { message ->
+                    Logger.d("User update message: $message")
                 }
 
                 UpdateQueue.reset()
@@ -157,12 +168,7 @@ object UserManager {
      * Logs out the user and clears the user state.
      */
     fun logout() {
-        val isUserIdDefined = userId != null
-
-        if (!isUserIdDefined) {
-            val error = SDKError.noUserIdSetError
-            Logger.e(error)
-        }
+        Logger.d("Logging out and cleaning user state")
 
         prefManager.edit().apply {
             remove(CONTACT_ID_KEY)
@@ -186,10 +192,6 @@ object UserManager {
         UpdateQueue.reset()
 
         SurveyManager.filterSurveys()
-
-        if(isUserIdDefined) {
-            Logger.d("User logged out successfully!")
-        }
     }
 
     private fun startSyncTimer() {

@@ -151,7 +151,7 @@ object SurveyManager {
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
         if (actionClass == null) {
-            val error = RuntimeException("\"$action\" action unknown. Please add this action in Formbricks first in order to use it in your code.")
+            val error = RuntimeException("Action with identifier '$action' is unknown. Please add this action in Formbricks in order to use it via the SDK action tracking.")
             Logger.e(error)
             return
         }
