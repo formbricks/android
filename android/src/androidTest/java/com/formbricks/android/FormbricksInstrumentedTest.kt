@@ -38,6 +38,8 @@ class FormbricksInstrumentedTest {
     fun setUp() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         Formbricks.applicationContext = appContext
+        Formbricks.isInitialized = false
+        Formbricks.language = "default"
         UserManager.logout()
         SurveyManager.environmentDataHolder = null
         FormbricksApi.service = MockFormbricksApiService()
