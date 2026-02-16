@@ -161,6 +161,20 @@ object Formbricks {
     }
 
     /**
+     * Adds an integer attribute for the current user.
+     * The value is converted to a [Double] internally.
+     * The SDK must be initialized before calling this method.
+     *
+     * ```
+     * Formbricks.setAttribute(42, "age")
+     * ```
+     *
+     */
+    fun setAttribute(attribute: Int, key: String) {
+        setAttribute(attribute.toDouble(), key)
+    }
+
+    /**
      * Adds a date attribute for the current user.
      * The date is converted to an ISO 8601 string. The backend will detect the format and treat it as a date type.
      * The SDK must be initialized before calling this method.
