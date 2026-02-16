@@ -57,6 +57,15 @@ object Formbricks {
             return
         }
 
+
+        // Validate HTTPS URL
+        if (!config.appUrl.startsWith("https://", ignoreCase = true)) {
+            val error = RuntimeException("Only HTTPS URLs are allowed for security reasons. HTTP URLs are not permitted. Provided URL: ${config.appUrl}")
+            Logger.e(error)
+            return
+        }
+
+
         applicationContext = context
 
         appUrl = config.appUrl
