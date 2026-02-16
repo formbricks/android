@@ -175,6 +175,116 @@ class FormbricksInstrumentedTest {
         assertTrue(SurveyManager.isShowingSurvey)
     }
 
+    @Test
+    fun testSetAttributesWithUserId() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        // Set userId first, then set attributes - exercises UpdateQueue.setAttributes with a valid userId
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+
+        Formbricks.setAttributes(mapOf(
+            "plan" to AttributeValue.string("premium"),
+            "score" to AttributeValue.number(99.5)
+        ))
+        waitForSeconds(1)
+
+        // User should still be synced
+        assertEquals(userId, UserManager.userId)
+    }
+
+    @Test
+    fun testAddAttributeWithUserId() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        // Set userId first, then add attributes - exercises UpdateQueue.addAttribute with a valid userId
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+
+        Formbricks.setAttribute("John", "name")
+        Formbricks.setAttribute(42.0, "age")
+        Formbricks.setAttribute(99, "level")
+        waitForSeconds(1)
+
+        assertEquals(userId, UserManager.userId)
+    }
+
+    @Test
+    fun testSetLanguageWithUserId() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        // Set userId first, then set language - exercises the if-branch in UpdateQueue.setLanguage
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+
+        Formbricks.setLanguage("de")
+        waitForSeconds(1)
+
+        assertEquals("de", Formbricks.language)
+        assertEquals(userId, UserManager.userId)
+    }
+
+    @Test
+    fun testSetUserIdSameValueIsNoOp() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+
+        // Same userId again — should be a no-op
+        Formbricks.setUserId(userId)
+        assertEquals(userId, UserManager.userId)
+    }
+
+    @Test
+    fun testSetUserIdDifferentValueOverridesPrevious() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+        assertNotNull(UserManager.expiresAt)
+
+        // Different userId — should clean up previous state and re-sync
+        // (Previously this would error and return without doing anything)
+        val newUserId = "NEW-USER-ID-12345"
+        Formbricks.setUserId(newUserId)
+
+        // Verify that logout was called: expiresAt should be cleared immediately
+        assertNull("expiresAt should be cleared by logout", UserManager.expiresAt)
+
+        // After sync completes, the mock returns the hardcoded userId from User.json,
+        // so we just verify the SDK is still functional (sync completed without errors)
+        waitForSeconds(2)
+        assertNotNull("userId should be set after re-sync", UserManager.userId)
+    }
+
+    @Test
+    fun testLogoutWithoutUserIdDoesNotError() {
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, environmentId).setLoggingEnabled(true).build())
+        waitForSeconds(1)
+
+        // Logout without ever setting a userId — should not crash
+        assertNull(UserManager.userId)
+        Formbricks.logout()
+        assertNull(UserManager.userId)
+    }
+
     private fun waitForSeconds(seconds: Long) {
         val latch = CountDownLatch(1)
         latch.await(seconds, TimeUnit.SECONDS)
