@@ -42,6 +42,7 @@ class FormbricksInstrumentedTest {
         Formbricks.language = "default"
         UserManager.logout()
         SurveyManager.environmentDataHolder = null
+        SurveyManager.filteredSurveys.clear()
         FormbricksApi.service = MockFormbricksApiService()
     }
 
