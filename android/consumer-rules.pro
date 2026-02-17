@@ -2,4 +2,6 @@
 -keep class com.formbricks.android.Formbricks { *; }
 -keep class com.formbricks.android.helper.FormbricksConfig { *; }
 -keep class com.formbricks.android.model.error.SDKError { *; }
+-keep class com.formbricks.android.model.user.AttributeValue { *; }
+-keep class com.formbricks.android.model.user.AttributeValue$* { *; }
 -keep interface com.formbricks.android.FormbricksCallback { *; }

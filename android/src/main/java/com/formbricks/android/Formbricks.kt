@@ -11,8 +11,13 @@ import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.error.SDKError
+import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.webview.FormbricksFragment
 import java.lang.RuntimeException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @Keep
 object Formbricks {
@@ -52,12 +57,14 @@ object Formbricks {
             return
         }
 
+
         // Validate HTTPS URL
         if (!config.appUrl.startsWith("https://", ignoreCase = true)) {
             val error = RuntimeException("Only HTTPS URLs are allowed for security reasons. HTTP URLs are not permitted. Provided URL: ${config.appUrl}")
             Logger.e(error)
             return
         }
+
 
         applicationContext = context
 
@@ -68,7 +75,10 @@ object Formbricks {
 
         config.userId?.let { UserManager.set(it) }
         config.attributes?.let { UserManager.setAttributes(it) }
-        config.attributes?.get("language")?.let { UserManager.setLanguage(it) }
+        config.attributes?.get("language")?.stringValue?.let {
+            UserManager.setLanguage(it)
+            language = it
+        }
 
         FormbricksApi.initialize()
         SurveyManager.refreshEnvironmentIfNeeded(force = forceRefresh)
@@ -79,6 +89,11 @@ object Formbricks {
 
     /**
      * Sets the user id for the current user with the given [String].
+     *
+     * - If the same userId is already set, this is a no-op.
+     * - If a different userId is already set, the previous user state is cleaned up first
+     *   before setting the new userId.
+     *
      * The SDK must be initialized before calling this method.
      *
      * ```
@@ -93,21 +108,28 @@ object Formbricks {
             return
         }
 
-        if(UserManager.userId != null) {
-            val error = RuntimeException("A userId is already set ${UserManager.userId} - please call logout first before setting a new one")
-            Logger.e(error)
+        // If the same userId is already set, no-op
+        val existing = UserManager.userId
+        if (existing != null && existing == userId) {
+            Logger.d("UserId is already set to the same value, skipping")
             return
+        }
+
+        // If a different userId is set, clean up the previous user state first
+        if (existing != null && existing.isNotEmpty()) {
+            Logger.d("Different userId is being set, cleaning up previous user state")
+            UserManager.logout()
         }
 
         UserManager.set(userId)
     }
 
     /**
-     * Adds an attribute for the current user with the given [String] value and [String] key.
+     * Adds a string attribute for the current user.
      * The SDK must be initialized before calling this method.
      *
      * ```
-     * Formbricks.setAttribute("my_attribute", "key")
+     * Formbricks.setAttribute("John", "name")
      * ```
      *
      */
@@ -117,19 +139,86 @@ object Formbricks {
             Logger.e(error)
             return
         }
-        UserManager.addAttribute(attribute, key)
+        UserManager.addAttribute(AttributeValue.string(attribute), key)
     }
 
     /**
-     * Sets the user attributes for the current user with the given [Map] of [String] values and [String] keys.
+     * Adds a numeric attribute for the current user.
      * The SDK must be initialized before calling this method.
      *
      * ```
-     * Formbricks.setAttributes(mapOf(Pair("key", "my_attribute")))
+     * Formbricks.setAttribute(42.0, "age")
      * ```
      *
      */
-    fun setAttributes(attributes: Map<String, String>) {
+    fun setAttribute(attribute: Double, key: String) {
+        if (!isInitialized) {
+            val error = SDKError.sdkIsNotInitialized
+            Logger.e(error)
+            return
+        }
+        UserManager.addAttribute(AttributeValue.number(attribute), key)
+    }
+
+    /**
+     * Adds an integer attribute for the current user.
+     * The value is converted to a [Double] internally.
+     * The SDK must be initialized before calling this method.
+     *
+     * ```
+     * Formbricks.setAttribute(42, "age")
+     * ```
+     *
+     */
+    fun setAttribute(attribute: Int, key: String) {
+        setAttribute(attribute.toDouble(), key)
+    }
+
+    /**
+     * Adds a date attribute for the current user.
+     * The date is converted to an ISO 8601 string. The backend will detect the format and treat it as a date type.
+     * The SDK must be initialized before calling this method.
+     *
+     * ```
+     * Formbricks.setAttribute(Date(), "signupDate")
+     * ```
+     *
+     */
+    fun setAttribute(attribute: Date, key: String) {
+        if (!isInitialized) {
+            val error = SDKError.sdkIsNotInitialized
+            Logger.e(error)
+            return
+        }
+        val iso8601Format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        UserManager.addAttribute(AttributeValue.string(iso8601Format.format(attribute)), key)
+    }
+
+    /**
+     * Sets the user attributes for the current user.
+     *
+     * Attribute types are determined by the value:
+     * - String values -> string attribute
+     * - Number values -> number attribute
+     * - Use ISO 8601 date strings for date attributes
+     *
+     * On first write to a new attribute, the type is set based on the value type.
+     * On subsequent writes, the value must match the existing attribute type.
+     *
+     * The SDK must be initialized before calling this method.
+     *
+     * ```
+     * Formbricks.setAttributes(mapOf(
+     *     "name" to AttributeValue.string("John"),
+     *     "age" to AttributeValue.number(30.0),
+     *     "score" to AttributeValue.number(9.5)
+     * ))
+     * ```
+     *
+     */
+    fun setAttributes(attributes: Map<String, AttributeValue>) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)

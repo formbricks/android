@@ -3,6 +3,7 @@ package com.formbricks.android.network.queue
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.error.SDKError
+import com.formbricks.android.model.user.AttributeValue
 import java.util.*
 import kotlin.concurrent.timer
 
@@ -15,7 +16,7 @@ object UpdateQueue {
     private const val DEBOUNCE_INTERVAL: Long = 500 // 500 ms
 
     private var userId: String? = null
-    private var attributes: MutableMap<String, String>? = null
+    private var attributes: MutableMap<String, AttributeValue>? = null
     private var language: String? = null
     private var timer: Timer? = null
 
@@ -24,12 +25,12 @@ object UpdateQueue {
         startDebounceTimer()
     }
 
-    fun setAttributes(attributes: Map<String, String>) {
+    fun setAttributes(attributes: Map<String, AttributeValue>) {
         this.attributes = attributes.toMutableMap()
         startDebounceTimer()
     }
 
-    fun addAttribute(key: String, attribute: String) {
+    fun addAttribute(key: String, attribute: AttributeValue) {
         if (attributes == null) {
             attributes = mutableMapOf()
         }
@@ -38,13 +39,13 @@ object UpdateQueue {
     }
 
     fun setLanguage(language: String) {
-        val effectiveUserId =  userId ?: UserManager.userId
+        val effectiveUserId = userId ?: UserManager.userId
 
-        if(effectiveUserId != null) {
-            addAttribute("language", language)
+        if (effectiveUserId != null) {
+            addAttribute("language", AttributeValue.string(language))
             startDebounceTimer()
         } else {
-            Logger.d("UpdateQueue - updating language locally: ${language}")
+            Logger.d("UpdateQueue - updating language locally: $language")
             return
         }
     }

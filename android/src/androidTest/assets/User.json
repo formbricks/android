@@ -10,6 +10,8 @@
         "userId": "6CCCE716-6783-4D0F-8344-9C7DFA43D8F7"
       },
       "expiresAt": "2035-03-06T10:59:32.359Z"
-    }
+    },
+    "messages": ["User synced successfully"],
+    "errors": ["Unknown attribute key: invalidKey"]
   }
 }

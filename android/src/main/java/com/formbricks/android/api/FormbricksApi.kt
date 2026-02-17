@@ -2,6 +2,7 @@ package com.formbricks.android.api
 
 import com.formbricks.android.Formbricks
 import com.formbricks.android.model.environment.EnvironmentDataHolder
+import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.model.user.PostUserBody
 import com.formbricks.android.model.user.UserResponse
 import com.formbricks.android.network.FormbricksApiService
@@ -45,7 +46,7 @@ object FormbricksApi {
         }
     }
 
-    suspend fun postUser(userId: String, attributes: Map<String, *>?): Result<UserResponse> = withContext(Dispatchers.IO) {
+    suspend fun postUser(userId: String, attributes: Map<String, AttributeValue>?): Result<UserResponse> = withContext(Dispatchers.IO) {
         retryApiCall {
             try {
                 val result = service.postUser(Formbricks.environmentId, PostUserBody.create(userId, attributes)).getOrThrow()
