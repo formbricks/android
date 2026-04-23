@@ -1,7 +1,7 @@
 package com.formbricks.android.api
 
 import com.formbricks.android.Formbricks
-import com.formbricks.android.model.environment.EnvironmentDataHolder
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.model.user.PostUserBody
 import com.formbricks.android.model.user.UserResponse
@@ -34,10 +34,10 @@ object FormbricksApi {
         )
     }
 
-    suspend fun getEnvironmentState(): Result<EnvironmentDataHolder> = withContext(Dispatchers.IO) {
+    suspend fun getWorkspaceState(): Result<WorkspaceDataHolder> = withContext(Dispatchers.IO) {
         retryApiCall {
             try {
-                val response = service.getEnvironmentStateObject(Formbricks.environmentId)
+                val response = service.getWorkspaceStateObject(Formbricks.workspaceId)
                 val result = response.getOrThrow()
                 Result.success(result)
             } catch (e: Exception) {
@@ -49,7 +49,7 @@ object FormbricksApi {
     suspend fun postUser(userId: String, attributes: Map<String, AttributeValue>?): Result<UserResponse> = withContext(Dispatchers.IO) {
         retryApiCall {
             try {
-                val result = service.postUser(Formbricks.environmentId, PostUserBody.create(userId, attributes)).getOrThrow()
+                val result = service.postUser(Formbricks.workspaceId, PostUserBody.create(userId, attributes)).getOrThrow()
                 Result.success(result)
             } catch (e: Exception) {
                 Result.failure(e)

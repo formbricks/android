@@ -11,7 +11,7 @@ plugins {
     id("org.sonarqube") version "4.4.1.3373"
 }
 
-version = "1.2.0"
+version = "1.3.1"
 val groupId = "com.formbricks"
 val artifactId = "android"
 
@@ -95,7 +95,7 @@ dependencies {
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
-    signAllPublications()
+    // signAllPublications()  // disabled for local publishing
 
     coordinates(groupId, artifactId, version.toString())
 

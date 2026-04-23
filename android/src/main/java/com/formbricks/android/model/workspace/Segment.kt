@@ -1,5 +1,6 @@
-package com.formbricks.android.model.environment
+package com.formbricks.android.model.workspace
 
+import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
@@ -137,7 +138,7 @@ sealed class SegmentFilterResource {
 object SegmentFilterResourceSerializer : KSerializer<SegmentFilterResource> {
     override val descriptor = buildClassSerialDescriptor("SegmentFilterResource") {
         // You can declare children here if you like,
-        // or leave it empty if you’re purely passing through.
+        // or leave it empty if you're purely passing through.
     }
     override fun deserialize(decoder: Decoder): SegmentFilterResource {
         val input = decoder as JsonDecoder
@@ -169,6 +170,7 @@ data class SegmentFilter(
 )
 
 // MARK: - Segment Model
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class Segment(
     val id: String,
@@ -176,7 +178,12 @@ data class Segment(
     val description: String? = null,
     @SerialName("isPrivate") val isPrivate: Boolean,
     val filters: List<SegmentFilter>,
-    val environmentId: String,
+    // Server may send `workspaceId` (new) or `environmentId` (legacy). Field is
+    // informational only — not read by SDK logic — so keep it optional.
+    @SerializedName(value = "workspaceId", alternate = ["environmentId"])
+    @SerialName("workspaceId")
+    @JsonNames("environmentId")
+    val workspaceId: String? = null,
     val createdAt: String,
     val updatedAt: String,
     val surveys: List<String>

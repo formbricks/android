@@ -6,10 +6,10 @@ import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
-import com.formbricks.android.model.environment.EnvironmentDataHolder
-import com.formbricks.android.model.environment.SegmentFilterResource
-import com.formbricks.android.model.environment.SegmentFilterResourceDeserializer
-import com.formbricks.android.model.environment.Survey
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.SegmentFilterResource
+import com.formbricks.android.model.workspace.SegmentFilterResourceDeserializer
+import com.formbricks.android.model.workspace.Survey
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.Display
 import com.google.gson.Gson
@@ -30,7 +30,9 @@ import java.util.concurrent.TimeUnit
 object SurveyManager {
     private const val REFRESH_STATE_ON_ERROR_TIMEOUT_IN_MINUTES = 10
     private const val FORMBRICKS_PREFS = "formbricks_prefs"
-    private const val PREF_FORMBRICKS_DATA_HOLDER = "formbricksDataHolder"
+    internal const val PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER = "formbricksWorkspaceDataHolder"
+    /** Pre-workspace-rename storage key. Read on first access so existing installs can be migrated. */
+    internal const val PREF_LEGACY_ENVIRONMENT_DATA_HOLDER = "formbricksDataHolder"
 
     internal val refreshTimer = Timer()
     internal var displayTimer = Timer()
@@ -46,40 +48,58 @@ object SurveyManager {
         )
         .create()
 
-    private var environmentDataHolderJson: String?
+    private var workspaceDataHolderJson: String?
         get() {
-            return prefManager.getString(PREF_FORMBRICKS_DATA_HOLDER, "")
+            // Prefer the new key; fall back to the legacy key for installs that still
+            // have data stored under the pre-rename `formbricksDataHolder`.
+            val current = prefManager.getString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, null)
+            if (current != null) return current
+
+            val legacy = prefManager.getString(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER, null)
+            if (legacy != null) {
+                // Migrate the legacy blob to the new key and drop the old one.
+                prefManager.edit()
+                    .putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, legacy)
+                    .remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
+                    .apply()
+                return legacy
+            }
+            return null
         }
         set(value) {
+            val editor = prefManager.edit()
             if (null != value) {
-                prefManager.edit().putString(PREF_FORMBRICKS_DATA_HOLDER, value).apply()
+                editor.putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, value)
             } else {
-                prefManager.edit().remove(PREF_FORMBRICKS_DATA_HOLDER).apply()
+                editor.remove(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER)
             }
+            // Drop the legacy cache key once we've written to the new one.
+            editor.remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
+            editor.apply()
         }
 
-    private var backingEnvironmentDataHolder: EnvironmentDataHolder? = null
-    var environmentDataHolder: EnvironmentDataHolder?
+    private var backingWorkspaceDataHolder: WorkspaceDataHolder? = null
+    var workspaceDataHolder: WorkspaceDataHolder?
         get() {
-            if (null != backingEnvironmentDataHolder) {
-                return backingEnvironmentDataHolder
+            if (null != backingWorkspaceDataHolder) {
+                return backingWorkspaceDataHolder
             }
             synchronized(this) {
-                backingEnvironmentDataHolder = environmentDataHolderJson?.let { json ->
+                backingWorkspaceDataHolder = workspaceDataHolderJson?.let { json ->
                     try {
-                        gson.fromJson(json, EnvironmentDataHolder::class.java)
+                        gson.fromJson(json, WorkspaceDataHolder::class.java)
                     } catch (e: Exception) {
-                        Logger.e(RuntimeException("Unable to retrieve environment data from the local storage."))
+                        Logger.e(RuntimeException("Unable to retrieve workspace data from the local storage."))
                         null
                     }
                 }
-                return backingEnvironmentDataHolder
+                return backingWorkspaceDataHolder
             }
         }
         set(value) {
             synchronized(this) {
-                backingEnvironmentDataHolder = value
-                environmentDataHolderJson = Gson().toJson(value)
+                backingWorkspaceDataHolder = value
+                workspaceDataHolderJson = Gson().toJson(value)
             }
         }
 
@@ -87,13 +107,13 @@ object SurveyManager {
      * Fills up the [filteredSurveys] array
      */
     fun filterSurveys() {
-        val surveys = environmentDataHolder?.data?.data?.surveys.guard { return }
+        val surveys = workspaceDataHolder?.data?.data?.surveys.guard { return }
         val displays = UserManager.displays ?: listOf()
         val responses = UserManager.responses ?: listOf()
         val segments = UserManager.segments ?: listOf()
 
         filteredSurveys = filterSurveysBasedOnDisplayType(surveys, displays, responses).toMutableList()
-        filteredSurveys = filterSurveysBasedOnRecontactDays(filteredSurveys, environmentDataHolder?.data?.data?.project?.recontactDays?.toInt()).toMutableList()
+        filteredSurveys = filterSurveysBasedOnRecontactDays(filteredSurveys, workspaceDataHolder?.data?.data?.settings?.recontactDays?.toInt()).toMutableList()
 
         if (UserManager.userId == null) {
             filteredSurveys = filteredSurveys.filter { survey ->
@@ -113,14 +133,14 @@ object SurveyManager {
     }
 
     /**
-     * Checks if the environment state needs to be refreshed based on its [expiresAt] property,
+     * Checks if the workspace state needs to be refreshed based on its [expiresAt] property,
      * and if so, refreshes it, starts the refresh timer, and filters the surveys.
      */
-    fun refreshEnvironmentIfNeeded(force: Boolean = false) {
+    fun refreshWorkspaceIfNeeded(force: Boolean = false) {
         if (!force) {
-            environmentDataHolder?.expiresAt()?.let {
+            workspaceDataHolder?.expiresAt()?.let {
                 if (it.after(Date())) {
-                    Logger.d("Environment state is still valid until $it")
+                    Logger.d("Workspace state is still valid until $it")
                     filterSurveys()
                     return
                 }
@@ -129,8 +149,8 @@ object SurveyManager {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                environmentDataHolder = FormbricksApi.getEnvironmentState().getOrThrow()
-                startRefreshTimer(environmentDataHolder?.expiresAt())
+                workspaceDataHolder = FormbricksApi.getWorkspaceState().getOrThrow()
+                startRefreshTimer(workspaceDataHolder?.expiresAt())
                 filterSurveys()
                 hasApiError = false
             } catch (e: Exception) {
@@ -147,7 +167,7 @@ object SurveyManager {
      * Handles the display percentage and the delay of the survey.
      */
     fun track(action: String) {
-        val actionClasses = environmentDataHolder?.data?.data?.actionClasses ?: listOf()
+        val actionClasses = workspaceDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
         if (actionClass == null) {
@@ -157,7 +177,7 @@ object SurveyManager {
         }
         val firstSurveyWithActionClass = filteredSurveys.firstOrNull { survey ->
             val triggers = survey.triggers ?: listOf()
-            triggers.firstOrNull { trigger -> 
+            triggers.firstOrNull { trigger ->
                 trigger.actionClass?.name == actionClass?.name
             } != null
         }
@@ -238,28 +258,28 @@ object SurveyManager {
     }
 
    /**
-     *  Starts a timer to refresh the environment state after the given timeout [expiresAt].
+     *  Starts a timer to refresh the workspace state after the given timeout [expiresAt].
      */
     private fun startRefreshTimer(expiresAt: Date?) {
         val date = expiresAt.guard { return }
         refreshTimer.schedule(object: TimerTask() {
             override fun run() {
-                Logger.d("Refreshing environment state.")
-                refreshEnvironmentIfNeeded()
+                Logger.d("Refreshing workspace state.")
+                refreshWorkspaceIfNeeded()
             }
 
         }, date)
     }
 
     /**
-     *  When an error occurs, it starts a timer to refresh the environment state after the given timeout.
+     *  When an error occurs, it starts a timer to refresh the workspace state after the given timeout.
      */
     private fun startErrorTimer() {
         val targetDate = Date(System.currentTimeMillis() + 1000 * 60 * REFRESH_STATE_ON_ERROR_TIMEOUT_IN_MINUTES)
         refreshTimer.schedule(object: TimerTask() {
             override fun run() {
-                Logger.d("Refreshing environment state after an error")
-                refreshEnvironmentIfNeeded()
+                Logger.d("Refreshing workspace state after an error")
+                refreshWorkspaceIfNeeded()
             }
 
         }, targetDate)
