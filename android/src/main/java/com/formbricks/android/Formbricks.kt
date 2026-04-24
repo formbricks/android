@@ -85,7 +85,7 @@ object Formbricks {
         fragmentManager = config.fragmentManager
 
         if (config.usedDeprecatedEnvironmentId) {
-            Logger.d("environmentId is deprecated and will be removed in a future version. Please use workspaceId instead.")
+            Logger.w("environmentId is deprecated and will be removed in a future version. Please use workspaceId instead.")
         }
 
         config.userId?.let { UserManager.set(it) }
@@ -96,6 +96,7 @@ object Formbricks {
         }
 
         FormbricksApi.initialize()
+        SurveyManager.migrateLegacyCacheIfNeeded()
         SurveyManager.refreshWorkspaceIfNeeded(force = forceRefresh)
         UserManager.syncUserStateIfNeeded()
 

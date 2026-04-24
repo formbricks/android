@@ -17,7 +17,7 @@ class MockFormbricksApiService: FormbricksApiService() {
 
     init {
         val context = InstrumentationRegistry.getInstrumentation().context
-        val workspaceJson = context.assets.open("Environment.json").bufferedReader().readText()
+        val workspaceJson = context.assets.open("Workspace.json").bufferedReader().readText()
         val userJson = context.assets.open("User.json").bufferedReader().readText()
 
         workspace = gson.fromJson(workspaceJson, WorkspaceResponse::class.java)

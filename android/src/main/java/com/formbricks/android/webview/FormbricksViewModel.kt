@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.formbricks.android.Formbricks
 import com.formbricks.android.extensions.guard
+import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
@@ -116,12 +117,18 @@ class FormbricksViewModel : ViewModel() {
 
     fun loadHtml(surveyId: String) {
         val workspace = SurveyManager.workspaceDataHolder.guard { return }
-        val json = getJson(workspace, surveyId)
+        val json = getJson(workspace, surveyId) ?: return
         val htmlString = htmlTemplate.replace("{{WEBVIEW_DATA}}", json)
         html.postValue(htmlString)
     }
 
-    private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String): String {
+    private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String): String? {
+        val matchedSurvey = workspaceDataHolder.data?.data?.surveys?.firstOrNull { it.id == surveyId }
+        if (matchedSurvey == null) {
+            Logger.w("Survey with id $surveyId not found in workspace data; skipping render")
+            return null
+        }
+
         val jsonObject = JsonObject()
         workspaceDataHolder.getSurveyJson(surveyId).let { jsonObject.add("survey", it) }
         jsonObject.addProperty("isBrandingEnabled", workspaceDataHolder.data?.data?.settings?.inAppSurveyBranding ?: true)
@@ -133,7 +140,6 @@ class FormbricksViewModel : ViewModel() {
         jsonObject.addProperty("contactId", UserManager.contactId)
         jsonObject.addProperty("isWebEnvironment", false)
 
-        val matchedSurvey = workspaceDataHolder.data?.data?.surveys?.first { it.id == surveyId }
         val settings = workspaceDataHolder.data?.data?.settings
 
         val isMultiLangSurvey =

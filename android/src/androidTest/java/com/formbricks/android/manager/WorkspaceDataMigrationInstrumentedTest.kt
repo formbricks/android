@@ -125,11 +125,12 @@ class WorkspaceDataMigrationInstrumentedTest {
     }
 
     /**
-     * A cache blob written under the pre-rename SharedPreferences key should be read
-     * once, migrated to the new key, and then removed from the legacy slot.
+     * A cache blob written under the pre-rename SharedPreferences key should be
+     * copied to the new key and dropped from the legacy slot when
+     * `migrateLegacyCacheIfNeeded` runs at setup time.
      */
     @Test
-    fun testLegacyCachedDataHolderIsMigratedOnRead() {
+    fun testLegacyCachedDataHolderIsMigratedOnSetup() {
         val legacyBlob = """
             {
               "data": {
@@ -156,9 +157,10 @@ class WorkspaceDataMigrationInstrumentedTest {
             .putString(SurveyManager.PREF_LEGACY_ENVIRONMENT_DATA_HOLDER, legacyBlob)
             .apply()
 
-        // Reading should migrate and return a decoded WorkspaceDataHolder.
+        SurveyManager.migrateLegacyCacheIfNeeded()
+
         val holder = SurveyManager.workspaceDataHolder
-        assertNotNull("Legacy cache should be read and decoded", holder)
+        assertNotNull("Migrated cache should be read and decoded", holder)
         assertEquals("bottomRight", holder?.data?.data?.settings?.placement)
 
         // Legacy key is gone, new key is populated.

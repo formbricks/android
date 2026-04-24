@@ -43,13 +43,13 @@ open class FormbricksApiService {
                     .getWorkspaceState(workspaceId)
             }
             val resultMap = result.getOrThrow()
-            normalizeWorkspaceKeys(resultMap)
+            val normalizedMap = normalizeWorkspaceKeys(resultMap)
             // Use Gson end-to-end so `@SerializedName(alternate=[...])` handles all
             // the workspace-rename compatibility cases (settings/workspace/project,
             // workspaceId/environmentId) and unknown server fields are ignored.
-            val resultJson = gson.toJson(resultMap)
+            val resultJson = gson.toJson(normalizedMap)
             val workspaceResponse = gson.fromJson(resultJson, WorkspaceResponse::class.java)
-            val data = WorkspaceDataHolder(workspaceResponse.data, resultMap)
+            val data = WorkspaceDataHolder(workspaceResponse.data, normalizedMap)
             Result.success(data)
         } catch (e: Exception) {
             Logger.e(RuntimeException("Failed to parse workspace state: ${e.message}", e))
@@ -61,15 +61,20 @@ open class FormbricksApiService {
      * Server may respond with `settings` (new), `workspace` (interim), or legacy
      * `project` — plus sometimes more than one simultaneously. Pick one in order
      * of preference and drop the rest so downstream decode only sees `settings`.
+     * Returns a shallow copy; the input map is not mutated.
      */
     @Suppress("UNCHECKED_CAST")
-    private fun normalizeWorkspaceKeys(resultMap: Map<String, Any>) {
-        val outer = resultMap["data"] as? MutableMap<String, Any> ?: return
-        val inner = outer["data"] as? MutableMap<String, Any> ?: return
-        val replacement = inner["settings"] ?: inner["workspace"] ?: inner["project"] ?: return
-        inner.remove("workspace")
-        inner.remove("project")
-        inner["settings"] = replacement
+    private fun normalizeWorkspaceKeys(resultMap: Map<String, Any>): Map<String, Any> {
+        val outer = resultMap["data"] as? Map<String, Any> ?: return resultMap
+        val inner = outer["data"] as? Map<String, Any> ?: return resultMap
+        val replacement = inner["settings"] ?: inner["workspace"] ?: inner["project"] ?: return resultMap
+        val newInner = inner.toMutableMap().apply {
+            remove("workspace")
+            remove("project")
+            put("settings", replacement)
+        }
+        val newOuter = outer.toMutableMap().apply { put("data", newInner) }
+        return resultMap.toMutableMap().apply { put("data", newOuter) }
     }
 
     open fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> {

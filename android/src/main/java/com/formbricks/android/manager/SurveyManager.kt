@@ -49,23 +49,7 @@ object SurveyManager {
         .create()
 
     private var workspaceDataHolderJson: String?
-        get() {
-            // Prefer the new key; fall back to the legacy key for installs that still
-            // have data stored under the pre-rename `formbricksDataHolder`.
-            val current = prefManager.getString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, null)
-            if (current != null) return current
-
-            val legacy = prefManager.getString(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER, null)
-            if (legacy != null) {
-                // Migrate the legacy blob to the new key and drop the old one.
-                prefManager.edit()
-                    .putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, legacy)
-                    .remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
-                    .apply()
-                return legacy
-            }
-            return null
-        }
+        get() = prefManager.getString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, null)
         set(value) {
             val editor = prefManager.edit()
             if (null != value) {
@@ -77,6 +61,21 @@ object SurveyManager {
             editor.remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
             editor.apply()
         }
+
+    /**
+     * One-shot migration of the pre-rename SharedPreferences cache. Call once during
+     * SDK setup before any reads. If a legacy blob exists and the new key is empty,
+     * copy it over; always drop the legacy key afterwards.
+     */
+    internal fun migrateLegacyCacheIfNeeded() {
+        if (!prefManager.contains(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)) return
+        val legacy = prefManager.getString(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER, null)
+        val editor = prefManager.edit().remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
+        if (legacy != null && !prefManager.contains(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER)) {
+            editor.putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, legacy)
+        }
+        editor.apply()
+    }
 
     private var backingWorkspaceDataHolder: WorkspaceDataHolder? = null
     var workspaceDataHolder: WorkspaceDataHolder?
