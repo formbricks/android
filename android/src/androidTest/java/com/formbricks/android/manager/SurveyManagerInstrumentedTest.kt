@@ -1,7 +1,7 @@
 package com.formbricks.android.manager
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.formbricks.android.model.environment.*
+import com.formbricks.android.model.workspace.*
 import com.formbricks.android.model.user.Display
 import org.junit.Assert.*
 import org.junit.Before
@@ -15,8 +15,8 @@ class SurveyManagerInstrumentedTest {
     fun setup() {
         // Reset UserManager state before each test
         UserManager.lastDisplayedAt = null
-        // Reset SurveyManager environment state
-        setBackingEnvironmentDataHolder(null)
+        // Reset SurveyManager workspace state
+        setBackingWorkspaceDataHolder(null)
     }
 
     @Test
@@ -434,8 +434,8 @@ class SurveyManagerInstrumentedTest {
 
     // region helper methods
 
-    private fun setBackingEnvironmentDataHolder(value: EnvironmentDataHolder?) {
-        val field = SurveyManager::class.java.getDeclaredField("backingEnvironmentDataHolder")
+    private fun setBackingWorkspaceDataHolder(value: WorkspaceDataHolder?) {
+        val field = SurveyManager::class.java.getDeclaredField("backingWorkspaceDataHolder")
         field.isAccessible = true
         field.set(SurveyManager, value)
     }

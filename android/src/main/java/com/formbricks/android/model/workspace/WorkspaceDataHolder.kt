@@ -1,15 +1,15 @@
-package com.formbricks.android.model.environment
+package com.formbricks.android.model.workspace
 
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 
-data class EnvironmentDataHolder(
-    val data: EnvironmentResponseData?,
+data class WorkspaceDataHolder(
+    val data: WorkspaceResponseData?,
     val originalResponseMap: Map<String, Any>
 )
 
 @Suppress("UNCHECKED_CAST")
-fun EnvironmentDataHolder.getSurveyJson(surveyId: String): JsonElement? {
+fun WorkspaceDataHolder.getSurveyJson(surveyId: String): JsonElement? {
     val responseMap = originalResponseMap["data"] as? Map<*, *>
     val dataMap = responseMap?.get("data") as? Map<*, *>
     val surveyArray = dataMap?.get("surveys") as? ArrayList<Map<String, Any?>>
@@ -22,7 +22,7 @@ fun EnvironmentDataHolder.getSurveyJson(surveyId: String): JsonElement? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun EnvironmentDataHolder.getStyling(surveyId: String): JsonElement? {
+fun WorkspaceDataHolder.getStyling(surveyId: String): JsonElement? {
     val responseMap = originalResponseMap["data"] as? Map<*, *>
     val dataMap = responseMap?.get("data") as? Map<*, *>
     val surveyArray = dataMap?.get("surveys") as? ArrayList<Map<String, Any?>>
@@ -35,11 +35,14 @@ fun EnvironmentDataHolder.getStyling(surveyId: String): JsonElement? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun EnvironmentDataHolder.getProjectStylingJson(): JsonElement? {
+fun WorkspaceDataHolder.getSettingsStylingJson(): JsonElement? {
     val responseMap = originalResponseMap["data"] as? Map<*, *>
     val dataMap = responseMap?.get("data") as? Map<*, *>
-    val projectMap = dataMap?.get("project") as? Map<*, *>
-    val stylingMap = projectMap?.get("styling") as? Map<String, Any?>
+    // Server may respond with `settings`, `workspace`, or legacy `project` — all carry the same shape.
+    val settingsMap = (dataMap?.get("settings") as? Map<*, *>)
+        ?: (dataMap?.get("workspace") as? Map<*, *>)
+        ?: (dataMap?.get("project") as? Map<*, *>)
+    val stylingMap = settingsMap?.get("styling") as? Map<String, Any?>
     stylingMap?.let {
         return Gson().toJsonTree(it)
     }

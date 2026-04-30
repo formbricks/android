@@ -34,8 +34,8 @@ class FormbricksApiServiceInstrumentedTest {
     }
 
     @Test
-    fun testGetEnvironmentStateObject_handlesErrorGracefully() {
-        val result = apiService.getEnvironmentStateObject("dummy-environment-id")
+    fun testGetWorkspaceStateObject_handlesErrorGracefully() {
+        val result = apiService.getWorkspaceStateObject("dummy-workspace-id")
         assertTrue(result.isFailure)
         result.exceptionOrNull()?.let { e ->
             println("Exception caught as expected: ${e.message}")
@@ -46,14 +46,14 @@ class FormbricksApiServiceInstrumentedTest {
     fun testPostUser_handlesErrorGracefully() {
         // This should fail gracefully since the URL is unreachable
         val dummyBody = PostUserBody("dummy-user-id", null)
-        val result = apiService.postUser("dummy-environment-id", dummyBody)
+        val result = apiService.postUser("dummy-workspace-id", dummyBody)
         assertTrue(result.isFailure)
     }
 
     @Test
     fun testPostUser_withNullAttributes_handlesErrorGracefully() {
         val dummyBody = PostUserBody("dummy-user-id", null)
-        val result = apiService.postUser("dummy-environment-id", dummyBody)
+        val result = apiService.postUser("dummy-workspace-id", dummyBody)
         assertTrue(result.isFailure)
     }
 
@@ -68,15 +68,15 @@ class FormbricksApiServiceInstrumentedTest {
     }
 
     @Test
-    fun testGetEnvironmentStateObject_beforeInitialize_returnsFailure() {
+    fun testGetWorkspaceStateObject_beforeInitialize_returnsFailure() {
         val uninitializedService = FormbricksApiService()
-        val result = uninitializedService.getEnvironmentStateObject("dummy")
+        val result = uninitializedService.getWorkspaceStateObject("dummy")
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is RuntimeException)
     }
 
     // Add more integration-style tests as needed, e.g.:
-    // - testGetEnvironmentStateObject_withMockServer
+    // - testGetWorkspaceStateObject_withMockServer
     // - testPostUser_withMockServer
     // These would require a running test server or a mock web server
-} 
+}

@@ -1,8 +1,8 @@
 package com.formbricks.android
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.formbricks.android.model.environment.EnvironmentDataHolder
-import com.formbricks.android.model.environment.EnvironmentResponse
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.WorkspaceResponse
 import com.formbricks.android.model.user.PostUserBody
 import com.formbricks.android.model.user.UserResponse
 import com.formbricks.android.network.FormbricksApiService
@@ -11,28 +11,28 @@ import com.formbricks.android.model.error.SDKError
 
 class MockFormbricksApiService: FormbricksApiService() {
     private val gson = Gson()
-    private val environment: EnvironmentResponse
+    private val workspace: WorkspaceResponse
     internal var user: UserResponse
     var isErrorResponseNeeded = false
 
     init {
         val context = InstrumentationRegistry.getInstrumentation().context
-        val environmentJson = context.assets.open("Environment.json").bufferedReader().readText()
+        val workspaceJson = context.assets.open("Workspace.json").bufferedReader().readText()
         val userJson = context.assets.open("User.json").bufferedReader().readText()
-        
-        environment = gson.fromJson(environmentJson, EnvironmentResponse::class.java)
+
+        workspace = gson.fromJson(workspaceJson, WorkspaceResponse::class.java)
         user = gson.fromJson(userJson, UserResponse::class.java)
     }
 
-    override fun getEnvironmentStateObject(environmentId: String): Result<EnvironmentDataHolder> {
+    override fun getWorkspaceStateObject(workspaceId: String): Result<WorkspaceDataHolder> {
         return if (isErrorResponseNeeded) {
             Result.failure(SDKError.unableToRefreshEnvironment)
         } else {
-            Result.success(EnvironmentDataHolder(environment.data, mapOf()))
+            Result.success(WorkspaceDataHolder(workspace.data, mapOf()))
         }
     }
 
-    override fun postUser(environmentId: String, body: PostUserBody): Result<UserResponse> {
+    override fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> {
         return if (isErrorResponseNeeded) {
             Result.failure(SDKError.unableToPostResponse)
         } else {

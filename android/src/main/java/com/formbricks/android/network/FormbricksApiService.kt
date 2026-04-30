@@ -1,21 +1,27 @@
 package com.formbricks.android.network
 
 import com.formbricks.android.api.error.FormbricksAPIError
-import com.formbricks.android.helper.mapToJsonElement
 import com.formbricks.android.logger.Logger
-import com.formbricks.android.model.environment.EnvironmentDataHolder
-import com.formbricks.android.model.environment.EnvironmentResponse
+import com.formbricks.android.model.workspace.SegmentFilterResource
+import com.formbricks.android.model.workspace.SegmentFilterResourceDeserializer
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.WorkspaceResponse
 import com.formbricks.android.model.user.PostUserBody
 import com.formbricks.android.model.user.UserResponse
 import com.google.gson.Gson
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonObject
+import com.google.gson.GsonBuilder
 import retrofit2.Call
 import retrofit2.Retrofit
 
 open class FormbricksApiService {
     private var retrofit: Retrofit? = null
+
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(
+            SegmentFilterResource::class.java,
+            SegmentFilterResourceDeserializer()
+        )
+        .create()
 
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
         val builder = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled).getBuilder()
@@ -29,29 +35,53 @@ open class FormbricksApiService {
         }
     }
 
-    open fun getEnvironmentStateObject(environmentId: String): Result<EnvironmentDataHolder> {
+    open fun getWorkspaceStateObject(workspaceId: String): Result<WorkspaceDataHolder> {
         return try {
             val retrofitInstance = retrofit ?: return Result.failure(RuntimeException("API service not initialized due to invalid URL"))
             val result = execute {
                 retrofitInstance.create(FormbricksService::class.java)
-                    .getEnvironmentState(environmentId)
+                    .getWorkspaceState(workspaceId)
             }
-            val json = Json { ignoreUnknownKeys = true }
             val resultMap = result.getOrThrow()
-            val resultJson = mapToJsonElement(resultMap).jsonObject
-            val environmentResponse = json.decodeFromJsonElement<EnvironmentResponse>(resultJson)
-            val data = EnvironmentDataHolder(environmentResponse.data, resultMap)
+            val normalizedMap = normalizeWorkspaceKeys(resultMap)
+            // Use Gson end-to-end so `@SerializedName(alternate=[...])` handles all
+            // the workspace-rename compatibility cases (settings/workspace/project,
+            // workspaceId/environmentId) and unknown server fields are ignored.
+            val resultJson = gson.toJson(normalizedMap)
+            val workspaceResponse = gson.fromJson(resultJson, WorkspaceResponse::class.java)
+            val data = WorkspaceDataHolder(workspaceResponse.data, normalizedMap)
             Result.success(data)
         } catch (e: Exception) {
+            Logger.e(RuntimeException("Failed to parse workspace state: ${e.message}", e))
             Result.failure(e)
         }
     }
 
-    open fun postUser(environmentId: String, body: PostUserBody): Result<UserResponse> {
+    /**
+     * Server may respond with `settings` (new), `workspace` (interim), or legacy
+     * `project` — plus sometimes more than one simultaneously. Pick one in order
+     * of preference and drop the rest so downstream decode only sees `settings`.
+     * Returns a shallow copy; the input map is not mutated.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun normalizeWorkspaceKeys(resultMap: Map<String, Any>): Map<String, Any> {
+        val outer = resultMap["data"] as? Map<String, Any> ?: return resultMap
+        val inner = outer["data"] as? Map<String, Any> ?: return resultMap
+        val replacement = inner["settings"] ?: inner["workspace"] ?: inner["project"] ?: return resultMap
+        val newInner = inner.toMutableMap().apply {
+            remove("workspace")
+            remove("project")
+            put("settings", replacement)
+        }
+        val newOuter = outer.toMutableMap().apply { put("data", newInner) }
+        return resultMap.toMutableMap().apply { put("data", newOuter) }
+    }
+
+    open fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> {
         val retrofitInstance = retrofit ?: return Result.failure(RuntimeException("API service not initialized due to invalid URL"))
         return execute {
             retrofitInstance.create(FormbricksService::class.java)
-                .postUser(environmentId, body)
+                .postUser(workspaceId, body)
         }
     }
 

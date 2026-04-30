@@ -9,11 +9,11 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface FormbricksService {
-    @GET("$API_PREFIX/client/{environmentId}/environment")
-    fun getEnvironmentState(@Path("environmentId") environmentId: String): Call<Map<String, Any>>
+    @GET("$API_PREFIX/client/{workspaceId}/environment")
+    fun getWorkspaceState(@Path("workspaceId") workspaceId: String): Call<Map<String, Any>>
 
-    @POST("$API_PREFIX/client/{environmentId}/user")
-    fun postUser(@Path("environmentId") environmentId: String, @Body body: PostUserBody): Call<UserResponse>
+    @POST("$API_PREFIX/client/{workspaceId}/user")
+    fun postUser(@Path("workspaceId") workspaceId: String, @Body body: PostUserBody): Call<UserResponse>
 
     companion object {
         const val API_PREFIX = "/api/v2"
