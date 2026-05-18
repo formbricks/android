@@ -95,7 +95,7 @@ dependencies {
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
-    signAllPublications()
+    signAllPublications()  // disabled for local publishing
 
     coordinates(groupId, artifactId, version.toString())
 
@@ -127,7 +127,7 @@ mavenPublishing {
 // Add JaCoCo tasks
 tasks.register<JacocoReport>("jacocoAndroidTestReport") {
     dependsOn("connectedDebugAndroidTest")
-    
+
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -174,7 +174,7 @@ tasks.register<JacocoReport>("jacocoAndroidTestReport") {
 // Configure Sonar
 sonar {
     properties {
-        property("sonar.coverage.jacoco.xmlReportPaths", 
+        property("sonar.coverage.jacoco.xmlReportPaths",
             layout.buildDirectory.file("reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml").get().asFile.path)
     }
 }

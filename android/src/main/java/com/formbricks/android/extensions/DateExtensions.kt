@@ -1,6 +1,6 @@
 package com.formbricks.android.extensions
 
-import com.formbricks.android.model.environment.EnvironmentDataHolder
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.user.UserState
 import com.formbricks.android.model.user.UserStateData
 import java.text.SimpleDateFormat
@@ -44,7 +44,7 @@ fun UserState.expiresAt(): Date? {
     return null
 }
 
-fun EnvironmentDataHolder.expiresAt(): Date? {
+fun WorkspaceDataHolder.expiresAt(): Date? {
     data?.expiresAt?.let {
         try {
             val formatter = SimpleDateFormat(dateFormatPattern, Locale.getDefault())

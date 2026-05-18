@@ -12,17 +12,28 @@ import com.formbricks.android.model.user.AttributeValue
 @Keep
 class FormbricksConfig private constructor(
     val appUrl: String,
-    val environmentId: String,
+    val workspaceId: String,
     val userId: String?,
     val attributes: Map<String, AttributeValue>?,
     val loggingEnabled: Boolean,
-    val fragmentManager: FragmentManager?
+    val fragmentManager: FragmentManager?,
+    /** True if this config was built using the deprecated `environmentId` entry point. */
+    val usedDeprecatedEnvironmentId: Boolean
 ) {
-    class Builder(private val appUrl: String, private val environmentId: String) {
+    /** Backward-compatible alias for [workspaceId]. */
+    @Deprecated(
+        message = "Use workspaceId instead. environmentId will be removed in a future version.",
+        replaceWith = ReplaceWith("workspaceId")
+    )
+    val environmentId: String
+        get() = workspaceId
+
+    class Builder(private val appUrl: String, private val workspaceId: String) {
         private var userId: String? = null
         private var attributes: MutableMap<String, AttributeValue> = mutableMapOf()
         private var loggingEnabled = false
         private var fragmentManager: FragmentManager? = null
+        private var usedDeprecatedEnvironmentId: Boolean = false
 
         fun setUserId(userId: String): Builder {
             this.userId = userId
@@ -77,12 +88,31 @@ class FormbricksConfig private constructor(
         fun build(): FormbricksConfig {
             return FormbricksConfig(
                 appUrl = appUrl,
-                environmentId = environmentId,
+                workspaceId = workspaceId,
                 userId = userId,
                 attributes = attributes,
                 loggingEnabled = loggingEnabled,
-                fragmentManager = fragmentManager
+                fragmentManager = fragmentManager,
+                usedDeprecatedEnvironmentId = usedDeprecatedEnvironmentId
             )
+        }
+
+        companion object {
+            /**
+             * Deprecated factory that accepts the legacy `environmentId` parameter.
+             * The value is stored as `workspaceId` internally, and the resulting config is
+             * flagged so the SDK can log a deprecation warning on setup.
+             */
+            @JvmStatic
+            @Deprecated(
+                message = "Use Builder(appUrl, workspaceId) instead. environmentId will be removed in a future version.",
+                replaceWith = ReplaceWith("FormbricksConfig.Builder(appUrl, environmentId)")
+            )
+            fun withEnvironmentId(appUrl: String, environmentId: String): Builder {
+                return Builder(appUrl, environmentId).also {
+                    it.usedDeprecatedEnvironmentId = true
+                }
+            }
         }
     }
 }

@@ -3,13 +3,13 @@ package com.formbricks.android.webview
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.formbricks.android.Formbricks
 import com.formbricks.android.manager.UserManager
-import com.formbricks.android.model.environment.EnvironmentDataHolder
-import com.formbricks.android.model.environment.EnvironmentResponseData
-import com.formbricks.android.model.environment.EnvironmentData
-import com.formbricks.android.model.environment.Project
-import com.formbricks.android.model.environment.Survey
-import com.formbricks.android.model.environment.SurveyOverlay
-import com.formbricks.android.model.environment.SurveyProjectOverwrites
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.WorkspaceResponseData
+import com.formbricks.android.model.workspace.WorkspaceData
+import com.formbricks.android.model.workspace.Settings
+import com.formbricks.android.model.workspace.Survey
+import com.formbricks.android.model.workspace.SurveyOverlay
+import com.formbricks.android.model.workspace.SurveyProjectOverwrites
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -21,7 +21,7 @@ class FormbricksViewModelInstrumentedTest {
     fun setup() {
         // Set up static singletons with minimal values
         Formbricks.appUrl = "https://test.formbricks.com"
-        Formbricks.environmentId = "env123"
+        Formbricks.workspaceId = "ws123"
         Formbricks.language = "en"
         // Use reflection to set private contactId
         val contactIdField = UserManager::class.java.getDeclaredField("backingContactId")
@@ -30,8 +30,8 @@ class FormbricksViewModelInstrumentedTest {
     }
 
     @Test
-    fun testGetJson_minimalEnvironment() {
-        // Minimal survey and environment
+    fun testGetJson_minimalWorkspace() {
+        // Minimal survey and workspace
         val surveyId = "survey1"
         val survey = Survey(
             id = surveyId,
@@ -46,7 +46,7 @@ class FormbricksViewModelInstrumentedTest {
             styling = null,
             languages = null
         )
-        val project = Project(
+        val settings = Settings(
             id = "proj1",
             recontactDays = null,
             clickOutsideClose = null,
@@ -55,31 +55,33 @@ class FormbricksViewModelInstrumentedTest {
             inAppSurveyBranding = null,
             styling = null
         )
-        val envData = EnvironmentData(
+        val wsData = WorkspaceData(
             surveys = listOf(survey),
             actionClasses = null,
-            project = project
+            settings = settings
         )
-        val envResponseData = EnvironmentResponseData(
-            data = envData,
+        val wsResponseData = WorkspaceResponseData(
+            data = wsData,
             expiresAt = null
         )
-        val envHolder = EnvironmentDataHolder(
-            data = envResponseData,
+        val wsHolder = WorkspaceDataHolder(
+            data = wsResponseData,
             originalResponseMap = mapOf()
         )
         val viewModel = FormbricksViewModel()
-        val json = viewModel.javaClass.getDeclaredMethod("getJson", EnvironmentDataHolder::class.java, String::class.java)
+        val json = viewModel.javaClass.getDeclaredMethod("getJson", WorkspaceDataHolder::class.java, String::class.java)
             .apply { isAccessible = true }
-            .invoke(viewModel, envHolder, surveyId) as String
+            .invoke(viewModel, wsHolder, surveyId) as String
         // Check that the output JSON string contains expected keys/values
         assertTrue(json.contains("\"survey\""))
         assertTrue(json.contains("\"isBrandingEnabled\":true"))
         assertTrue(json.contains("https://test.formbricks.com"))
-        assertTrue(json.contains("env123"))
+        assertTrue(json.contains("\"workspaceId\":\"ws123\""))
+        // environmentId alias is still present for back-compat
+        assertTrue(json.contains("\"environmentId\":\"ws123\""))
         assertTrue(json.contains("contact123"))
         assertTrue(json.contains("\"languageCode\":\"default\""))
-        // defaults: clickOutside=false, overlay="none" when both project and survey are null
+        // defaults: clickOutside=false, overlay="none" when both settings and survey are null
         assertTrue(json.contains("\"clickOutside\":false"))
         assertTrue(json.contains("\"overlay\":\"none\""))
     }
@@ -319,7 +321,7 @@ class FormbricksViewModelInstrumentedTest {
             languages = null,
             projectOverwrites = surveyOverwrites
         )
-        val project = Project(
+        val settings = Settings(
             id = "proj1",
             recontactDays = null,
             clickOutsideClose = projectClickOutsideClose,
@@ -328,32 +330,32 @@ class FormbricksViewModelInstrumentedTest {
             inAppSurveyBranding = null,
             styling = null
         )
-        val envData = EnvironmentData(
+        val wsData = WorkspaceData(
             surveys = listOf(survey),
             actionClasses = null,
-            project = project
+            settings = settings
         )
-        val envResponseData = EnvironmentResponseData(
-            data = envData,
+        val wsResponseData = WorkspaceResponseData(
+            data = wsData,
             expiresAt = null
         )
-        val envHolder = EnvironmentDataHolder(
-            data = envResponseData,
+        val wsHolder = WorkspaceDataHolder(
+            data = wsResponseData,
             originalResponseMap = mapOf()
         )
-        return callGetJson(envHolder, surveyId)
+        return callGetJson(wsHolder, surveyId)
     }
 
     /**
-     * Creates an environment with surveys=null so that matchedSurvey resolves to null.
-     * This forces clickOutside and overlay to fall through entirely to project-level values,
+     * Creates a workspace with surveys=null so that matchedSurvey resolves to null.
+     * This forces clickOutside and overlay to fall through entirely to settings-level values,
      * covering the bytecode branches where matchedSurvey is null.
      */
     private fun invokeGetJsonWithNoSurveys(
         projectClickOutsideClose: Boolean? = null,
         projectOverlay: SurveyOverlay? = null
     ): String {
-        val project = Project(
+        val settings = Settings(
             id = "proj1",
             recontactDays = null,
             clickOutsideClose = projectClickOutsideClose,
@@ -362,31 +364,31 @@ class FormbricksViewModelInstrumentedTest {
             inAppSurveyBranding = null,
             styling = null
         )
-        val envData = EnvironmentData(
+        val wsData = WorkspaceData(
             surveys = null,
             actionClasses = null,
-            project = project
+            settings = settings
         )
-        val envResponseData = EnvironmentResponseData(
-            data = envData,
+        val wsResponseData = WorkspaceResponseData(
+            data = wsData,
             expiresAt = null
         )
-        val envHolder = EnvironmentDataHolder(
-            data = envResponseData,
+        val wsHolder = WorkspaceDataHolder(
+            data = wsResponseData,
             originalResponseMap = mapOf()
         )
-        return callGetJson(envHolder, "any-survey-id")
+        return callGetJson(wsHolder, "any-survey-id")
     }
 
-    private fun callGetJson(envHolder: EnvironmentDataHolder, surveyId: String): String {
+    private fun callGetJson(wsHolder: WorkspaceDataHolder, surveyId: String): String {
         val viewModel = FormbricksViewModel()
         return viewModel.javaClass.getDeclaredMethod(
             "getJson",
-            EnvironmentDataHolder::class.java,
+            WorkspaceDataHolder::class.java,
             String::class.java
         )
             .apply { isAccessible = true }
-            .invoke(viewModel, envHolder, surveyId) as String
+            .invoke(viewModel, wsHolder, surveyId) as String
     }
 
     // endregion

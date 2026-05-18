@@ -23,12 +23,23 @@ import java.util.TimeZone
 object Formbricks {
     internal lateinit var applicationContext: Context
 
-    internal lateinit var environmentId: String
+    internal lateinit var workspaceId: String
     internal lateinit var appUrl: String
     internal var language: String = "default"
     internal var loggingEnabled: Boolean = true
     private var fragmentManager: FragmentManager? = null
     internal var isInitialized = false
+
+    /** Backward-compatible alias for [workspaceId]. */
+    @Deprecated(
+        message = "Use workspaceId instead. environmentId will be removed in a future version.",
+        replaceWith = ReplaceWith("workspaceId")
+    )
+    internal var environmentId: String
+        get() = workspaceId
+        set(value) {
+            workspaceId = value
+        }
 
     /**
      * Initializes the Formbricks SDK with the given [Context] config [FormbricksConfig].
@@ -40,7 +51,7 @@ object Formbricks {
      *
      *     override fun onCreate() {
      *         super.onCreate()
-     *         val config = FormbricksConfig.Builder("http://localhost:3000","my_environment_id")
+     *         val config = FormbricksConfig.Builder("http://localhost:3000","my_workspace_id")
      *             .setLoggingEnabled(true)
      *             .setFragmentManager(supportFragmentManager)
      *            .build())
@@ -69,9 +80,13 @@ object Formbricks {
         applicationContext = context
 
         appUrl = config.appUrl
-        environmentId = config.environmentId
+        workspaceId = config.workspaceId
         loggingEnabled = config.loggingEnabled
         fragmentManager = config.fragmentManager
+
+        if (config.usedDeprecatedEnvironmentId) {
+            Logger.w("environmentId is deprecated and will be removed in a future version. Please use workspaceId instead.")
+        }
 
         config.userId?.let { UserManager.set(it) }
         config.attributes?.let { UserManager.setAttributes(it) }
@@ -81,7 +96,8 @@ object Formbricks {
         }
 
         FormbricksApi.initialize()
-        SurveyManager.refreshEnvironmentIfNeeded(force = forceRefresh)
+        SurveyManager.migrateLegacyCacheIfNeeded()
+        SurveyManager.refreshWorkspaceIfNeeded(force = forceRefresh)
         UserManager.syncUserStateIfNeeded()
 
         isInitialized = true
