@@ -35,7 +35,6 @@ class FormbricksViewModelInstrumentedTest {
         val surveyId = "survey1"
         val survey = Survey(
             id = surveyId,
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -309,7 +308,6 @@ class FormbricksViewModelInstrumentedTest {
         val surveyId = "survey1"
         val survey = Survey(
             id = surveyId,
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,

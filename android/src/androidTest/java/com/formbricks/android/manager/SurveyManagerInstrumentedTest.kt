@@ -51,7 +51,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_nullLanguage_returnsDefault() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -80,7 +79,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_emptyLanguage_returnsDefault() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -109,7 +107,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_explicitDefault_returnsDefault() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -138,7 +135,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_matchByCode_returnsCode() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -177,7 +173,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_matchByAlias_returnsCode() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -216,7 +211,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_disabledLanguage_returnsNull() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -255,7 +249,6 @@ class SurveyManagerInstrumentedTest {
     fun testGetLanguageCode_defaultLanguage_returnsDefault() {
         val survey = Survey(
             id = "test",
-            name = "Test Survey",
             triggers = null,
             recontactDays = null,
             displayLimit = null,
@@ -448,7 +441,6 @@ class SurveyManagerInstrumentedTest {
     ): Survey {
         return Survey(
             id = id,
-            name = "Test Survey",
             triggers = null,
             recontactDays = recontactDays,
             displayLimit = displayLimit,
@@ -464,7 +456,6 @@ class SurveyManagerInstrumentedTest {
     private fun createMockSurvey(recontactDays: Double?): Survey {
         return Survey(
             id = "mockSurvey",
-            name = "Mock Survey",
             triggers = null,
             recontactDays = recontactDays,
             displayLimit = null,

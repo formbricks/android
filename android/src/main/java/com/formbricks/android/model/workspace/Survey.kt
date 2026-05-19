@@ -22,7 +22,9 @@ data class LanguageDetail(
 @Serializable
 data class Survey(
     @SerializedName("id") val id: String,
-    @SerializedName("name") val name: String,
+    // `name` intentionally omitted — internal label, not returned by the
+    // public client API. Cached payloads from older SDK versions may still
+    // carry it in JSON; Gson silently ignores unknown keys.
     @SerializedName("triggers") val triggers: List<Trigger>?,
     @SerializedName("recontactDays") val recontactDays: Double?,
     @SerializedName("displayLimit") val displayLimit: Double?,
@@ -38,9 +40,12 @@ data class Survey(
 /// Defines the overlay style displayed behind a survey modal.
 @Serializable
 enum class SurveyOverlay(val value: String) {
-    @SerialName("none") NONE("none"),
-    @SerialName("light") LIGHT("light"),
-    @SerialName("dark") DARK("dark");
+    // `@SerializedName` for Gson, `@SerialName` for kotlinx.serialization —
+    // wire path is Gson, but kotlinx annotation kept for parity in case the
+    // codec ever switches.
+    @SerializedName("none") @SerialName("none") NONE("none"),
+    @SerializedName("light") @SerialName("light") LIGHT("light"),
+    @SerializedName("dark") @SerialName("dark") DARK("dark");
 }
 
 @Serializable

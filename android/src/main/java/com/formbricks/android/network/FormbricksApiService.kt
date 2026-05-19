@@ -2,8 +2,8 @@ package com.formbricks.android.network
 
 import com.formbricks.android.api.error.FormbricksAPIError
 import com.formbricks.android.logger.Logger
-import com.formbricks.android.model.workspace.SegmentFilterResource
-import com.formbricks.android.model.workspace.SegmentFilterResourceDeserializer
+import com.formbricks.android.model.workspace.Segment
+import com.formbricks.android.model.workspace.SegmentDeserializer
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.WorkspaceResponse
 import com.formbricks.android.model.user.PostUserBody
@@ -17,10 +17,7 @@ open class FormbricksApiService {
     private var retrofit: Retrofit? = null
 
     private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(
-            SegmentFilterResource::class.java,
-            SegmentFilterResourceDeserializer()
-        )
+        .registerTypeAdapter(Segment::class.java, SegmentDeserializer())
         .create()
 
     fun initialize(appUrl: String, isLoggingEnabled: Boolean) {

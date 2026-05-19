@@ -7,8 +7,8 @@ import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
-import com.formbricks.android.model.workspace.SegmentFilterResource
-import com.formbricks.android.model.workspace.SegmentFilterResourceDeserializer
+import com.formbricks.android.model.workspace.Segment
+import com.formbricks.android.model.workspace.SegmentDeserializer
 import com.formbricks.android.model.workspace.Survey
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.Display
@@ -42,10 +42,7 @@ object SurveyManager {
     internal var filteredSurveys: MutableList<Survey> = mutableListOf()
 
     val gson = GsonBuilder()
-        .registerTypeAdapter(
-            SegmentFilterResource::class.java,
-            SegmentFilterResourceDeserializer()
-        )
+        .registerTypeAdapter(Segment::class.java, SegmentDeserializer())
         .create()
 
     private var workspaceDataHolderJson: String?
@@ -116,8 +113,10 @@ object SurveyManager {
 
         if (UserManager.userId == null) {
             filteredSurveys = filteredSurveys.filter { survey ->
-                // Only include surveys that have no segment filters or null segment
-                survey.segment?.filters?.isEmpty() ?: true
+                // Only include surveys that have no segment filters or null segment.
+                // `hasFilters` is decoded directly from the server response, or
+                // derived from a legacy cached `filters` array (see SegmentDeserializer).
+                !(survey.segment?.hasFilters ?: false)
             }.toMutableList()
         }
 
@@ -193,7 +192,7 @@ object SurveyManager {
             val languageCode = getLanguageCode(firstSurveyWithActionClass, currentLanguage)
 
             if (languageCode == null) {
-                val error = RuntimeException("Survey “${firstSurveyWithActionClass.name}” is not available in language “$currentLanguage”. Skipping.")
+                val error = RuntimeException("Survey “${firstSurveyWithActionClass.id}” is not available in language “$currentLanguage”. Skipping.")
                 Logger.e(error)
                 return
             }
@@ -208,8 +207,7 @@ object SurveyManager {
                 isShowingSurvey = true
                 val timeout = firstSurveyWithActionClass.delay ?: 0.0
                 if (timeout > 0.0) {
-                    val surveyName = firstSurveyWithActionClass.name
-                    Logger.d("Delaying survey \"$surveyName\" by $timeout seconds")
+                    Logger.d("Delaying survey \"${firstSurveyWithActionClass.id}\" by $timeout seconds")
                 }
                 stopDisplayTimer()
                 displayTimer.schedule(object : TimerTask() {
