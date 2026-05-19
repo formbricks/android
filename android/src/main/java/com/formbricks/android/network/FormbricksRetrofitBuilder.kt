@@ -13,17 +13,17 @@ import java.util.concurrent.TimeUnit
 class FormbricksRetrofitBuilder(private val baseUrl: String, private val loggingEnabled: Boolean) {
     fun getBuilder(): Retrofit.Builder? {
         // Validate base URL is HTTPS
-//        if (!baseUrl.startsWith("https://", ignoreCase = true)) {
-//            val error = RuntimeException("Only HTTPS URLs are allowed. HTTP URLs are not permitted for security reasons. Provided URL: $baseUrl")
-//            Logger.e(error)
-//            return null
-//        }
+        if (!baseUrl.startsWith("https://", ignoreCase = true)) {
+            val error = RuntimeException("Only HTTPS URLs are allowed. HTTP URLs are not permitted for security reasons. Provided URL: $baseUrl")
+            Logger.e(error)
+            return null
+        }
 
         val clientBuilder = OkHttpClient.Builder()
             .connectTimeout(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
             .readTimeout(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
             .followSslRedirects(true)
-//            .addInterceptor(HttpsOnlyInterceptor())
+            .addInterceptor(HttpsOnlyInterceptor())
         
         if (loggingEnabled) {
             val logging = HttpLoggingInterceptor()

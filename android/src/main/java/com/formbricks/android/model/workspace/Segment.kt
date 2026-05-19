@@ -31,12 +31,15 @@ class SegmentDeserializer : JsonDeserializer<Segment> {
     ): Segment {
         val obj = json.asJsonObject
         val id = obj.get("id").asString
+        // Fail-closed: ambiguous payload (neither `hasFilters` nor `filters` present)
+        // is treated as "has filters" so anonymous users are excluded from segment-
+        // targeted surveys rather than over-shown.
         val hasFilters = when {
             obj.has("hasFilters") && !obj.get("hasFilters").isJsonNull ->
                 obj.get("hasFilters").asBoolean
             obj.has("filters") && obj.get("filters").isJsonArray ->
                 obj.get("filters").asJsonArray.size() > 0
-            else -> false
+            else -> true
         }
         return Segment(id = id, hasFilters = hasFilters)
     }
