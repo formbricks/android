@@ -89,7 +89,10 @@ class FormbricksInstrumentedTest {
         assertEquals(workspaceId, Formbricks.workspaceId)
 
         // User manager default state. There is no user yet.
-        assertEquals(UserManager.displays?.count(), 0)
+        // displays getter returns null when SharedPreferences key absent (no
+        // emptySet default like segments/responses), and logout() in setUp
+        // cleared the key.
+        assertNull(UserManager.displays)
         assertEquals(UserManager.responses?.count(), 0)
         assertEquals(UserManager.segments?.count(), 0)
 
