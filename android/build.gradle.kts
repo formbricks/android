@@ -95,7 +95,7 @@ dependencies {
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
-    signAllPublications()  // disabled for local publishing
+    signAllPublications()
 
     coordinates(groupId, artifactId, version.toString())
 
