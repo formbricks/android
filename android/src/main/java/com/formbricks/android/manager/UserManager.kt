@@ -112,12 +112,16 @@ object UserManager {
     fun syncUserStateIfNeeded() {
         val id = userId
         val expiresAt = expiresAt
-        if (id != null && expiresAt != null && Date().before(expiresAt)) {
+        if (id != null && expiresAt != null && !Date().before(expiresAt)) {
             syncUser(id)
         } else {
-            backingSegments = emptyList()
-            backingDisplays = emptyList()
-            backingResponses = emptyList()
+            // Drop only the in-memory caches. Assigning emptyList() would mask the
+            // persisted SharedPreferences arrays because the lazy getters fall back
+            // to disk only when the backing is null; a non-null empty list
+            // short-circuits the elvis/null-check and the persisted values never load.
+            backingSegments = null
+            backingDisplays = null
+            backingResponses = null
         }
     }
 
