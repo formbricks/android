@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.formbricks:android:1.0.0") // replace with latest version
+    implementation("com.formbricks:android:2.0.0") // replace with latest version
 }
 ```
 
@@ -33,11 +33,21 @@ android {
 // 1. Initialize the SDK
 val config = FormbricksConfig.Builder(
     "https://your-formbricks-server.com",
-    "YOUR_ENVIRONMENT_ID"
+    "YOUR_WORKSPACE_ID"
 )
   .setLoggingEnabled(true)
   .setFragmentManager(supportFragmentManager)
   .build()
+
+// Note: `environmentId` is deprecated and will be removed in a future version.
+// Existing integrations using the legacy entry point still work:
+//
+//   FormbricksConfig.Builder.withEnvironmentId(
+//       "https://your-formbricks-server.com",
+//       "YOUR_ENVIRONMENT_ID"
+//   )
+//
+// Migrate to `workspaceId` as soon as possible.
 
 // 2. Setup Formbricks
 Formbricks.setup(this, config)
