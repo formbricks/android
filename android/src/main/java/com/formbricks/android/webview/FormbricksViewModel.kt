@@ -1,5 +1,6 @@
 package com.formbricks.android.webview
 
+import android.util.Base64
 import android.webkit.WebView
 import androidx.databinding.BindingAdapter
 import androidx.lifecycle.MutableLiveData
@@ -39,7 +40,10 @@ class FormbricksViewModel : ViewModel() {
             </body>
 
             <script type="text/javascript">
-                const json = `{{WEBVIEW_DATA}}`;
+                // {{WEBVIEW_DATA}} is a base64-encoded JSON string (see loadHtml). Decoding
+                // it here means the survey payload is never parsed as JS source, so survey
+                // content cannot break out of a string literal and execute as code.
+                const json = new TextDecoder().decode(Uint8Array.from(atob("{{WEBVIEW_DATA}}"), c => c.charCodeAt(0)));
 
                 function onClose() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onClose" }));
@@ -117,7 +121,12 @@ class FormbricksViewModel : ViewModel() {
     fun loadHtml(surveyId: String) {
         val workspace = SurveyManager.workspaceDataHolder.guard { return }
         val json = getJson(workspace, surveyId)
-        val htmlString = htmlTemplate.replace("{{WEBVIEW_DATA}}", json)
+        // Base64-encode the payload before embedding it in the HTML. Base64 output is
+        // limited to [A-Za-z0-9+/=], so survey content can no longer contain characters
+        // (backticks, `${...}`, quotes, "</script>") that would break out of the
+        // surrounding JS string and execute. The WebView decodes it back to JSON.
+        val encoded = Base64.encodeToString(json.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        val htmlString = htmlTemplate.replace("{{WEBVIEW_DATA}}", encoded)
         html.postValue(htmlString)
     }
 
@@ -164,13 +173,17 @@ class FormbricksViewModel : ViewModel() {
             workspaceDataHolder.getSettingsStylingJson()?.let { jsonObject.add("styling", it) }
         }
 
+        // Return valid JSON as-is. It is base64-encoded before being embedded in the
+        // HTML (see loadHtml), so no character-level escaping is needed here (the old
+        // #->%23 and \"->' workarounds corrupted survey text and are no longer required).
         return jsonObject.toString()
-            .replace("#", "%23") // Hex color code's # breaks the JSON
-            .replace("\\\"","'") // " is replaced to ' in the html codes in the JSON
     }
 }
 
 @BindingAdapter("htmlText")
 fun WebView.setHtmlText(htmlString: String?) {
-    loadData(htmlString ?: "", "text/html", "UTF-8")
+    // loadDataWithBaseURL (null base URL) loads the document verbatim, without the
+    // URL-decoding that loadData applies to its data: URL. That keeps the base64-encoded
+    // survey payload (which may contain +, / and =) intact. Mirrors iOS's baseURL: nil.
+    loadDataWithBaseURL(null, htmlString ?: "", "text/html", "UTF-8", null)
 }
