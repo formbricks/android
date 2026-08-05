@@ -33,15 +33,18 @@ class SurveyInteractionRefreshInstrumentedTest {
     private val gson = Gson()
 
     @Before
-    fun setup() {
-        UpdateQueue.reset()
-        setUserId(null)
-        setBackingWorkspaceDataHolder(null)
-    }
+    fun setup() = resetAll()
 
     @After
-    fun tearDown() {
+    fun tearDown() = resetAll()
+
+    /**
+     * `reset()` deliberately keeps `pendingRefreshUserId` (the sync success path relies on it
+     * surviving), so tests have to clear it explicitly or one leaks into the next.
+     */
+    private fun resetAll() {
         UpdateQueue.reset()
+        UpdateQueue.clearPendingRefresh()
         setUserId(null)
         setBackingWorkspaceDataHolder(null)
     }
@@ -223,6 +226,72 @@ class SurveyInteractionRefreshInstrumentedTest {
         assertEquals("user-1", queuedUserId())
     }
 
+    // MARK: - In-flight handling
+
+    /**
+     * A nudge that lands mid-sync must be deferred and then replayed — not dropped. The
+     * in-flight request was built before that interaction, so its response cannot reflect it.
+     */
+    @Test
+    fun refreshDuringAnInFlightSyncIsDeferredThenReplayed() {
+        seedWorkspace(survey("survey-a", InteractionRefresh(onFinished = true)))
+        setUserId("user-1")
+
+        setSyncInFlight(true)
+        SurveyManager.onSurveyInteraction("survey-a", InteractionSource.ON_FINISHED)
+
+        // Deferred, so nothing has been queued for sending yet.
+        assertNull(queuedUserId())
+        assertEquals("user-1", pendingRefreshUserId())
+
+        // Completing the sync replays it on its own, with no further interaction.
+        UpdateQueue.syncDidFinish()
+
+        assertEquals("user-1", queuedUserId())
+        assertNull(pendingRefreshUserId())
+    }
+
+    /** Only the latest deferred refresh is kept, so a slow sync costs one follow-up. */
+    @Test
+    fun multipleDeferredRefreshesCollapseIntoOneReplay() {
+        seedWorkspace(survey("survey-a", InteractionRefresh(onDisplay = true, onFinished = true)))
+        setUserId("user-1")
+
+        setSyncInFlight(true)
+        SurveyManager.onSurveyInteraction("survey-a", InteractionSource.ON_DISPLAY)
+        SurveyManager.onSurveyInteraction("survey-a", InteractionSource.ON_FINISHED)
+
+        assertEquals("user-1", pendingRefreshUserId())
+
+        UpdateQueue.syncDidFinish()
+
+        assertEquals("user-1", queuedUserId())
+        assertNull(pendingRefreshUserId())
+    }
+
+    /** Teardown drops the deferred refresh rather than replaying it for a gone user. */
+    @Test
+    fun clearPendingRefreshDropsTheDeferredNudge() {
+        seedWorkspace(survey("survey-a", InteractionRefresh(onFinished = true)))
+        setUserId("user-1")
+
+        setSyncInFlight(true)
+        SurveyManager.onSurveyInteraction("survey-a", InteractionSource.ON_FINISHED)
+        assertEquals("user-1", pendingRefreshUserId())
+
+        UpdateQueue.clearPendingRefresh()
+        UpdateQueue.syncDidFinish()
+
+        assertNull(queuedUserId())
+        assertNull(pendingRefreshUserId())
+    }
+
+    /** The failure retry backs off past the minimum interval rather than hammering. */
+    @Test
+    fun failureRetryBacksOffFurtherThanTheMinimumInterval() {
+        assertTrue(UserManager.RETRY_AFTER_FAILURE_MS > UserManager.MINIMUM_SYNC_INTERVAL_MS)
+    }
+
     // MARK: - Helpers
 
     private fun survey(id: String, refresh: InteractionRefresh?) = Survey(
@@ -265,10 +334,21 @@ class SurveyInteractionRefreshInstrumentedTest {
         styling = null
     )
 
-    private fun queuedUserId(): String? {
-        val field = UpdateQueue::class.java.getDeclaredField("userId")
+    private fun queuedUserId(): String? = readQueueField("userId") as String?
+
+    private fun pendingRefreshUserId(): String? =
+        readQueueField("pendingRefreshUserId") as String?
+
+    private fun setSyncInFlight(value: Boolean) {
+        val field = UpdateQueue::class.java.getDeclaredField("isSyncInFlight")
         field.isAccessible = true
-        return field.get(UpdateQueue) as String?
+        field.set(UpdateQueue, value)
+    }
+
+    private fun readQueueField(name: String): Any? {
+        val field = UpdateQueue::class.java.getDeclaredField(name)
+        field.isAccessible = true
+        return field.get(UpdateQueue)
     }
 
     /**

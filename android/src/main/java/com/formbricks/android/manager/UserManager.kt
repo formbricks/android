@@ -40,6 +40,13 @@ object UserManager {
      * device's past and an unclamped timer would sync in a tight loop.
      */
     internal var MINIMUM_SYNC_INTERVAL_MS: Long = 60_000
+
+    /**
+     * How long to wait before retrying a user-state sync that failed. Deliberately much longer
+     * than the minimum interval so a sustained outage doesn't become a fixed-rate request
+     * stream. Mirrors the workspace-state path's error timeout.
+     */
+    internal var RETRY_AFTER_FAILURE_MS: Long = 10 * 60_000
     private val prefManager by lazy { Formbricks.applicationContext.getSharedPreferences(FORMBROCKS_PERFS, Context.MODE_PRIVATE) }
 
     private var backingUserId: String? = null
@@ -198,14 +205,21 @@ object UserManager {
                 }
 
                 UpdateQueue.reset()
+                // `reset()` clears the in-flight lock, but only this drains a refresh that
+                // arrived while the request was out — that interaction happened after this
+                // response was computed, so it still needs its own sync.
+                UpdateQueue.syncDidFinish()
                 SurveyManager.filterSurveys()
                 startSyncTimer()
             } catch (e: Exception) {
-                // Release the in-flight lock so a later refresh nudge isn't swallowed.
-                // `UpdateQueue.reset()` already does this on the success path.
+                // Release the in-flight lock and replay a refresh that arrived mid-sync.
                 UpdateQueue.syncDidFinish()
                 val error = SDKError.unableToPostResponse
                 Logger.e(error)
+                // Re-arm, otherwise the refresh cycle ends here for the whole process: the
+                // task that fired is spent and startSyncTimer() is otherwise only reached
+                // from a successful sync.
+                scheduleSyncRetry()
             }
         }
     }
@@ -237,9 +251,11 @@ object UserManager {
         Formbricks.language = "default"
         UpdateQueue.reset()
 
-        // Drop any pending expiry-driven sync; its captured user id is gone.
+        // Drop any pending expiry-driven sync and any deferred refresh; the user they were
+        // captured for is gone.
         syncTask?.cancel()
         syncTask = null
+        UpdateQueue.clearPendingRefresh()
 
         SurveyManager.filterSurveys()
     }
@@ -260,7 +276,23 @@ object UserManager {
 
         val delay = (expiresAt.time - System.currentTimeMillis())
             .coerceAtLeast(MINIMUM_SYNC_INTERVAL_MS)
+        scheduleSync(delay, id)
+    }
 
+    /**
+     * Re-arms the sync after a failed request.
+     *
+     * `expiresAt` still holds the value from the last success, so it is not a usable cadence
+     * here. Back off well past the minimum sync interval so a sustained outage doesn't turn
+     * into a fixed-rate request stream.
+     */
+    private fun scheduleSyncRetry() {
+        val id = userId ?: return
+        scheduleSync(RETRY_AFTER_FAILURE_MS, id)
+    }
+
+    /** Replaces any pending sync with one scheduled [delay] ms from now. */
+    private fun scheduleSync(delay: Long, id: String) {
         syncTask?.cancel()
         val task = object : TimerTask() {
             override fun run() {
@@ -274,6 +306,7 @@ object UserManager {
         try {
             syncTimer.schedule(task, delay)
         } catch (e: IllegalStateException) {
+            // The shared Timer was cancelled (logout/cleanup); nothing more to schedule.
             Logger.d("User state sync timer is no longer schedulable: ${e.message}")
         }
     }

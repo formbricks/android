@@ -332,13 +332,16 @@ object Formbricks {
     /// `IllegalStateException: FragmentManager has been destroyed`. See
     /// https://github.com/formbricks/android/issues/43.
     internal fun showSurvey(id: String) {
-        val manager = fragmentManager
-        if (manager == null) {
-            Logger.e(SDKError.fragmentManagerIsNotSet)
-            return
-        }
-
         Handler(Looper.getMainLooper()).post {
+            // Read the manager here rather than at schedule time: the host may have handed us
+            // a newer one via `setFragmentManager` in between, and using the stale reference
+            // would report "destroyed" while a usable manager was available.
+            val manager = fragmentManager
+            if (manager == null) {
+                Logger.e(SDKError.fragmentManagerIsNotSet)
+                return@post
+            }
+
             // The Activity that owned this manager is gone. Showing is impossible, and
             // the host has to hand us a live one.
             if (manager.isDestroyed) {

@@ -29,6 +29,13 @@ object UpdateQueue {
      */
     private var isSyncInFlight = false
 
+    /**
+     * A refresh that arrived while a sync was already airborne, replayed once that sync
+     * finishes. Only the latest is kept, so many interactions behind a slow sync still cost a
+     * single follow-up request.
+     */
+    private var pendingRefreshUserId: String? = null
+
     fun setUserId(userId: String) {
         this.userId = userId
         startDebounceTimer()
@@ -62,13 +69,20 @@ object UpdateQueue {
     /**
      * Asks for the user state to be re-read from the server. Carries no new data — it exists so
      * an interaction that can change segment membership doesn't have to wait for the state to
-     * expire. Dropped while a sync is already in flight, because that sync's response already
-     * brings fresh segments.
+     * expire.
+     *
+     * While a sync is airborne the nudge is deferred rather than sent, because two concurrent
+     * `POST /user` calls would race and the later response would overwrite segments, displays
+     * and responses wholesale. It is replayed by [syncDidFinish].
      */
     fun requestUserStateRefresh(userId: String) {
         synchronized(lock) {
             if (isSyncInFlight) {
-                Logger.d("UpdateQueue - refresh skipped, a sync is already in flight")
+                Logger.d("UpdateQueue - refresh deferred, a sync is already in flight")
+                // The in-flight request was built before this interaction, so its response
+                // cannot reflect it. Dropping the nudge would leave segments stale until the
+                // next trigger.
+                pendingRefreshUserId = userId
                 return
             }
             this.userId = userId
@@ -76,11 +90,19 @@ object UpdateQueue {
         startDebounceTimer()
     }
 
-    /** Called by the user manager once a sync finishes, so the next nudge can start a request. */
+    /**
+     * Called by the user manager once a sync finishes. Releases the in-flight lock and replays a
+     * refresh that arrived while the request was out.
+     */
     fun syncDidFinish() {
-        synchronized(lock) {
+        val deferredUserId = synchronized(lock) {
             isSyncInFlight = false
-        }
+            pendingRefreshUserId.also { pendingRefreshUserId = null }
+        } ?: return
+
+        Logger.d("UpdateQueue - replaying a refresh that arrived mid-sync")
+        // Outside the block above: `requestUserStateRefresh` takes the same lock.
+        requestUserStateRefresh(deferredUserId)
     }
 
     fun reset() {
@@ -89,6 +111,15 @@ object UpdateQueue {
             attributes = null
             language = null
             isSyncInFlight = false
+            // `pendingRefreshUserId` is deliberately kept: reset() runs on the sync success
+            // path, and syncDidFinish() still has to replay it.
+        }
+    }
+
+    /** Teardown, unlike [reset]: drop the deferred refresh instead of replaying it. */
+    fun clearPendingRefresh() {
+        synchronized(lock) {
+            pendingRefreshUserId = null
         }
     }
 
