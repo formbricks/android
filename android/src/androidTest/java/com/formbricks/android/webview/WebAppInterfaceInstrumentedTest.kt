@@ -17,11 +17,13 @@ class WebAppInterfaceInstrumentedTest {
         var closed = false
         var displayCreated = false
         var responseCreated = false
+        var finished = false
         var filePick: FileUploadData? = null
         var surveyLibraryLoadError = false
         override fun onClose() { closed = true }
         override fun onDisplayCreated() { displayCreated = true }
         override fun onResponseCreated() { responseCreated = true }
+        override fun onFinished() { finished = true }
         override fun onFilePick(data: FileUploadData) { filePick = data }
         override fun onSurveyLibraryLoadError() { surveyLibraryLoadError = true }
     }
@@ -51,6 +53,13 @@ class WebAppInterfaceInstrumentedTest {
         val json = "{\"event\":\"onResponseCreated\"}"
         webAppInterface.message(json)
         assertTrue(callback.responseCreated)
+    }
+
+    @Test
+    fun testMessage_onFinished() {
+        val json = "{\"event\":\"onFinished\"}"
+        webAppInterface.message(json)
+        assertTrue(callback.finished)
     }
 
     @Test

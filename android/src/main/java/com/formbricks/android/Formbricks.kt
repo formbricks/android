@@ -3,6 +3,8 @@ package com.formbricks.android
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.Keep
 import androidx.fragment.app.FragmentManager
 import com.formbricks.android.api.FormbricksApi
@@ -320,16 +322,47 @@ object Formbricks {
         this.fragmentManager = fragmentManager
     }
 
-    /// Assembles the survey fragment and presents it
+    /// Assembles the survey fragment and presents it.
+    ///
+    /// This is called from `SurveyManager`'s display timer, which runs on a
+    /// `java.util.Timer` thread. `DialogFragment.show()` commits a fragment
+    /// transaction, and androidx requires that on the main thread — committing from
+    /// the timer thread crashed the host app. The stored `FragmentManager` can also
+    /// outlive the Activity it came from, in which case committing throws
+    /// `IllegalStateException: FragmentManager has been destroyed`. See
+    /// https://github.com/formbricks/android/issues/43.
     internal fun showSurvey(id: String) {
-        if (fragmentManager == null) {
-            val error = SDKError.fragmentManagerIsNotSet
-            Logger.e(error)
-            return
-        }
+        Handler(Looper.getMainLooper()).post {
+            // Read the manager here rather than at schedule time: the host may have handed us
+            // a newer one via `setFragmentManager` in between, and using the stale reference
+            // would report "destroyed" while a usable manager was available.
+            val manager = fragmentManager
+            if (manager == null) {
+                Logger.e(SDKError.fragmentManagerIsNotSet)
+                return@post
+            }
 
-        fragmentManager?.let {
-            FormbricksFragment.show(it, surveyId = id)
+            // The Activity that owned this manager is gone. Showing is impossible, and
+            // the host has to hand us a live one.
+            if (manager.isDestroyed) {
+                Logger.e(SDKError.fragmentManagerIsDestroyed)
+                return@post
+            }
+
+            // A commit after onSaveInstanceState throws. Skipping is the right call:
+            // the host is on its way to the background, so there is nothing to show.
+            if (manager.isStateSaved) {
+                Logger.d("Skipping survey $id: the host has already saved its state.")
+                return@post
+            }
+
+            try {
+                FormbricksFragment.show(manager, surveyId = id)
+            } catch (e: IllegalStateException) {
+                // Backstop for any remaining commit-time race: failing to show a survey
+                // must never take the host app down.
+                Logger.e(RuntimeException("Unable to show survey $id: ${e.message}"))
+            }
         }
     }
 

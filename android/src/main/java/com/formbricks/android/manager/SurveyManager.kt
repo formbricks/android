@@ -7,6 +7,7 @@ import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.InteractionSource
 import com.formbricks.android.model.workspace.Segment
 import com.formbricks.android.model.workspace.SegmentDeserializer
 import com.formbricks.android.model.workspace.Survey
@@ -252,6 +253,19 @@ object SurveyManager {
         }
 
         UserManager.onDisplay(id)
+    }
+
+    /**
+     * Forwards an in-survey interaction so the user manager can pull fresh `segments` when the
+     * server flagged this survey/source pair as able to change segment membership.
+     */
+    fun onSurveyInteraction(surveyId: String?, source: InteractionSource) {
+        // Plain null checks rather than `guard`: its fallback path is
+        // `T::class.java.newInstance()`, which would throw for a data class like `Survey`.
+        val id = surveyId ?: return
+        val survey = workspaceDataHolder?.data?.data?.surveys?.firstOrNull { it.id == id } ?: return
+
+        UserManager.refreshSegmentsAfterInteraction(survey, source)
     }
 
    /**

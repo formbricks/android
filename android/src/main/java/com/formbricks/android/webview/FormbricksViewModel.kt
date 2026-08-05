@@ -57,6 +57,13 @@ class FormbricksViewModel : ViewModel() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onResponseCreated" }));
                 };
 
+                // Fires once the finished response has been accepted by the backend — the
+                // surveys library gates this on `isResponseSendingFinished`, and we supply
+                // `getSetIsResponseSendingFinished` below, so it starts out false.
+                function onFinished() {
+                    FormbricksJavascript.message(JSON.stringify({ event: "onFinished" }));
+                };
+
                 let setResponseFinished = null;
                 function getSetIsResponseSendingFinished(callback) {
                     setResponseFinished = callback;
@@ -69,6 +76,7 @@ class FormbricksViewModel : ViewModel() {
                         getSetIsResponseSendingFinished,
                         onDisplayCreated,
                         onResponseCreated,
+                        onFinished,
                         onClose,
                     };
 

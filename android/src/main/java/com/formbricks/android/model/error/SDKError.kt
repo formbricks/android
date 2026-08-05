@@ -8,6 +8,11 @@ object SDKError {
     val sdkIsNotInitialized = RuntimeException("Formbricks SDK is not initialized")
     val sdkIsAlreadyInitialized = RuntimeException("Formbricks SDK is already initialized")
     val fragmentManagerIsNotSet = RuntimeException("The fragment manager is not set.")
+    val fragmentManagerIsDestroyed = RuntimeException(
+        "The fragment manager belongs to a destroyed Activity, so the survey cannot be " +
+            "shown. Call Formbricks.setFragmentManager(supportFragmentManager) from the " +
+            "Activity that is currently on screen."
+    )
 
     // Errors related to network and connectivity
     val connectionIsNotAvailable = RuntimeException("There is no connection.")

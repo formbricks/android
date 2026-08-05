@@ -31,6 +31,7 @@ import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.javascript.FileUploadData
+import com.formbricks.android.model.workspace.InteractionSource
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.gson.JsonObject
@@ -42,6 +43,13 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     private lateinit var surveyId: String
     private val viewModel: FormbricksViewModel by viewModels()
     private var isDismissing = false
+
+    /** Scoped to this showing, so each interaction refreshes segments at most once. */
+    private val interactionForwarder = SurveyInteractionForwarder()
+
+    private fun refreshSegmentsOnce(source: InteractionSource) {
+        interactionForwarder.refreshOnce(surveyId, source)
+    }
 
     private var webAppInterface = WebAppInterface(object : WebAppInterface.WebAppCallback {
         override fun onClose() {
@@ -57,6 +65,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
                 val error = SDKError.couldNotCreateDisplayError
                 Logger.e(error)
             }
+            refreshSegmentsOnce(InteractionSource.ON_DISPLAY)
         }
 
         override fun onResponseCreated() {
@@ -66,6 +75,16 @@ class FormbricksFragment : BottomSheetDialogFragment() {
                 val error = SDKError.couldNotCreateResponseError
                 Logger.e(error)
             }
+            refreshSegmentsOnce(InteractionSource.ON_RESPONSE)
+        }
+
+        /**
+         * Fires when the survey is completed and the finished response has been accepted by
+         * the backend. Only used to refresh interaction-based segments — the sheet is still
+         * dismissed by [onClose].
+         */
+        override fun onFinished() {
+            refreshSegmentsOnce(InteractionSource.ON_FINISHED)
         }
 
         override fun onFilePick(data: FileUploadData) {

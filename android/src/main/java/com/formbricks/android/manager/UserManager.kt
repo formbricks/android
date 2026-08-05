@@ -11,6 +11,8 @@ import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.model.user.Display
+import com.formbricks.android.model.workspace.InteractionSource
+import com.formbricks.android.model.workspace.Survey
 import com.formbricks.android.network.queue.UpdateQueue
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +34,19 @@ object UserManager {
     private const val RESPONSES_KEY = "responsesKey"
     private const val LAST_DISPLAYED_AT_KEY = "lastDisplayedAtKey"
     private const val EXPIRES_AT_KEY = "expiresAtKey"
+    /**
+     * Floor for the gap between two user-state syncs. Guards against a device clock running
+     * ahead of the server, where every `expiresAt` the server returns is already in the
+     * device's past and an unclamped timer would sync in a tight loop.
+     */
+    internal var MINIMUM_SYNC_INTERVAL_MS: Long = 60_000
+
+    /**
+     * How long to wait before retrying a user-state sync that failed. Deliberately much longer
+     * than the minimum interval so a sustained outage doesn't become a fixed-rate request
+     * stream. Mirrors the workspace-state path's error timeout.
+     */
+    internal var RETRY_AFTER_FAILURE_MS: Long = 10 * 60_000
     private val prefManager by lazy { Formbricks.applicationContext.getSharedPreferences(FORMBROCKS_PERFS, Context.MODE_PRIVATE) }
 
     private var backingUserId: String? = null
@@ -42,6 +57,8 @@ object UserManager {
     private var backingLastDisplayedAt: Date? = null
     private var backingExpiresAt: Date? = null
     internal val syncTimer = Timer()
+    /** The pending expiry-driven sync, so it can be replaced or cancelled on logout. */
+    private var syncTask: TimerTask? = null
 
     /**
      * Starts an update queue with the given user id.
@@ -107,6 +124,30 @@ object UserManager {
     }
 
     /**
+     * Pulls fresh server-computed `segments` after an interaction that can flip segment
+     * membership, instead of waiting for the state to expire.
+     *
+     * A `surveyInteraction` segment filter ("have seen X", "have completed X", ...) can change
+     * who a contact is the moment they interact with a survey. The local bookkeeping in
+     * [onDisplay] / [onResponse] keeps display caps and recontact days correct on device, but
+     * segment membership is only ever computed by the server, so it has to be refetched.
+     *
+     * The refresh is deliberately gated twice, because a `/user` sync is not cheap:
+     *  - no-op for anonymous users, who never receive segments in the first place;
+     *  - no-op unless the server set the bit for this survey and this event.
+     *
+     * It is routed through the [UpdateQueue] rather than calling [syncUser] directly, so a
+     * display -> response -> finish burst is debounced into a single request.
+     */
+    fun refreshSegmentsAfterInteraction(survey: Survey, source: InteractionSource) {
+        val id = userId ?: return
+        if (survey.interactionRefresh?.shouldRefresh(source) != true) return
+
+        Logger.d("Refreshing segments after ${source.value} on survey ${survey.id}")
+        UpdateQueue.requestUserStateRefresh(id)
+    }
+
+    /**
      * Syncs the user state with the server if the user id is set and the expiration date has passed.
      */
     fun syncUserStateIfNeeded() {
@@ -122,6 +163,11 @@ object UserManager {
             backingSegments = null
             backingDisplays = null
             backingResponses = null
+
+            // The state is still valid, but nothing has been scheduled to refresh it when it
+            // does expire — `startSyncTimer` is otherwise only reached from a successful sync,
+            // so a launch that finds a warm cache would never refresh segments again.
+            startSyncTimer()
         }
     }
 
@@ -159,11 +205,21 @@ object UserManager {
                 }
 
                 UpdateQueue.reset()
+                // `reset()` clears the in-flight lock, but only this drains a refresh that
+                // arrived while the request was out — that interaction happened after this
+                // response was computed, so it still needs its own sync.
+                UpdateQueue.syncDidFinish()
                 SurveyManager.filterSurveys()
                 startSyncTimer()
             } catch (e: Exception) {
+                // Release the in-flight lock and replay a refresh that arrived mid-sync.
+                UpdateQueue.syncDidFinish()
                 val error = SDKError.unableToPostResponse
                 Logger.e(error)
+                // Re-arm, otherwise the refresh cycle ends here for the whole process: the
+                // task that fired is spent and startSyncTimer() is otherwise only reached
+                // from a successful sync.
+                scheduleSyncRetry()
             }
         }
     }
@@ -195,18 +251,64 @@ object UserManager {
         Formbricks.language = "default"
         UpdateQueue.reset()
 
+        // Drop any pending expiry-driven sync and any deferred refresh; the user they were
+        // captured for is gone.
+        syncTask?.cancel()
+        syncTask = null
+        UpdateQueue.clearPendingRefresh()
+
         SurveyManager.filterSurveys()
     }
 
+    /**
+     * Schedules the next user-state sync for when the cached state expires.
+     *
+     * Two things this guards against:
+     *  - A device clock running ahead of the server makes every `expiresAt` we receive land in
+     *    the device's past. [Timer.schedule] runs a past-dated task immediately, which would
+     *    sync, get another past-dated expiry, and loop. Hence the delay floor.
+     *  - [syncTimer] is a single shared [Timer]; once cancelled it throws on every later
+     *    `schedule`. Catch that rather than tearing down the SDK.
+     */
     private fun startSyncTimer() {
-        val expiresAt = expiresAt.guard { return }
-        val userId = userId.guard { return }
-        syncTimer.schedule(object: TimerTask() {
-            override fun run() {
-                syncUser(userId)
-            }
+        val expiresAt = expiresAt ?: return
+        val id = userId ?: return
 
-        }, expiresAt)
+        val delay = (expiresAt.time - System.currentTimeMillis())
+            .coerceAtLeast(MINIMUM_SYNC_INTERVAL_MS)
+        scheduleSync(delay, id)
+    }
+
+    /**
+     * Re-arms the sync after a failed request.
+     *
+     * `expiresAt` still holds the value from the last success, so it is not a usable cadence
+     * here. Back off well past the minimum sync interval so a sustained outage doesn't turn
+     * into a fixed-rate request stream.
+     */
+    private fun scheduleSyncRetry() {
+        val id = userId ?: return
+        scheduleSync(RETRY_AFTER_FAILURE_MS, id)
+    }
+
+    /** Replaces any pending sync with one scheduled [delay] ms from now. */
+    private fun scheduleSync(delay: Long, id: String) {
+        syncTask?.cancel()
+        val task = object : TimerTask() {
+            override fun run() {
+                // The user may have been logged out or swapped while this was pending.
+                if (userId != id) return
+                syncUser(id)
+            }
+        }
+        syncTask = task
+
+        try {
+            syncTimer.schedule(task, delay)
+        } catch (e: IllegalStateException) {
+            // The shared Timer was cancelled (logout/cleanup); nothing more to schedule.
+            Logger.d("User state sync timer is no longer schedulable: ${e.message}")
+        }
     }
 
 

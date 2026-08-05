@@ -34,7 +34,10 @@ data class Survey(
     @SerializedName("segment") val segment: Segment?,
     @SerializedName("styling") val styling: Styling?,
     @SerializedName("languages") val languages: List<SurveyLanguage>?,
-    @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites? = null
+    @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites? = null,
+    // Whether interacting with this survey can change some live survey's segment
+    // membership. Absent unless the workspace uses survey-interaction targeting.
+    @SerializedName("interactionRefresh") val interactionRefresh: InteractionRefresh? = null
 )
 
 /// Defines the overlay style displayed behind a survey modal.
