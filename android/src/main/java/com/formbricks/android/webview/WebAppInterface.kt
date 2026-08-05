@@ -14,7 +14,13 @@ class WebAppInterface(private val callback: WebAppCallback?) {
         fun onClose()
         fun onDisplayCreated()
         fun onResponseCreated()
-        fun onFinished()
+
+        /**
+         * Defaulted rather than abstract: [WebAppCallback] is public, so adding an abstract
+         * member would stop any existing implementor from compiling. Only the SDK implements
+         * this today, but that would make an additive change a breaking one.
+         */
+        fun onFinished() {}
         fun onFilePick(data: FileUploadData)
         fun onSurveyLibraryLoadError()
     }
