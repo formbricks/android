@@ -15,10 +15,19 @@ import kotlin.concurrent.timer
 object UpdateQueue {
     private const val DEBOUNCE_INTERVAL: Long = 500 // 500 ms
 
+    private val lock = Any()
+
     private var userId: String? = null
     private var attributes: MutableMap<String, AttributeValue>? = null
     private var language: String? = null
     private var timer: Timer? = null
+
+    /**
+     * True while a commit-triggered sync is airborne. A repeat nudge joins that request instead
+     * of starting a second one: two concurrent `POST /user` calls would race and whichever
+     * response landed last would overwrite `segments` / `displays` / `responses` wholesale.
+     */
+    private var isSyncInFlight = false
 
     fun setUserId(userId: String) {
         this.userId = userId
@@ -50,30 +59,77 @@ object UpdateQueue {
         }
     }
 
+    /**
+     * Asks for the user state to be re-read from the server. Carries no new data — it exists so
+     * an interaction that can change segment membership doesn't have to wait for the state to
+     * expire. Dropped while a sync is already in flight, because that sync's response already
+     * brings fresh segments.
+     */
+    fun requestUserStateRefresh(userId: String) {
+        synchronized(lock) {
+            if (isSyncInFlight) {
+                Logger.d("UpdateQueue - refresh skipped, a sync is already in flight")
+                return
+            }
+            this.userId = userId
+        }
+        startDebounceTimer()
+    }
+
+    /** Called by the user manager once a sync finishes, so the next nudge can start a request. */
+    fun syncDidFinish() {
+        synchronized(lock) {
+            isSyncInFlight = false
+        }
+    }
+
     fun reset() {
-        userId = null
-        attributes = null
-        language = null
+        synchronized(lock) {
+            userId = null
+            attributes = null
+            language = null
+            isSyncInFlight = false
+        }
     }
 
     private fun startDebounceTimer() {
-        timer?.cancel()
-        timer = timer("debounceTimer", false, DEBOUNCE_INTERVAL, DEBOUNCE_INTERVAL) {
-            commit()
+        synchronized(lock) {
             timer?.cancel()
+            // One-shot rather than the previous repeating timer that cancelled itself from
+            // inside its own task: that read the shared `timer` field from the timer thread, so
+            // a newer timer scheduled in the meantime could be cancelled instead of this one.
+            val newTimer = Timer("debounceTimer", false)
+            timer = newTimer
+            newTimer.schedule(object : TimerTask() {
+                override fun run() {
+                    commit()
+                }
+            }, DEBOUNCE_INTERVAL)
         }
     }
 
     private fun commit() {
-        val effectiveUserId = userId
-            ?: UserManager.userId
+        val effectiveUserId: String?
+        val effectiveAttributes: Map<String, AttributeValue>?
+
+        // Capture a consistent snapshot, and only mark a sync in flight when one is actually
+        // about to be sent — otherwise a commit with no user id would leave the flag stuck and
+        // swallow every later refresh nudge.
+        synchronized(lock) {
+            effectiveUserId = userId ?: UserManager.userId
+            effectiveAttributes = attributes?.toMap()
+            if (effectiveUserId != null) {
+                isSyncInFlight = true
+            }
+        }
+
         if (effectiveUserId == null) {
             val error = SDKError.noUserIdSetError
             Logger.e(error)
             return
         }
 
-        Logger.d("UpdateQueue - commit() called on UpdateQueue with $effectiveUserId and $attributes")
-        UserManager.syncUser(effectiveUserId, attributes)
+        Logger.d("UpdateQueue - commit() called on UpdateQueue with $effectiveUserId and $effectiveAttributes")
+        UserManager.syncUser(effectiveUserId, effectiveAttributes)
     }
 }
