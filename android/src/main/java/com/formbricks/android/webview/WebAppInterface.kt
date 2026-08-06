@@ -20,7 +20,10 @@ class WebAppInterface(private val callback: WebAppCallback?) {
          * member would stop any existing implementor from compiling. Only the SDK implements
          * this today, but that would make an additive change a breaking one.
          */
-        fun onFinished() {}
+        fun onFinished() {
+            // Intentionally empty. The default exists so implementors that predate this
+            // callback keep compiling; FormbricksFragment overrides it to do the real work.
+        }
         fun onFilePick(data: FileUploadData)
         fun onSurveyLibraryLoadError()
     }
