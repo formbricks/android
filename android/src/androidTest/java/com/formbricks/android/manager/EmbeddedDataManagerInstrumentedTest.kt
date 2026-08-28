@@ -1,12 +1,12 @@
 package com.formbricks.android.manager
 
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.formbricks.android.Formbricks
 import com.formbricks.android.MockFormbricksApiService
 import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.extensions.dateString
-import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.model.embeddeddata.EmbeddedDataValue
 import com.formbricks.android.network.queue.UpdateQueue
 import com.google.gson.JsonParser
@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,39 +38,48 @@ class EmbeddedDataManagerInstrumentedTest {
     fun setUp() {
         Formbricks.applicationContext = InstrumentationRegistry.getInstrumentation().targetContext
         Formbricks.isInitialized = false
+        // Assigned directly rather than through `Formbricks.setup`: these tests need no workspace
+        // fetch, and running setup here would write the workspace cache that other classes assert
+        // on. `workspaceId`/`appUrl` are lateinit, so a queued update touching them must not find
+        // them unset - an exception on the UpdateQueue's timer thread cancels that Timer for the
+        // whole process, which would take later tests down with it.
+        Formbricks.appUrl = appUrl
+        Formbricks.workspaceId = workspaceId
+        FormbricksApi.service = MockFormbricksApiService()
         UserManager.logout()
         UpdateQueue.reset()
-        SurveyManager.workspaceDataHolder = null
-        SurveyManager.filteredSurveys.clear()
-        FormbricksApi.service = MockFormbricksApiService()
         EmbeddedDataManager.clear()
     }
 
-    /** Initializes the SDK against the mock API service, so identity changes can run for real. */
-    private fun setUpSdk() {
-        Formbricks.setup(
-            InstrumentationRegistry.getInstrumentation().targetContext,
-            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build(),
-        )
-        waitForSeconds(1)
+    @After
+    fun tearDown() {
+        // Leave nothing running for the next class: logout cancels the sync task and resets the
+        // queue, so a debounced commit from an identity test cannot fire during someone else's.
+        UserManager.logout()
+        UpdateQueue.reset()
+        Formbricks.isInitialized = false
+        EmbeddedDataManager.clear()
     }
 
     /**
-     * Identifies as [userId] and waits for the id to actually land.
+     * Seeds a persisted identity, the way a previous app session would have left one.
      *
-     * [Formbricks.setUserId] reads [UserManager.userId] to decide whether this is a switch, and that
-     * property is only written once the debounced [UpdateQueue] sync completes - `set(userId)` merely
-     * enqueues. Asserting the switch behaviour right after a bare `setUserId` would take the
-     * first-identification branch instead and pass for the wrong reason.
+     * Not `Formbricks.setUserId`: that only enqueues into the debounced [UpdateQueue], so
+     * [UserManager.userId] stays null until a network sync lands, and a test driving it that way
+     * would silently take the first-identification branch and pass for the wrong reason. Writing the
+     * same key the getter reads is exact, needs no timer or request, and models the honest scenario
+     * - the app relaunches already identified, then a different user signs in.
+     *
+     * The key names are `UserManager`'s own private constants, repeated here because that is the
+     * storage contract this seeds; [assertEquals] below fails loudly if either ever changes.
      */
-    private fun identify(userId: String) {
-        Formbricks.setUserId(userId)
-        waitForSeconds(2)
+    private fun seedPersistedUserId(userId: String) {
+        InstrumentationRegistry.getInstrumentation().targetContext
+            .getSharedPreferences("formbricks_prefs", Context.MODE_PRIVATE)
+            .edit()
+            .putString("userIdKey", userId)
+            .commit()
         assertEquals(userId, UserManager.userId)
-    }
-
-    private fun waitForSeconds(seconds: Long) {
-        CountDownLatch(1).await(seconds, TimeUnit.SECONDS)
     }
 
     /** The snapshot as plain strings — `asString` renders numbers and booleans too, so one
@@ -285,8 +295,8 @@ class EmbeddedDataManagerInstrumentedTest {
 
     @Test
     fun switchingUserClearsTheBag() {
-        setUpSdk()
-        identify("user-a")
+        Formbricks.isInitialized = true
+        seedPersistedUserId("user-a")
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.setUserId("user-b")
@@ -298,7 +308,7 @@ class EmbeddedDataManagerInstrumentedTest {
     fun firstIdentificationKeepsTheBag() {
         // The host pushes context before it knows who the user is - that is the normal order, and
         // clearing here would throw away the value the API exists to carry.
-        setUpSdk()
+        Formbricks.isInitialized = true
         // `userId` is persisted, so an id left by an earlier test would make this take the switch
         // branch. setUp() logs out, so this only pins the precondition the assertion depends on.
         assertNull(UserManager.userId)
@@ -311,8 +321,8 @@ class EmbeddedDataManagerInstrumentedTest {
 
     @Test
     fun settingTheSameUserIdKeepsTheBag() {
-        setUpSdk()
-        identify("user-a")
+        Formbricks.isInitialized = true
+        seedPersistedUserId("user-a")
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.setUserId("user-a")
@@ -322,7 +332,7 @@ class EmbeddedDataManagerInstrumentedTest {
 
     @Test
     fun logoutClearsTheBag() {
-        setUpSdk()
+        Formbricks.isInitialized = true
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.logout()
