@@ -3,12 +3,16 @@ package com.formbricks.android.manager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.formbricks.android.Formbricks
+import com.formbricks.android.MockFormbricksApiService
+import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.extensions.dateString
+import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.model.embeddeddata.EmbeddedDataValue
 import com.formbricks.android.network.queue.UpdateQueue
 import com.google.gson.JsonParser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -26,13 +30,46 @@ import java.util.concurrent.TimeUnit
 @RunWith(AndroidJUnit4::class)
 class EmbeddedDataManagerInstrumentedTest {
 
+    private val workspaceId = "workspaceId"
+    private val appUrl = "https://example.com"
+
     @Before
     fun setUp() {
         Formbricks.applicationContext = InstrumentationRegistry.getInstrumentation().targetContext
         Formbricks.isInitialized = false
         UserManager.logout()
         UpdateQueue.reset()
+        SurveyManager.workspaceDataHolder = null
+        SurveyManager.filteredSurveys.clear()
+        FormbricksApi.service = MockFormbricksApiService()
         EmbeddedDataManager.clear()
+    }
+
+    /** Initializes the SDK against the mock API service, so identity changes can run for real. */
+    private fun setUpSdk() {
+        Formbricks.setup(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build(),
+        )
+        waitForSeconds(1)
+    }
+
+    /**
+     * Identifies as [userId] and waits for the id to actually land.
+     *
+     * [Formbricks.setUserId] reads [UserManager.userId] to decide whether this is a switch, and that
+     * property is only written once the debounced [UpdateQueue] sync completes - `set(userId)` merely
+     * enqueues. Asserting the switch behaviour right after a bare `setUserId` would take the
+     * first-identification branch instead and pass for the wrong reason.
+     */
+    private fun identify(userId: String) {
+        Formbricks.setUserId(userId)
+        waitForSeconds(2)
+        assertEquals(userId, UserManager.userId)
+    }
+
+    private fun waitForSeconds(seconds: Long) {
+        CountDownLatch(1).await(seconds, TimeUnit.SECONDS)
     }
 
     /** The snapshot as plain strings — `asString` renders numbers and booleans too, so one
@@ -234,9 +271,10 @@ class EmbeddedDataManagerInstrumentedTest {
         val prefsDir = java.io.File(context.applicationInfo.dataDir, "shared_prefs")
         val files = prefsDir.listFiles() ?: emptyArray()
         for (file in files) {
+            val contents = runCatching { file.readText() }.getOrDefault("")
             assertFalse(
                 "${file.name} holds Embedded Data - the bag must stay in memory",
-                file.readText().contains(marker)
+                contents.contains(marker)
             )
         }
     }
@@ -247,8 +285,8 @@ class EmbeddedDataManagerInstrumentedTest {
 
     @Test
     fun switchingUserClearsTheBag() {
-        Formbricks.isInitialized = true
-        Formbricks.setUserId("user-a")
+        setUpSdk()
+        identify("user-a")
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.setUserId("user-b")
@@ -260,7 +298,10 @@ class EmbeddedDataManagerInstrumentedTest {
     fun firstIdentificationKeepsTheBag() {
         // The host pushes context before it knows who the user is - that is the normal order, and
         // clearing here would throw away the value the API exists to carry.
-        Formbricks.isInitialized = true
+        setUpSdk()
+        // `userId` is persisted, so an id left by an earlier test would make this take the switch
+        // branch. setUp() logs out, so this only pins the precondition the assertion depends on.
+        assertNull(UserManager.userId)
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.setUserId("user-a")
@@ -270,8 +311,8 @@ class EmbeddedDataManagerInstrumentedTest {
 
     @Test
     fun settingTheSameUserIdKeepsTheBag() {
-        Formbricks.isInitialized = true
-        Formbricks.setUserId("user-a")
+        setUpSdk()
+        identify("user-a")
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.setUserId("user-a")
@@ -281,8 +322,7 @@ class EmbeddedDataManagerInstrumentedTest {
 
     @Test
     fun logoutClearsTheBag() {
-        Formbricks.isInitialized = true
-        Formbricks.setUserId("user-a")
+        setUpSdk()
         Formbricks.setEmbeddedData(mapOf("plan" to EmbeddedDataValue.string("pro")))
 
         Formbricks.logout()
