@@ -10,8 +10,10 @@ import androidx.fragment.app.FragmentManager
 import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.logger.Logger
+import com.formbricks.android.manager.EmbeddedDataManager
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
+import com.formbricks.android.model.embeddeddata.EmbeddedDataValue
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.webview.FormbricksFragment
@@ -137,6 +139,11 @@ object Formbricks {
         if (existing != null && existing.isNotEmpty()) {
             Logger.d("Different userId is being set, cleaning up previous user state")
             UserManager.logout()
+            // An identity switch: the ambient Embedded Data bag may carry the previous user's
+            // context, which must not ride onto the next user's responses on a shared device.
+            // First-time identification keeps the bag - a host legitimately pushes context before
+            // it knows who the user is.
+            EmbeddedDataManager.clear()
         }
 
         UserManager.set(userId)
@@ -306,6 +313,62 @@ object Formbricks {
         }
 
         UserManager.logout()
+        // Same identity-switch rule as setUserId: logout must not let the previous user's ambient
+        // context leak onto whoever uses the app next.
+        EmbeddedDataManager.clear()
+    }
+
+    /**
+     * Attaches Embedded Data to future responses without tying it to a trigger.
+     *
+     * Merges into an in-memory bag - last write wins per key, and an explicit `null` removes a key.
+     * Values land only on the survey's declared *ingested* fields; anything else is dropped and
+     * logged by the survey renderer, never fatal.
+     *
+     * Deliberately callable **before** [setup], unlike the methods above: a host that pushes context
+     * at launch must not have that value silently dropped because initialization had not finished.
+     * The bag is pure memory - nothing here needs the SDK to be running.
+     *
+     * The bag is snapshotted when a survey is displayed and frozen for its lifetime, so a value set
+     * while a survey is on screen reaches the *next* response, not that one. It is never persisted:
+     * a cold app start begins empty and the host re-pushes.
+     *
+     * ```kotlin
+     * Formbricks.setEmbeddedData(mapOf(
+     *     "plan" to EmbeddedDataValue.string("pro"),
+     *     "seats" to EmbeddedDataValue.number(25.0),
+     *     "screen" to null,   // removes the key
+     * ))
+     * ```
+     */
+    fun setEmbeddedData(data: Map<String, EmbeddedDataValue?>) {
+        EmbeddedDataManager.set(data)
+    }
+
+    /**
+     * Removes one Embedded Data key. A key that was never set is a no-op.
+     *
+     * The single-key and clear-everything forms are separate overloads on purpose: a `String` that
+     * cannot be null means a host reading the key from its own state cannot accidentally wipe the
+     * whole bag.
+     *
+     * ```kotlin
+     * Formbricks.clearEmbeddedData("plan")
+     * ```
+     */
+    fun clearEmbeddedData(key: String) {
+        EmbeddedDataManager.remove(key)
+    }
+
+    /**
+     * Clears the whole Embedded Data bag - logout, or a hard context switch.
+     *
+     * ```kotlin
+     * Formbricks.clearEmbeddedData()
+     * ```
+     */
+    fun clearEmbeddedData() {
+        EmbeddedDataManager.clear()
     }
 
     /**

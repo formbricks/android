@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.formbricks.android.Formbricks
 import com.formbricks.android.extensions.guard
+import com.formbricks.android.manager.EmbeddedDataManager
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
@@ -149,6 +150,12 @@ class FormbricksViewModel : ViewModel() {
         jsonObject.addProperty("environmentId", Formbricks.workspaceId)
         jsonObject.addProperty("contactId", UserManager.contactId)
         jsonObject.addProperty("isWebEnvironment", false)
+        // The Embedded Data bag, snapshotted here - loadHtml runs when the survey is actually
+        // presented, after any configured delay - and frozen for the survey's life. Passed raw and
+        // unfiltered: the ingest contract (allow-list, coercion, `locked`, size caps) lives in the
+        // renderer, so all four mobile SDKs inherit the same rules without each shipping a copy, and
+        // the server re-runs all of it on ingest.
+        jsonObject.add("hiddenFieldsRecord", EmbeddedDataManager.snapshot())
 
         val matchedSurvey = workspaceDataHolder.data?.data?.surveys?.firstOrNull { it.id == surveyId }
         val settings = workspaceDataHolder.data?.data?.settings
