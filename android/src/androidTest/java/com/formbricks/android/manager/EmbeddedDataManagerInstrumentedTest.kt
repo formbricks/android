@@ -19,6 +19,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -197,6 +198,59 @@ class EmbeddedDataManagerInstrumentedTest {
         assertFalse(json.get("isTrial").asBoolean)
         // ISO 8601 is what the renderer's ingest contract accepts for a `date` field.
         assertEquals(signedUpAt.dateString(), json.get("signedUpAt").asString)
+    }
+
+    @Test
+    fun aDateSerializesAsAsciiIso8601OnEveryDeviceLocale() {
+        // SimpleDateFormat renders digits in the locale's own numbering system, so a device set to
+        // Persian or to an Arabic locale with the arab numbering system would produce an "ISO 8601"
+        // string in non-ASCII digits. Nothing downstream accepts those: the ingest contract's date
+        // parser would refuse the value and store it raw as coercion_failed - for those users only,
+        // which is exactly the kind of bug that never shows up in testing.
+        val original = Locale.getDefault()
+        try {
+            for (locale in listOf(Locale("fa"), Locale.forLanguageTag("ar-EG-u-nu-arab"))) {
+                Locale.setDefault(locale)
+                EmbeddedDataManager.clear()
+                Formbricks.setEmbeddedData(mapOf("signedUpAt" to EmbeddedDataValue.date(Date())))
+
+                val serialized = EmbeddedDataManager.snapshot().get("signedUpAt").asString
+                assertTrue(
+                    "under $locale the date serialized as \"$serialized\", which is not ASCII ISO 8601",
+                    serialized.matches(Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z"""))
+                )
+            }
+        } finally {
+            Locale.setDefault(original)
+        }
+    }
+
+    @Test
+    fun theSuccessTraceNamesKeysAndNeverValues() {
+        // The bag is otherwise invisible - memory-only, no getter - so this trace is a host's only
+        // confirmation that a write landed. Its one hard rule: the documented use of this bag
+        // includes hashed identity fields, so a value must never reach a log line.
+        val message = EmbeddedDataManager.setTrace(
+            setKeys = listOf("plan", "hashedEmail"),
+            removedKeys = listOf("screen"),
+            held = listOf("plan", "hashedEmail")
+        )
+
+        assertTrue(message.contains("set [plan, hashedEmail]"))
+        assertTrue(message.contains("removed [screen]"))
+        assertTrue(message.contains("the bag now holds [plan, hashedEmail]"))
+        assertTrue(message.contains("only if the survey declares them"))
+    }
+
+    @Test
+    fun theSuccessTraceOmitsTheRemovedListWhenNothingWasRemoved() {
+        val message = EmbeddedDataManager.setTrace(
+            setKeys = listOf("plan"),
+            removedKeys = emptyList(),
+            held = listOf("plan")
+        )
+
+        assertFalse(message.contains("removed"))
     }
 
     @Test

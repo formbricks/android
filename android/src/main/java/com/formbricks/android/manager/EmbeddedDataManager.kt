@@ -42,10 +42,14 @@ object EmbeddedDataManager {
      * `{ key: null }`.
      */
     fun set(values: Map<String, EmbeddedDataValue?>) {
+        val setKeys = mutableListOf<String>()
+        val removedKeys = mutableListOf<String>()
+        val held: List<String>
         synchronized(lock) {
             for ((key, value) in values) {
                 if (value == null) {
                     data.remove(key)
+                    removedKeys.add(key)
                     continue
                 }
                 // Refused rather than stored: a non-finite Double serializes as bare `NaN` or
@@ -57,22 +61,48 @@ object EmbeddedDataManager {
                     continue
                 }
                 data[key] = value
+                setKeys.add(key)
             }
+            held = data.keys.toList()
         }
+        // Built and logged outside the lock, so a log write never holds it.
+        Logger.d(setTrace(setKeys, removedKeys, held))
+    }
+
+    /**
+     * The success trace, because the bag is otherwise invisible: it lives in memory (nothing in
+     * `SharedPreferences` to inspect) and the API has no getter, so without this line a host wiring
+     * up `setEmbeddedData` gets no confirmation until a survey happens to display. Logged at debug,
+     * which [Logger] gates on `Formbricks.loggingEnabled`.
+     *
+     * Keys only, never values: the documented use of this bag includes hashed identity fields.
+     * Separated from the logging call so that property is directly assertable in a test.
+     */
+    internal fun setTrace(setKeys: List<String>, removedKeys: List<String>, held: List<String>): String {
+        val removed = if (removedKeys.isEmpty()) "" else ", removed [${removedKeys.joinToString(", ")}]"
+        return "setEmbeddedData: set [${setKeys.joinToString(", ")}]$removed - the bag now holds " +
+            "[${held.joinToString(", ")}]. Keys land on a response only if the survey declares them " +
+            "as ingested Embedded Data fields."
     }
 
     /** Removes one key. A key that is not set is a no-op. */
     fun remove(key: String) {
+        val held: List<String>
         synchronized(lock) {
             data.remove(key)
+            held = data.keys.toList()
         }
+        Logger.d("clearEmbeddedData: removed \"$key\" - the bag now holds [${held.joinToString(", ")}]")
     }
 
     /** Removes everything - logout, or a hard context switch. */
     fun clear() {
+        val clearedCount: Int
         synchronized(lock) {
+            clearedCount = data.size
             data.clear()
         }
+        Logger.d("clearEmbeddedData: cleared the whole bag ($clearedCount keys)")
     }
 
     /**
