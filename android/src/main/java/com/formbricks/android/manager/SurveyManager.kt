@@ -11,6 +11,9 @@ import com.formbricks.android.model.workspace.InteractionSource
 import com.formbricks.android.model.workspace.Segment
 import com.formbricks.android.model.workspace.SegmentDeserializer
 import com.formbricks.android.model.workspace.Survey
+import com.formbricks.android.mobilecore.MobileCoreDecision
+import com.formbricks.android.mobilecore.MobileCoreRuntime
+import com.formbricks.android.mobilecore.MobileCoreUserState
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.Display
 import com.google.gson.Gson
@@ -41,6 +44,12 @@ object SurveyManager {
     internal var isShowingSurvey = false
     private val prefManager by lazy { Formbricks.applicationContext.getSharedPreferences(FORMBRICKS_PREFS, Context.MODE_PRIVATE) }
     internal var filteredSurveys: MutableList<Survey> = mutableListOf()
+
+    /**
+     * The server-delivered JS brain. When present and healthy, it owns the
+     * survey-selection decision; the native logic below remains as fallback.
+     */
+    internal var mobileCoreRuntime: MobileCoreRuntime? = null
 
     val gson = GsonBuilder()
         .registerTypeAdapter(Segment::class.java, SegmentDeserializer())
@@ -166,6 +175,61 @@ object SurveyManager {
      * Handles the display percentage and the delay of the survey.
      */
     fun track(action: String) {
+        // When the server-delivered brain is available, it owns the decision.
+        // Any failure inside the remote path falls back to the built-in logic.
+        val runtime = mobileCoreRuntime
+        val workspaceStateJson = workspaceDataHolder?.let { Gson().toJson(it.originalResponseMap) }
+        if (runtime != null && workspaceStateJson != null) {
+            val userState = MobileCoreUserState(
+                userId = UserManager.userId,
+                segments = UserManager.segments,
+                displays = UserManager.displays,
+                responses = UserManager.responses,
+                lastDisplayedAtMs = UserManager.lastDisplayedAt?.time
+            )
+            runtime.selectSurvey(action, workspaceStateJson, userState, Formbricks.language) { decision ->
+                if (decision == null) {
+                    nativeTrack(action)
+                } else {
+                    handleRemoteDecision(decision)
+                }
+            }
+            return
+        }
+
+        nativeTrack(action)
+    }
+
+    /**
+     * Executes a brain decision. The shell keeps only the native-only parts:
+     * delay scheduling, language propagation, and presenting the survey fragment.
+     */
+    private fun handleRemoteDecision(decision: MobileCoreDecision) {
+        val surveyId = decision.surveyId
+        if (decision.shouldDisplay != true || surveyId == null) {
+            Logger.d("Mobile core decided not to display a survey: ${decision.reason ?: "no reason given"}")
+            return
+        }
+
+        Logger.d("Mobile core selected survey $surveyId: ${decision.reason ?: "no reason given"}")
+
+        decision.languageCode?.let { Formbricks.setLanguage(it) }
+
+        isShowingSurvey = true
+        val timeout = decision.delaySeconds ?: 0.0
+        if (timeout > 0.0) {
+            Logger.d("Delaying survey \"$surveyId\" by $timeout seconds")
+        }
+        stopDisplayTimer()
+        displayTimer.schedule(object : TimerTask() {
+            override fun run() {
+                Formbricks.showSurvey(surveyId)
+            }
+        }, Date(System.currentTimeMillis() + (timeout * 1000).toLong()))
+    }
+
+    /** The built-in decision logic, used until the brain is available and as its fallback. */
+    private fun nativeTrack(action: String) {
         val actionClasses = workspaceDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
