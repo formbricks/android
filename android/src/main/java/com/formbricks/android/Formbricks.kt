@@ -13,6 +13,8 @@ import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.EmbeddedDataManager
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
+import com.formbricks.android.mobilecore.MobileCoreLoader
+import com.formbricks.android.mobilecore.MobileCoreRuntime
 import com.formbricks.android.model.embeddeddata.EmbeddedDataValue
 import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.AttributeValue
@@ -103,6 +105,22 @@ object Formbricks {
         SurveyManager.migrateLegacyCacheIfNeeded()
         SurveyManager.refreshWorkspaceIfNeeded(force = forceRefresh)
         UserManager.syncUserStateIfNeeded()
+
+        // Fetch the server-delivered decision logic (the mobile core "brain").
+        // Until it arrives — or if it never does — the SDK runs on its built-in
+        // native logic, so this is a progressive enhancement, not a dependency.
+        MobileCoreLoader.load(appUrl) { source ->
+            if (source == null) {
+                Logger.d("No mobile core bundle available; using built-in survey logic.")
+                return@load
+            }
+            MobileCoreRuntime.create(applicationContext, source) { runtime ->
+                SurveyManager.mobileCoreRuntime = runtime
+                if (runtime != null) {
+                    Logger.d("Mobile core bundle loaded; server-delivered survey logic active.")
+                }
+            }
+        }
 
         isInitialized = true
     }
