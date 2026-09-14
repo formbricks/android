@@ -22,6 +22,16 @@ lifecycleViewmodelKtx = "2.9.0"
 fragmentKtx = "1.8.7"
 databindingCommon = "8.9.2"
 
+# Security pins for vulnerable transitive dependencies of the build toolchain
+# (Android Gradle Plugin's Unified Test Platform and Dokka). These never reach
+# the published AAR - see the resolutionStrategy block in android/build.gradle.kts,
+# which explains why `jackson` is capped below the latest patched release.
+# Re-check these whenever `agp` or the Dokka plugin is upgraded.
+netty = "4.1.138.Final"
+protobuf = "3.25.9"
+jackson = "2.14.3"
+jsoup = "1.23.2"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

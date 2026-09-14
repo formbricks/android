@@ -20,6 +20,45 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
+// Force known-vulnerable transitive dependencies of the build toolchain onto patched
+// versions. None of these are dependencies of the SDK itself - they are pulled in by the
+// Android Gradle Plugin's Unified Test Platform (netty, protobuf) and by Dokka
+// (jackson, jsoup), so the published AAR and its POM are unaffected.
+// Drop an entry once the tool that brings it in ships a patched version by default.
+run {
+    val securityPins = mapOf(
+        "io.netty" to libs.versions.netty.get(),
+        "org.jsoup" to libs.versions.jsoup.get(),
+        // Dokka 1.9.20 is compiled against Jackson 2.12-2.15 (it calls the
+        // TypeFactory(LRUMap) constructor that 2.16 replaced), so it cannot run on a
+        // fully patched 2.18.x. 2.14.3 is the best version it can load: it clears
+        // CVE-2026-50193 and CVE-2025-49128 without pulling in the advisories that
+        // first appear in 2.15.x. The rest need Dokka 2.2+, which drops Jackson entirely.
+        "com.fasterxml.jackson" to libs.versions.jackson.get(),
+        "com.fasterxml.jackson.core" to libs.versions.jackson.get(),
+        "com.fasterxml.jackson.dataformat" to libs.versions.jackson.get(),
+        "com.fasterxml.jackson.module" to libs.versions.jackson.get(),
+    )
+
+    configurations.configureEach {
+        resolutionStrategy.eachDependency {
+            securityPins[requested.group]?.let { pinned ->
+                useVersion(pinned)
+                because("security pin - see gradle/libs.versions.toml")
+            }
+
+            // protobuf-java 4.x is a breaking change for the tooling that depends on it,
+            // so stay on the patched 3.25.x line.
+            if (requested.group == "com.google.protobuf" &&
+                requested.version?.startsWith("3.") == true
+            ) {
+                useVersion(libs.versions.protobuf.get())
+                because("CVE-2024-7254 - patched in the 3.25.x line")
+            }
+        }
+    }
+}
+
 android {
     namespace = "com.formbricks.android"
     compileSdk = 35
