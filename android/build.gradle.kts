@@ -5,7 +5,6 @@ plugins {
     kotlin("android")
     kotlin("kapt")
     kotlin("plugin.serialization") version "2.1.0"
-    id("org.jetbrains.dokka") version "1.9.20"
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.31.0"
     id("org.sonarqube") version "4.4.1.3373"
@@ -20,40 +19,39 @@ jacoco {
     toolVersion = "0.8.11"
 }
 
-// Force known-vulnerable transitive dependencies of the build toolchain onto patched
-// versions. None of these are dependencies of the SDK itself - they are pulled in by the
-// Android Gradle Plugin's Unified Test Platform (netty, protobuf) and by Dokka
-// (jackson, jsoup), so the published AAR and its POM are unaffected.
-// Drop an entry once the tool that brings it in ships a patched version by default.
+// Raise known-vulnerable transitive dependencies of the build toolchain to patched
+// versions. Neither is a dependency of the SDK itself - both are pulled in by the Android
+// Gradle Plugin's Unified Test Platform, so the published AAR and its POM are unaffected.
+//
+// These are floors, not overrides: `useVersion` on its own would also drag a *newer*
+// version back down, so anything at or above the floor is left alone and only older
+// versions are raised. That matters now that Dependabot bumps `agp` weekly and each bump
+// can ship newer transitives of its own.
 run {
-    val securityPins = mapOf(
+    val securityFloors = mapOf(
         "io.netty" to libs.versions.netty.get(),
-        "org.jsoup" to libs.versions.jsoup.get(),
-        // Dokka 1.9.20 is compiled against Jackson 2.12-2.15 (it calls the
-        // TypeFactory(LRUMap) constructor that 2.16 replaced), so it cannot run on a
-        // fully patched 2.18.x. 2.14.3 is the best version it can load: it clears
-        // CVE-2026-50193 and CVE-2025-49128 without pulling in the advisories that
-        // first appear in 2.15.x. The rest need Dokka 2.2+, which drops Jackson entirely.
-        "com.fasterxml.jackson" to libs.versions.jackson.get(),
-        "com.fasterxml.jackson.core" to libs.versions.jackson.get(),
-        "com.fasterxml.jackson.dataformat" to libs.versions.jackson.get(),
-        "com.fasterxml.jackson.module" to libs.versions.jackson.get(),
+        "com.google.protobuf" to libs.versions.protobuf.get(),
     )
+
+    fun isBelowFloor(current: String?, floor: String): Boolean {
+        if (current.isNullOrBlank()) return true
+        fun numericParts(v: String) = v.split('.', '-', '_').mapNotNull(String::toIntOrNull)
+        val actual = numericParts(current)
+        val wanted = numericParts(floor)
+        for (i in 0 until maxOf(actual.size, wanted.size)) {
+            val a = actual.getOrElse(i) { 0 }
+            val b = wanted.getOrElse(i) { 0 }
+            if (a != b) return a < b
+        }
+        return false
+    }
 
     configurations.configureEach {
         resolutionStrategy.eachDependency {
-            securityPins[requested.group]?.let { pinned ->
-                useVersion(pinned)
-                because("security pin - see gradle/libs.versions.toml")
-            }
-
-            // protobuf-java 4.x is a breaking change for the tooling that depends on it,
-            // so stay on the patched 3.25.x line.
-            if (requested.group == "com.google.protobuf" &&
-                requested.version?.startsWith("3.") == true
-            ) {
-                useVersion(libs.versions.protobuf.get())
-                because("CVE-2024-7254 - patched in the 3.25.x line")
+            val floor = securityFloors[requested.group] ?: return@eachDependency
+            if (isBelowFloor(requested.version, floor)) {
+                useVersion(floor)
+                because("security floor - see gradle/libs.versions.toml")
             }
         }
     }

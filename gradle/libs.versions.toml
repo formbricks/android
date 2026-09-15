@@ -22,15 +22,16 @@ lifecycleViewmodelKtx = "2.9.0"
 fragmentKtx = "1.8.7"
 databindingCommon = "8.9.2"
 
-# Security pins for vulnerable transitive dependencies of the build toolchain
-# (Android Gradle Plugin's Unified Test Platform and Dokka). These never reach
-# the published AAR - see the resolutionStrategy block in android/build.gradle.kts,
-# which explains why `jackson` is capped below the latest patched release.
-# Re-check these whenever `agp` or the Dokka plugin is upgraded.
+# Security floors for vulnerable transitive dependencies of the Android Gradle Plugin's
+# Unified Test Platform. These never reach the published AAR - see the resolutionStrategy
+# block in android/build.gradle.kts.
+#
+# Dependabot does not track these: its Gradle parser only reaches [versions] through a
+# `version.ref` in [libraries]/[plugins], and nothing references them. Re-check them by
+# hand when `agp` is upgraded - because they are floors, one at or below what AGP already
+# ships is a no-op, so a stale entry is inert rather than harmful.
 netty = "4.1.138.Final"
 protobuf = "3.25.9"
-jackson = "2.14.3"
-jsoup = "1.23.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
