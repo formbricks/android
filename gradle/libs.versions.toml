@@ -22,16 +22,21 @@ lifecycleViewmodelKtx = "2.9.0"
 fragmentKtx = "1.8.7"
 databindingCommon = "8.9.2"
 
-# Security floors for vulnerable transitive dependencies of the Android Gradle Plugin's
-# Unified Test Platform. These never reach the published AAR - see the resolutionStrategy
-# block in android/build.gradle.kts.
+dokka = "2.2.0"
+
+# Security floors for vulnerable transitive dependencies of the build toolchain: the Android
+# Gradle Plugin's Unified Test Platform (netty, protobuf) and Dokka's engine (jackson, jsoup).
+# These never reach the published AAR - see the resolutionStrategy blocks in
+# android/build.gradle.kts.
 #
 # Dependabot does not track these: its Gradle parser only reaches [versions] through a
 # `version.ref` in [libraries]/[plugins], and nothing references them. Re-check them by
-# hand when `agp` is upgraded - because they are floors, one at or below what AGP already
-# ships is a no-op, so a stale entry is inert rather than harmful.
+# hand when `agp` or `dokka` is upgraded - because they are floors, one at or below what the
+# tool already ships is a no-op, so a stale entry is inert rather than harmful.
 netty = "4.1.138.Final"
 protobuf = "3.25.9"
+jackson = "2.22.2"
+jsoup = "1.23.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -58,3 +63,5 @@ androidx-databinding-common = { group = "androidx.databinding", name = "databind
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
