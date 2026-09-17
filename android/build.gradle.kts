@@ -21,7 +21,7 @@ plugins {
     alias(libs.plugins.dokka.javadoc)
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.31.0"
-    id("org.sonarqube") version "4.4.1.3373"
+    id("org.sonarqube") version "7.5.0.8588"
 }
 
 version = "2.2.0"
