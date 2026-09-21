@@ -16,7 +16,7 @@ plugins {
     id("com.android.library")
     kotlin("android")
     kotlin("kapt")
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("plugin.serialization") version "2.4.20"
     alias(libs.plugins.dokka)
     alias(libs.plugins.dokka.javadoc)
     id("jacoco")
