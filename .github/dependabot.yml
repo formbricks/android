@@ -16,6 +16,13 @@ updates:
         patterns:
           - "org.jetbrains.kotlin*"
           - "org.jetbrains.kotlinx*"
+    ignore:
+      # AGP 8.9.2 cannot consume these (they need a newer compileSdk / AGP); the test APK's
+      # AAR-metadata check fails and every CI run goes red. Lift once the AGP 9 migration lands.
+      - dependency-name: "androidx.core:core-ktx"
+        versions: ["> 1.16.0"]
+      - dependency-name: "com.squareup.okhttp3:*"
+        versions: [">= 5.0.0"]
 
   - package-ecosystem: github-actions
     directory: "/"
