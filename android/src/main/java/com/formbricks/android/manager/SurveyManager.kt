@@ -6,6 +6,7 @@ import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
+import com.formbricks.android.model.workspace.ActionClass
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.InteractionSource
 import com.formbricks.android.model.workspace.Segment
@@ -164,8 +165,18 @@ object SurveyManager {
     /**
      * Checks if there are any surveys to display, based in the track action, and if so, displays the first one.
      * Handles the display percentage and the delay of the survey.
+     *
+     * Survey selection is deferred until any queued user update has landed. Attribute writes are
+     * debounced, so a host doing `setAttribute(...)` immediately followed by `track(...)` would
+     * otherwise be matched against the segment membership it had *before* the write — the survey
+     * it was trying to trigger simply would not show. Worse for a first `setUserId`: the id is
+     * not persisted until the response lands, so [filterSurveys] still sees an anonymous user and
+     * drops every segment-targeted survey, while a survey without segment filters renders with no
+     * `contactId` and its response is recorded as anonymous.
      */
     fun track(action: String) {
+        // Resolved before the wait: action classes come from workspace state, not user state, so
+        // a typo'd action name is knowable now and should not cost the caller a network round trip.
         val actionClasses = workspaceDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
@@ -174,16 +185,38 @@ object SurveyManager {
             Logger.e(error)
             return
         }
+
+        UserManager.waitForPendingUpdates { didIdentify ->
+            evaluate(actionClass, didIdentify)
+        }
+    }
+
+    /**
+     * The half of [track] that needs current user state: pick a survey for the action and show
+     * it. Runs once the update queue has settled, so [filteredSurveys] reflects the writes the
+     * host made just before tracking. Thread-agnostic on purpose — the callback arrives on
+     * whichever thread settled the sync, and [Formbricks.showSurvey] posts to the main looper
+     * itself.
+     */
+    private fun evaluate(actionClass: ActionClass, didIdentify: Boolean) {
         val firstSurveyWithActionClass = filteredSurveys.firstOrNull { survey ->
             val triggers = survey.triggers ?: listOf()
             triggers.firstOrNull { trigger ->
-                trigger.actionClass?.name == actionClass?.name
+                trigger.actionClass?.name == actionClass.name
             } != null
         }
 
         if (firstSurveyWithActionClass == null) {
             val error = SDKError.surveyNotFoundError
             Logger.e(error)
+            return
+        }
+
+        // The update never landed, so `segments` is whatever it was before the host's write. A
+        // survey with no segment filters is unaffected and still shows; one that targets a segment
+        // would be a coin flip on stale membership, so it is skipped rather than shown wrongly.
+        if (!didIdentify && firstSurveyWithActionClass.segment?.hasFilters == true) {
+            Logger.w("Skipping survey \"${firstSurveyWithActionClass.id}\": the pending user update did not land, so segment membership is stale.")
             return
         }
 

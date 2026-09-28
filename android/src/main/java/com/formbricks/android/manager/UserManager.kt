@@ -98,6 +98,15 @@ object UserManager {
     }
 
     /**
+     * Calls [completion] once any queued user update has reached the server: `true` when there
+     * was nothing to wait for or the sync succeeded, `false` when it failed or timed out and
+     * segment membership is therefore still stale. See [UpdateQueue.waitForPendingWork].
+     */
+    fun waitForPendingUpdates(completion: (Boolean) -> Unit) {
+        UpdateQueue.waitForPendingWork(completion)
+    }
+
+    /**
      * Saves [surveyId] to the [displays] property and the the current date to the [lastDisplayedAt] property.
      *
      * @param surveyId
@@ -204,16 +213,20 @@ object UserManager {
                     Logger.d("User update message: $message")
                 }
 
-                UpdateQueue.reset()
-                // `reset()` clears the in-flight lock, but only this drains a refresh that
-                // arrived while the request was out — that interaction happened after this
-                // response was computed, so it still needs its own sync.
-                UpdateQueue.syncDidFinish()
                 SurveyManager.filterSurveys()
+                // Strictly after the re-filter, and that order is load-bearing: a waiter parked
+                // by `track()` exists to read `filteredSurveys`, and releasing it first would
+                // hand it the list computed from the *previous* user state — the very staleness
+                // the wait removes. Beyond that this releases the in-flight lock and replays a
+                // refresh that arrived while the request was out; that interaction happened
+                // after this response was computed, so it still needs its own sync.
+                UpdateQueue.syncDidFinish(success = true)
                 startSyncTimer()
             } catch (e: Exception) {
-                // Release the in-flight lock and replay a refresh that arrived mid-sync.
-                UpdateQueue.syncDidFinish()
+                // Release the in-flight lock, hand the failed request's values back to the queue
+                // to be retried, replay a refresh that arrived mid-sync, and tell anyone waiting
+                // that segment membership could not be refreshed.
+                UpdateQueue.syncDidFinish(success = false)
                 val error = SDKError.unableToPostResponse
                 Logger.e(error)
                 // Re-arm, otherwise the refresh cycle ends here for the whole process: the
