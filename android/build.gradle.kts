@@ -1,5 +1,6 @@
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 import com.vanniktech.maven.publish.SonatypeHost
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // The Dokka Gradle plugin puts Dokka's engine, and with it Jackson, on this build script's
 // own classpath, which the project-level resolutionStrategy below cannot reach. Importing the
@@ -127,8 +128,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+}
+
+// `kotlinOptions { jvmTarget = "11" }` became a script compilation error with Kotlin 2.4, so the
+// build could not even configure. This is the replacement the error points at.
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
     }
 }
 
