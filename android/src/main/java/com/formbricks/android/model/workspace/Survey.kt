@@ -49,6 +49,20 @@ enum class SurveyOverlay(val value: String) {
     @SerializedName("none") @SerialName("none") NONE("none"),
     @SerializedName("light") @SerialName("light") LIGHT("light"),
     @SerializedName("dark") @SerialName("dark") DARK("dark");
+
+    companion object {
+        /**
+         * The overlay a survey actually renders with: its own override, then the workspace
+         * setting, then [NONE].
+         *
+         * One function for both callers on purpose. The WebView payload decides what the renderer
+         * paints, the presentation decides whether the native side blocks touches, and if they
+         * disagree the user gets either a backdrop they can tap through or a corner card that
+         * freezes the app.
+         */
+        fun resolve(surveyOverride: SurveyOverlay?, workspaceSetting: SurveyOverlay?): SurveyOverlay =
+            surveyOverride ?: workspaceSetting ?: NONE
+    }
 }
 
 @Serializable

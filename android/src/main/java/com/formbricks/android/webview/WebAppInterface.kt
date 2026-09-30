@@ -4,6 +4,8 @@ import android.webkit.JavascriptInterface
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.model.javascript.JsMessageData
 import com.formbricks.android.model.javascript.EventType
+import com.formbricks.android.model.javascript.CardRect
+import com.formbricks.android.model.javascript.CardRectData
 import com.formbricks.android.model.javascript.FileUploadData
 import com.google.gson.JsonParseException
 import java.lang.RuntimeException
@@ -26,6 +28,16 @@ class WebAppInterface(private val callback: WebAppCallback?) {
         }
         fun onFilePick(data: FileUploadData)
         fun onSurveyLibraryLoadError()
+
+        /**
+         * The survey card moved, resized, or left the screen ([rect] null).
+         *
+         * Defaulted for the same reason as [onFinished]: [WebAppCallback] is public, so an
+         * abstract member would stop existing implementors compiling.
+         */
+        fun onCardRectChange(rect: CardRect?) {
+            // Intentionally empty; FormbricksFragment overrides it.
+        }
     }
 
     /**
@@ -44,6 +56,7 @@ class WebAppInterface(private val callback: WebAppCallback?) {
                 EventType.ON_FINISHED -> callback?.onFinished()
                 EventType.ON_FILE_PICK -> { callback?.onFilePick(FileUploadData.from(data)) }
                 EventType.ON_SURVEY_LIBRARY_LOAD_ERROR -> { callback?.onSurveyLibraryLoadError() }
+                EventType.ON_CARD_RECT_CHANGE -> { callback?.onCardRectChange(CardRectData.from(data).rect) }
             }
         } catch (e: Exception) {
             Logger.e(RuntimeException(e.message))

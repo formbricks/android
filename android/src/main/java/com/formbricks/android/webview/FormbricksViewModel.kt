@@ -65,6 +65,17 @@ class FormbricksViewModel : ViewModel() {
                     FormbricksJavascript.message(JSON.stringify({ event: "onFinished" }));
                 };
 
+                // Where the survey card is. The native side cannot work this out for itself —
+                // CSS decides it inside the page — and it needs it to pass touches outside the
+                // card through to the host app. `rect` is null when no card is on screen.
+                //
+                // Only the renderer shipped with Formbricks 6.0+ calls this. Against an older
+                // self-hosted server it never fires, and the native side keeps its previous
+                // behaviour of taking every touch.
+                function onCardRectChange(rect) {
+                    FormbricksJavascript.message(JSON.stringify({ event: "onCardRectChange", rect: rect }));
+                };
+
                 let setResponseFinished = null;
                 function getSetIsResponseSendingFinished(callback) {
                     setResponseFinished = callback;
@@ -79,6 +90,7 @@ class FormbricksViewModel : ViewModel() {
                         onResponseCreated,
                         onFinished,
                         onClose,
+                        onCardRectChange,
                     };
 
                     window.formbricksSurveys.renderSurvey(surveyProps);
@@ -178,7 +190,7 @@ class FormbricksViewModel : ViewModel() {
         val clickOutside = matchedSurvey?.projectOverwrites?.clickOutsideClose ?: settings?.clickOutsideClose ?: false
         jsonObject.addProperty("clickOutside", clickOutside)
 
-        val overlay = (matchedSurvey?.projectOverwrites?.overlay ?: settings?.overlay ?: SurveyOverlay.NONE).value
+        val overlay = SurveyOverlay.resolve(matchedSurvey?.projectOverwrites?.overlay, settings?.overlay).value
         jsonObject.addProperty("overlay", overlay)
 
         val enabled = settings?.styling?.allowStyleOverwrite ?: false
