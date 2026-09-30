@@ -23,14 +23,14 @@ internal class SurveyPassthroughLayout(context: Context) : FrameLayout(context) 
     /** Starts at [SurveyTouchRegion.Everything]: blocks like the dialog did until a rect arrives. */
     var touchRegion: SurveyTouchRegion = SurveyTouchRegion.Everything
 
-    private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateKeyboardPadding() }
+    private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateKeyboardPadding(null) }
 
     init {
         // Edge-to-edge windows (the default from Android 15) do not shrink for the keyboard, so
         // the survey has to make room itself. Insets changes cover that case; the layout listener
         // covers hosts that still resize, where this view simply comes out shorter.
         ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
-            updateKeyboardPadding()
+            updateKeyboardPadding(insets)
             insets
         }
     }
@@ -58,8 +58,10 @@ internal class SurveyPassthroughLayout(context: Context) : FrameLayout(context) 
      * Pads the bottom by however much of this view the keyboard covers. The WebView shrinks with
      * the padding, so the renderer lays the card out above the keyboard and reports the new rect.
      */
-    private fun updateKeyboardPadding() {
-        val insets = ViewCompat.getRootWindowInsets(this) ?: return
+    private fun updateKeyboardPadding(dispatched: WindowInsetsCompat?) {
+        // The root insets when attached: before API 30, a host view earlier in the content
+        // FrameLayout can consume the keyboard inset before it is ever dispatched to this one.
+        val insets = ViewCompat.getRootWindowInsets(this) ?: dispatched ?: return
         val location = IntArray(2)
         getLocationInWindow(location)
         val padding = keyboardOverlap(

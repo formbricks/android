@@ -162,8 +162,6 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.databinding.common)
 
-    // Plain JVM tests, for logic that needs no device (see SurveyTouchRegionTest).
-    testImplementation("junit:junit:4.13.2")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

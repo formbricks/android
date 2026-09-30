@@ -1,6 +1,7 @@
 package com.formbricks.android.webview
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.formbricks.android.model.javascript.CardRect
 import com.formbricks.android.model.javascript.EventType
 import com.formbricks.android.model.javascript.FileUploadData
 import org.junit.Assert.*
@@ -20,6 +21,9 @@ class WebAppInterfaceInstrumentedTest {
         var finished = false
         var filePick: FileUploadData? = null
         var surveyLibraryLoadError = false
+        var cardRectCalls = 0
+        var cardRect: CardRect? = null
+        override fun onCardRectChange(rect: CardRect?) { cardRectCalls++; cardRect = rect }
         override fun onClose() { closed = true }
         override fun onDisplayCreated() { displayCreated = true }
         override fun onResponseCreated() { responseCreated = true }
@@ -32,6 +36,17 @@ class WebAppInterfaceInstrumentedTest {
     fun setup() {
         callback = FakeCallback()
         webAppInterface = WebAppInterface(callback)
+    }
+
+    @Test
+    fun testMessage_onCardRectChange() {
+        webAppInterface.message("""{"event":"onCardRectChange","rect":{"x":0,"y":498,"width":411,"height":416}}""")
+        assertEquals(498f, callback.cardRect!!.y, 0.01f)
+
+        // `rect: null` means the card has gone, and still has to reach the callback.
+        webAppInterface.message("""{"event":"onCardRectChange","rect":null}""")
+        assertEquals(2, callback.cardRectCalls)
+        assertNull(callback.cardRect)
     }
 
     @Test
