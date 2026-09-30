@@ -33,14 +33,17 @@ dokka = "2.2.0"
 # resolved independently:
 #
 #   - build.gradle.kts (root buildscript) - AGP's own plugin classpath. gRPC/Netty, Bouncy
-#     Castle, commons-compress, jose4j and JDOM live here. This is the classpath Dependabot
-#     reports against, attributed to settings.gradle.kts.
+#     Castle, commons-compress (and its commons-lang3), jose4j and JDOM live here.
 #   - android/build.gradle.kts (resolutionStrategy) - the :android project's configurations,
-#     including AGP's Unified Test Platform, plus Dokka's engine (jackson, jsoup).
+#     including AGP's Unified Test Platform, Dokka's engine (jackson, jsoup, freemarker) and
+#     the Kotlin plugin's signing helpers (Bouncy Castle again).
+#
+# Dependabot reports both, attributing every alert to settings.gradle.kts - check which
+# classpath a version is on before adding a floor.
 #
 # Dependabot does not track these: its Gradle parser only reaches [versions] through a
 # `version.ref` in [libraries]/[plugins], and nothing references them. Re-check them by
-# hand when `agp` or `dokka` is upgraded - because they are floors, one at or below what the
+# hand when `agp`, `kotlin` or `dokka` is upgraded - because they are floors, one at or below what the
 # tool already ships is a no-op, so a stale entry is inert rather than harmful.
 netty = "4.1.138.Final"
 protobuf = "3.25.9"
@@ -50,6 +53,8 @@ bouncycastle = "1.85"
 jose4j = "0.9.6"
 jdom2 = "2.0.6.1"
 commonsCompress = "1.27.1"
+commonsLang3 = "3.21.0"
+freemarker = "2.3.35"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

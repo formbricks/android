@@ -36,8 +36,9 @@ jacoco {
 
 // Raise known-vulnerable transitive dependencies of the build toolchain to patched
 // versions. None of these is a dependency of the SDK itself - they are pulled in by the
-// Android Gradle Plugin's Unified Test Platform (netty, protobuf) and by Dokka's engine
-// (jackson, jsoup), so the published AAR and its POM are unaffected.
+// Android Gradle Plugin's Unified Test Platform (netty, protobuf), by Dokka's engine
+// (jackson, jsoup, freemarker) and by the Kotlin plugin's signing helpers (Bouncy Castle),
+// so the published AAR and its POM are unaffected.
 //
 // These are floors, not overrides: `useVersion` on its own would also drag a *newer*
 // version back down, so anything at or above the floor is left alone and only older
@@ -54,6 +55,10 @@ run {
         "com.fasterxml.jackson.dataformat" to libs.versions.jackson.get(),
         "com.fasterxml.jackson.module" to libs.versions.jackson.get(),
         "org.jsoup" to libs.versions.jsoup.get(),
+        "org.freemarker" to libs.versions.freemarker.get(),
+        // Kotlin 2.4's `kotlinBouncyCastleConfiguration` backs its PGP key and signing check
+        // tasks. This build never runs them, but the dependency graph still resolves it.
+        "org.bouncycastle" to libs.versions.bouncycastle.get(),
     )
 
     fun isBelowFloor(current: String?, floor: String): Boolean {

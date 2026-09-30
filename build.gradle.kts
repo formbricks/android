@@ -20,6 +20,9 @@ buildscript {
             add("classpath", "org.bitbucket.b_c:jose4j:${libs.versions.jose4j.get()}")
             add("classpath", "org.jdom:jdom2:${libs.versions.jdom2.get()}")
             add("classpath", "org.apache.commons:commons-compress:${libs.versions.commonsCompress.get()}")
+            // Not from AGP directly: commons-compress 1.26+ depends on it, so the floor above
+            // brings it onto this classpath.
+            add("classpath", "org.apache.commons:commons-lang3:${libs.versions.commonsLang3.get()}")
         }
     }
 }
