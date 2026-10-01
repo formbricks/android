@@ -11,9 +11,11 @@ import androidx.activity.ComponentActivity
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.formbricks.android.Formbricks
 import com.formbricks.android.model.workspace.SurveyOverlay
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -139,6 +141,30 @@ class SurveyPassthroughInstrumentedTest {
         assertEquals(0, SurveyPassthroughLayout.keyboardOverlap(1500, window, keyboardHeight = 900))
         assertEquals(0, SurveyPassthroughLayout.keyboardOverlap(1200, window, keyboardHeight = 900))
         assertEquals(100, SurveyPassthroughLayout.keyboardOverlap(1600, window, keyboardHeight = 900))
+    }
+
+    // Showing
+
+    @Test
+    fun aSecondShowInTheSameTurnDoesNotStackASecondSurvey() {
+        // Two zero-delay surveys post their `show` back to back, so the second runs before the
+        // first's transaction would have if it were only scheduled.
+        ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                // `show` reads the workspace from prefs; with none stored it takes the no-overlay path.
+                // The fragment's view model reads the app URL and workspace id.
+                Formbricks.applicationContext = activity.applicationContext
+                Formbricks.appUrl = "https://test.formbricks.com"
+                Formbricks.workspaceId = "test-workspace"
+                val manager = activity.supportFragmentManager
+
+                FormbricksFragment.show(manager, "survey-one")
+                FormbricksFragment.show(manager, "survey-two")
+                manager.executePendingTransactions()
+
+                assertEquals(1, manager.fragments.count { it is FormbricksFragment })
+            }
+        }
     }
 
     // Which path a survey takes

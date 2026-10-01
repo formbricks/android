@@ -6,5 +6,9 @@
         <activity
             android:name="androidx.activity.ComponentActivity"
             android:exported="false" />
+        <!-- A host with a FragmentManager, for FormbricksFragment.show. -->
+        <activity
+            android:name="androidx.fragment.app.FragmentActivity"
+            android:exported="false" />
     </application>
 </manifest>

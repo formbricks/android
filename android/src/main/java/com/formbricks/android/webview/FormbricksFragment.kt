@@ -347,6 +347,10 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         fun show(childFragmentManager: FragmentManager, surveyId: String) {
             // The host app stays usable while a no-overlay survey is open, so it can track again
             // mid-survey. Without this a second survey would stack on top of the first.
+            //
+            // Both paths below commit synchronously, which is what lets this guard see a survey shown
+            // earlier in the same main-thread turn: `findFragmentByTag` does not search pending
+            // transactions, and two zero-delay surveys can post their `show` back to back.
             val showing = childFragmentManager.findFragmentByTag(TAG)
             if (showing != null && !showing.isRemoving) {
                 Logger.d("Skipping survey $surveyId: a survey is already showing.")
@@ -368,9 +372,9 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             }
             if (passthrough) {
                 // No container: the fragment places its own view (see attachToHostContent).
-                childFragmentManager.beginTransaction().add(fragment, TAG).commit()
+                childFragmentManager.beginTransaction().add(fragment, TAG).commitNow()
             } else {
-                fragment.show(childFragmentManager, TAG)
+                fragment.showNow(childFragmentManager, TAG)
             }
         }
     }
