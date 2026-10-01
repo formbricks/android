@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- A bare host Activity for view tests (SurveyPassthroughInstrumentedTest): the library has none. -->
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            android:exported="false" />
+        <!-- A host with a FragmentManager, for FormbricksFragment.show. -->
+        <activity
+            android:name="androidx.fragment.app.FragmentActivity"
+            android:exported="false" />
+    </application>
+</manifest>

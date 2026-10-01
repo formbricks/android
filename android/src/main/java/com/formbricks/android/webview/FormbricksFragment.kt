@@ -22,6 +22,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
@@ -30,19 +31,35 @@ import com.formbricks.android.databinding.FragmentFormbricksBinding
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.model.error.SDKError
+import com.formbricks.android.model.javascript.CardRect
 import com.formbricks.android.model.javascript.FileUploadData
 import com.formbricks.android.model.workspace.InteractionSource
+import com.formbricks.android.model.workspace.SurveyOverlay
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.gson.JsonObject
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
+/**
+ * Shows one survey.
+ *
+ * A `light` or `dark` overlay is a bottom-sheet dialog: its backdrop is meant to block the host
+ * app, and a dialog window blocks everything. `overlay: none` cannot work that way — a dialog is a
+ * window of its own and takes every touch inside its bounds, however transparent — so that case is
+ * the same fragment without a dialog, with its view placed into the host Activity's content and
+ * wrapped in [SurveyPassthroughLayout].
+ */
 class FormbricksFragment : BottomSheetDialogFragment() {
     private lateinit var binding: FragmentFormbricksBinding
     private lateinit var surveyId: String
     private val viewModel: FormbricksViewModel by viewModels()
     private var isDismissing = false
+
+    private val isPassthrough: Boolean by lazy { arguments?.getBoolean(ARG_PASSTHROUGH) ?: false }
+
+    /** Only set on the no-overlay path. */
+    private var passthroughLayout: SurveyPassthroughLayout? = null
 
     /** Scoped to this showing, so each interaction refreshes segments at most once. */
     private val interactionForwarder = SurveyInteractionForwarder()
@@ -101,6 +118,15 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             Logger.e(error)
             safeDismiss()
         }
+
+        override fun onCardRectChange(rect: CardRect?) {
+            // JavaScript interface calls arrive on a WebView background thread.
+            Handler(Looper.getMainLooper()).post {
+                val layout = passthroughLayout ?: return@post
+                // CSS pixels to physical pixels: the viewport is pinned at initial-scale=1.0.
+                layout.touchRegion = SurveyTouchRegion.forReported(rect, layout.resources.displayMetrics.density)
+            }
+        }
     })
 
     var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -143,6 +169,9 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         arguments?.let {
             surveyId = it.getString(ARG_SURVEY_ID) ?: throw IllegalArgumentException("Survey ID is required")
         }
+        // Has to happen here: DialogFragment decides whether to build a dialog right after
+        // onCreate, and a fragment added without a container would otherwise get one.
+        if (isPassthrough) showsDialog = false
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -151,7 +180,11 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         }
         binding.viewModel = viewModel
 
-        return binding.root
+        if (!isPassthrough) return binding.root
+        return SurveyPassthroughLayout(requireContext()).also {
+            it.addView(binding.root, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            passthroughLayout = it
+        }
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -162,6 +195,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     @Suppress("DEPRECATION")
     override fun onStart() {
         super.onStart()
+        // The bottom-sheet setup below needs the dialog, which the no-overlay path does not have.
+        if (isPassthrough) return
         val view: FrameLayout = dialog?.findViewById(com.google.android.material.R.id.design_bottom_sheet)!!
         view.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
         val behavior = BottomSheetBehavior.from(view)
@@ -179,6 +214,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (isPassthrough) attachToHostContent(view)
         dialog?.window?.setDimAmount(0.0f)
         binding.formbricksWebview.setBackgroundColor(Color.TRANSPARENT)
         binding.formbricksWebview.let {
@@ -221,6 +257,31 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
             viewModel.loadHtml(surveyId)
         }
+    }
+
+    /**
+     * Puts the survey on top of the host Activity's content.
+     *
+     * The fragment is added without a container, so the FragmentManager creates the view but
+     * places it nowhere. Placing it by hand, rather than adding the fragment into
+     * `android.R.id.content`, keeps this working when the host handed us a child FragmentManager,
+     * whose container lookup would not find that id and would crash the commit.
+     */
+    private fun attachToHostContent(view: View) {
+        val content = requireActivity().findViewById<ViewGroup>(android.R.id.content)
+        content.addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+
+        // The dialog swallowed back (it is not cancelable). Here back would otherwise reach the
+        // host, which may navigate away and leave the survey floating over another screen, so it
+        // closes the survey instead.
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) { safeDismiss() }
+    }
+
+    override fun onDestroyView() {
+        // The FragmentManager only removes views it placed itself; this one it did not.
+        (view?.parent as? ViewGroup)?.removeView(view)
+        passthroughLayout = null
+        super.onDestroyView()
     }
 
     private fun getFileName(uri: Uri): String? {
@@ -281,14 +342,40 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
         private const val ARG_SURVEY_ID = "survey_id"
+        private const val ARG_PASSTHROUGH = "passthrough"
 
         fun show(childFragmentManager: FragmentManager, surveyId: String) {
+            // The host app stays usable while a no-overlay survey is open, so it can track again
+            // mid-survey. Without this a second survey would stack on top of the first.
+            //
+            // Both paths below commit synchronously, which is what lets this guard see a survey shown
+            // earlier in the same main-thread turn: `findFragmentByTag` does not search pending
+            // transactions, and two zero-delay surveys can post their `show` back to back.
+            val showing = childFragmentManager.findFragmentByTag(TAG)
+            if (showing != null && !showing.isRemoving) {
+                Logger.d("Skipping survey $surveyId: a survey is already showing.")
+                return
+            }
+
+            val workspace = SurveyManager.workspaceDataHolder?.data?.data
+            val overlay = SurveyOverlay.resolve(
+                workspace?.surveys?.firstOrNull { it.id == surveyId }?.projectOverwrites?.overlay,
+                workspace?.settings?.overlay,
+            )
+            val passthrough = overlay == SurveyOverlay.NONE
+
             val fragment = FormbricksFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_SURVEY_ID, surveyId)
+                    putBoolean(ARG_PASSTHROUGH, passthrough)
                 }
             }
-            fragment.show(childFragmentManager, TAG)
+            if (passthrough) {
+                // No container: the fragment places its own view (see attachToHostContent).
+                childFragmentManager.beginTransaction().add(fragment, TAG).commitNow()
+            } else {
+                fragment.showNow(childFragmentManager, TAG)
+            }
         }
     }
 }
