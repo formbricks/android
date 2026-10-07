@@ -15,8 +15,10 @@ buildscript {
 
 plugins {
     id("com.android.library")
-    kotlin("android")
-    kotlin("kapt")
+    // AGP 9 has Kotlin support built in, so org.jetbrains.kotlin.android must not be applied.
+    // legacy-kapt replaces org.jetbrains.kotlin.kapt, which is unsupported with built-in Kotlin;
+    // it is what runs the data binding annotation processor.
+    id("com.android.legacy-kapt")
     kotlin("plugin.serialization") version "2.4.20"
     alias(libs.plugins.dokka)
     alias(libs.plugins.dokka.javadoc)
