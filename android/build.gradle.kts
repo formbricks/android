@@ -1,5 +1,6 @@
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
-import com.vanniktech.maven.publish.SonatypeHost
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // The Dokka Gradle plugin puts Dokka's engine, and with it Jackson, on this build script's
@@ -15,8 +16,10 @@ buildscript {
 
 plugins {
     id("com.android.library")
-    kotlin("android")
-    kotlin("kapt")
+    // AGP 9 has Kotlin support built in, so org.jetbrains.kotlin.android must not be applied.
+    // legacy-kapt replaces org.jetbrains.kotlin.kapt, which is unsupported with built-in Kotlin;
+    // it is what runs the data binding annotation processor.
+    id("com.android.legacy-kapt")
     kotlin("plugin.serialization") version "2.4.20"
     alias(libs.plugins.dokka)
     alias(libs.plugins.dokka.javadoc)
@@ -103,7 +106,6 @@ android {
     buildTypes {
         getByName("debug") {
             enableAndroidTestCoverage = true
-            isTestCoverageEnabled = true  // For backward compatibility
         }
         release {
             isMinifyEnabled = true
@@ -179,7 +181,7 @@ dokka {
     }
 }
 
-val dokkaJavadocJar by tasks.registering(Jar::class) {
+val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
     group = "documentation"
     description = "Packages the Dokka Javadoc output into the -javadoc jar published to Maven Central."
     from(tasks.named("dokkaGeneratePublicationJavadoc"))
@@ -187,7 +189,7 @@ val dokkaJavadocJar by tasks.registering(Jar::class) {
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
 
     // AGP's own withJavadocJar() runs a bundled Dokka 1.4.32 engine on a detached
     // configuration that neither the dependency report nor the floors above can reach (old
@@ -196,8 +198,8 @@ mavenPublishing {
     configure(
         AndroidSingleVariantLibrary(
             variant = "release",
-            sourcesJar = true,
-            publishJavadocJar = false,
+            sourcesJar = SourcesJar.Sources(),
+            javadocJar = JavadocJar.None(),
         )
     )
 
