@@ -1,4 +1,11 @@
 version: 2
+
+# Security updates only. We do not want Dependabot to keep dependencies up to date;
+# a PR should only be opened when a Dependabot alert (vulnerability) can be fixed.
+#
+# `open-pull-requests-limit: 0` switches off *version* update PRs for an ecosystem.
+# Security update PRs are not subject to that limit, so they keep being opened as long
+# as "Dependabot security updates" is enabled in Settings > Advanced Security.
 updates:
   # Gradle dependencies, including the gradle/libs.versions.toml version catalog.
   # Note: Dependabot *alerts* for Gradle need the dependency graph, which this repo
@@ -7,25 +14,10 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
-    groups:
-      androidx:
-        patterns:
-          - "androidx.*"
-      kotlin:
-        patterns:
-          - "org.jetbrains.kotlin*"
-          - "org.jetbrains.kotlinx*"
-    ignore:
-      # AGP 8.9.2 cannot consume these (they need a newer compileSdk / AGP); the test APK's
-      # AAR-metadata check fails and every CI run goes red. Lift once the AGP 9 migration lands.
-      - dependency-name: "androidx.core:core-ktx"
-        versions: ["> 1.16.0"]
-      - dependency-name: "com.squareup.okhttp3:*"
-        versions: [">= 5.0.0"]
+    open-pull-requests-limit: 0
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
