@@ -2,6 +2,8 @@ package com.formbricks.android.helper
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import com.formbricks.android.logger.Logger
 import java.util.concurrent.CopyOnWriteArraySet
 
@@ -40,10 +42,28 @@ internal object Appearance {
 
     /**
      * What the renderer understands: always "light" or "dark", never "system". [context] should be
-     * the Activity the survey is shown in, whose configuration carries the app's night mode.
+     * the Activity the survey is shown in. An explicit AppCompat night mode (the activity's local
+     * one, else the default) wins over the configuration: creating the first WebView in a process
+     * resets the Activity's configuration to the phone's, losing the app's own night mode.
      */
     fun resolve(context: Context, appearance: FormbricksAppearance = current): String =
-        resolve(context.resources.configuration.uiMode, appearance)
+        resolve(appCompatUiMode(context) ?: context.resources.configuration.uiMode, appearance)
+
+    /** AppCompat's forced night mode as a `uiMode` night flag, or null when it follows the system. */
+    private fun appCompatUiMode(context: Context): Int? {
+        val local = (context as? AppCompatActivity)?.delegate?.localNightMode
+            ?: AppCompatDelegate.MODE_NIGHT_UNSPECIFIED
+        val mode = if (local != AppCompatDelegate.MODE_NIGHT_UNSPECIFIED) {
+            local
+        } else {
+            AppCompatDelegate.getDefaultNightMode()
+        }
+        return when (mode) {
+            AppCompatDelegate.MODE_NIGHT_YES -> Configuration.UI_MODE_NIGHT_YES
+            AppCompatDelegate.MODE_NIGHT_NO -> Configuration.UI_MODE_NIGHT_NO
+            else -> null
+        }
+    }
 
     fun resolve(uiMode: Int, appearance: FormbricksAppearance = current): String = when (appearance) {
         FormbricksAppearance.LIGHT -> "light"

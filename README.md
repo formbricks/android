@@ -80,6 +80,7 @@ Formbricks.setAppearance(FormbricksAppearance.DARK) // LIGHT, DARK or SYSTEM
 - Works before or after `setup`, or pass it in the config with `.setAppearance(FormbricksAppearance.DARK)`. A string overload (`"dark"`) is available too.
 - An open survey switches in place; the typed answer and current question stay.
 - `SYSTEM` follows **your app's** night mode (including `AppCompatDelegate.setDefaultNightMode`), not the phone's, and updates live.
+- If your app keeps its theme outside AppCompat (for example a Compose `darkTheme` flag), call `setAppearance(LIGHT)` or `setAppearance(DARK)` yourself when it changes.
 - To keep an open survey's answers when the night mode changes, let the host Activity handle `uiMode` in `android:configChanges`. Otherwise Android recreates the Activity and the survey reloads, as it does on rotation.
 - Kept across `logout()`, forgotten on app restart, never sent to the server. An unknown value is logged and falls back to light.
 - Needs a Formbricks server that supports dark mode; an older server keeps surveys light.

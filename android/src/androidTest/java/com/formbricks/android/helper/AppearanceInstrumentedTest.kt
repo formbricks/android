@@ -1,6 +1,8 @@
 package com.formbricks.android.helper
 
+import android.content.Context
 import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.formbricks.android.Formbricks
@@ -23,7 +25,19 @@ class AppearanceInstrumentedTest {
 
     @Before
     @After
-    fun reset() = Appearance.reset()
+    fun reset() {
+        Appearance.reset()
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+    }
+
+    /** A context whose configuration says [nightFlag], like the Activity after the WebView reset. */
+    private fun contextWithNight(nightFlag: Int): Context {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val config = Configuration(base.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or nightFlag
+        }
+        return base.createConfigurationContext(config)
+    }
 
     @Test
     fun defaultsToLightWhateverTheAppTheme() {
@@ -55,6 +69,29 @@ class AppearanceInstrumentedTest {
             Configuration.UI_MODE_NIGHT_YES
         ) "dark" else "light"
         assertEquals(expected, Appearance.resolve(context))
+    }
+
+    @Test
+    fun systemPrefersAppCompatsForcedNightModeOverTheConfiguration() {
+        Appearance.set(FormbricksAppearance.SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        assertEquals("dark", Appearance.resolve(contextWithNight(day)))
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        assertEquals("light", Appearance.resolve(contextWithNight(night)))
+    }
+
+    @Test
+    fun systemFallsBackToTheConfigurationWhenAppCompatFollowsTheSystem() {
+        Appearance.set(FormbricksAppearance.SYSTEM)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        assertEquals("dark", Appearance.resolve(contextWithNight(night)))
+        assertEquals("light", Appearance.resolve(contextWithNight(day)))
+    }
+
+    @Test
+    fun forcedLightAndDarkIgnoreAppCompat() {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        assertEquals("light", Appearance.resolve(contextWithNight(day), FormbricksAppearance.LIGHT))
     }
 
     @Test
