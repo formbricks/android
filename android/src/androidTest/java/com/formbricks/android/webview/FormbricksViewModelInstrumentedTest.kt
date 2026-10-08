@@ -6,6 +6,7 @@ import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.WorkspaceResponseData
 import com.formbricks.android.model.workspace.WorkspaceData
+import com.formbricks.android.model.workspace.CustomCss
 import com.formbricks.android.model.workspace.Settings
 import com.formbricks.android.model.workspace.Survey
 import com.formbricks.android.model.workspace.SurveyOverlay
@@ -387,6 +388,43 @@ class FormbricksViewModelInstrumentedTest {
         )
             .apply { isAccessible = true }
             .invoke(viewModel, wsHolder, surveyId) as String
+    }
+
+    @Test
+    fun testGetJson_appearanceAndCustomCss() {
+        val survey = Survey(
+            id = "s1", triggers = null, recontactDays = null, displayLimit = null, delay = null,
+            displayPercentage = null, displayOption = null, segment = null, styling = null, languages = null,
+            customCss = CustomCss(dark = ".s{margin:0}")
+        )
+        val settings = Settings(
+            id = "proj1", recontactDays = null, clickOutsideClose = null, overlay = null, placement = null,
+            inAppSurveyBranding = null, styling = null, customCss = CustomCss(light = ".w{color:red}")
+        )
+        val holder = WorkspaceDataHolder(
+            data = WorkspaceResponseData(
+                data = WorkspaceData(surveys = listOf(survey), actionClasses = null, settings = settings),
+                expiresAt = null
+            ),
+            originalResponseMap = mapOf()
+        )
+        val viewModel = FormbricksViewModel()
+        val method = viewModel.javaClass.getDeclaredMethod(
+            "getJson", WorkspaceDataHolder::class.java, String::class.java, String::class.java
+        ).apply { isAccessible = true }
+
+        val json = com.google.gson.JsonParser.parseString(method.invoke(viewModel, holder, "s1", "dark") as String).asJsonObject
+
+        assertEquals("dark", json["appearance"].asString)
+        assertEquals(".w{color:red}", json["customCss"].asJsonObject["workspace"].asJsonObject["light"].asString)
+        assertEquals(".s{margin:0}", json["customCss"].asJsonObject["survey"].asJsonObject["dark"].asString)
+    }
+
+    @Test
+    fun testGetJson_defaultsToLightAndSendsNoCustomCss() {
+        val json = com.google.gson.JsonParser.parseString(invokeGetJsonWithNoSurveys()).asJsonObject
+        assertEquals("light", json["appearance"].asString)
+        assertFalse(json.has("customCss"))
     }
 
     // endregion

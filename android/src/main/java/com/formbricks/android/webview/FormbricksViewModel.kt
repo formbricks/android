@@ -157,6 +157,9 @@ class FormbricksViewModel : ViewModel() {
         html.postValue(htmlString)
     }
 
+    private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String): String =
+        getJson(workspaceDataHolder, surveyId, "light")
+
     private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String, appearance: String): String {
         val jsonObject = JsonObject()
         workspaceDataHolder.getSurveyJson(surveyId).let { jsonObject.add("survey", it) }
