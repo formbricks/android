@@ -82,7 +82,7 @@ jobs:
           args: >
             -Dsonar.organization=formbricks
             -Dsonar.projectKey=formbricks_android
-            -Dsonar.java.binaries=android/build/tmp/kotlin-classes/debug
+            -Dsonar.java.binaries=android/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes
             -Dsonar.sources=android/src/main/java
             -Dsonar.tests=android/src/androidTest/java
             -Dsonar.coverage.jacoco.xmlReportPaths=android/build/reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml
