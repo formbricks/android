@@ -95,6 +95,7 @@ class FormbricksViewModel : ViewModel() {
                     };
 
                     window.formbricksSurveys.renderSurvey(surveyProps);
+                    FormbricksJavascript.message(JSON.stringify({ event: "onSurveyRendered" }));
                 };
 
               function attachFilePickerOverride() {

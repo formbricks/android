@@ -428,4 +428,15 @@ class FormbricksViewModelInstrumentedTest {
     }
 
     // endregion
+    @Test
+    fun testHtml_postsOnSurveyRenderedOnlyAfterRenderSurvey() {
+        // The fragment holds appearance changes until this message, so it must follow renderSurvey.
+        val html = FormbricksViewModel::class.java.getDeclaredField("htmlTemplate")
+            .apply { isAccessible = true }
+            .get(FormbricksViewModel()) as String
+        val render = html.indexOf("window.formbricksSurveys.renderSurvey(surveyProps);")
+        val rendered = html.indexOf("""FormbricksJavascript.message(JSON.stringify({ event: "onSurveyRendered" }));""")
+        assertTrue("renderSurvey call missing", render >= 0)
+        assertTrue("onSurveyRendered must be posted after renderSurvey", rendered > render)
+    }
 }

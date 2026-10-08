@@ -67,6 +67,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
 
     /** What the open survey currently shows ("light" / "dark"), so only a real change is sent. */
     private var appliedAppearance = "light"
+    /** Until the survey has rendered there is no `formbricksSurveys.setAppearance` to call. */
+    private var surveyRendered = false
     private val appearanceListener: () -> Unit = {
         // The host may call setAppearance from any thread; the WebView is main-thread only.
         Handler(Looper.getMainLooper()).post { syncAppearance() }
@@ -128,6 +130,14 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             val error = SDKError.unableToLoadFormbicksJs
             Logger.e(error)
             safeDismiss()
+        }
+
+        override fun onSurveyRendered() {
+            // JavaScript interface calls arrive on a WebView background thread.
+            Handler(Looper.getMainLooper()).post {
+                surveyRendered = true
+                syncAppearance() // sends only if the value changed while loading
+            }
         }
 
         override fun onCardRectChange(rect: CardRect?) {
@@ -275,9 +285,10 @@ class FormbricksFragment : BottomSheetDialogFragment() {
 
             it.setInitialScale(1)
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
+            surveyRendered = false
+            Appearance.addListener(appearanceListener) // before resolving, so no change slips between
             appliedAppearance = Appearance.resolve(requireActivity())
             viewModel.loadHtml(surveyId, appliedAppearance)
-            Appearance.addListener(appearanceListener)
         }
     }
 
@@ -302,7 +313,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     /** Sends the resolved appearance into the open survey, only when it actually changed. */
     private fun syncAppearance() {
         val activity = activity ?: return
-        if (!isAdded || view == null) return
+        if (!surveyRendered || !isAdded || view == null) return // hold until the renderer exists
         val resolved = Appearance.resolve(activity)
         if (resolved == appliedAppearance) return
         appliedAppearance = resolved
