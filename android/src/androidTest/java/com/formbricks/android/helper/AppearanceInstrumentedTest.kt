@@ -1,8 +1,9 @@
-package com.formbricks.android
+package com.formbricks.android.helper
 
 import android.content.res.Configuration
-import com.formbricks.android.helper.Appearance
-import com.formbricks.android.helper.FormbricksAppearance
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.formbricks.android.Formbricks
 import com.formbricks.android.model.workspace.CustomCss
 import com.formbricks.android.model.workspace.Settings
 import com.google.gson.Gson
@@ -13,8 +14,10 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 
-class AppearanceTest {
+@RunWith(AndroidJUnit4::class)
+class AppearanceInstrumentedTest {
     private val night = Configuration.UI_MODE_NIGHT_YES
     private val day = Configuration.UI_MODE_NIGHT_NO
 
@@ -45,11 +48,39 @@ class AppearanceTest {
     }
 
     @Test
-    fun stringOverloadAcceptsKnownValuesAndFallsBackToLightOtherwise() {
-        Appearance.set("dark")
+    fun systemResolvesFromAContextConfiguration() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        Appearance.set(FormbricksAppearance.SYSTEM)
+        val expected = if (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+            Configuration.UI_MODE_NIGHT_YES
+        ) "dark" else "light"
+        assertEquals(expected, Appearance.resolve(context))
+    }
+
+    @Test
+    fun publicApiWorksBeforeSetupFromEnumOrString() {
+        Formbricks.setAppearance(FormbricksAppearance.DARK)
         assertEquals(FormbricksAppearance.DARK, Appearance.current)
+        Formbricks.setAppearance("system")
+        assertEquals(FormbricksAppearance.SYSTEM, Appearance.current)
+    }
+
+    @Test
+    fun anUnknownStringFallsBackToLight() {
+        Appearance.set("dark")
         Appearance.set("sepia")
         assertEquals(FormbricksAppearance.LIGHT, Appearance.current)
+        assertNull(FormbricksAppearance.from(null))
+        assertEquals(FormbricksAppearance.DARK, FormbricksAppearance.from(" Dark "))
+    }
+
+    @Test
+    fun configBuilderCarriesTheAppearance() {
+        val withIt = FormbricksConfig.Builder("https://app.formbricks.com", "ws")
+            .setAppearance(FormbricksAppearance.DARK)
+            .build()
+        assertEquals(FormbricksAppearance.DARK, withIt.appearance)
+        assertNull(FormbricksConfig.Builder("https://app.formbricks.com", "ws").build().appearance)
     }
 
     @Test
@@ -87,7 +118,6 @@ class AppearanceTest {
     fun settingsDecodeWithAndWithoutCustomCss() {
         val with = Gson().fromJson("""{"customCss":{"light":".a{}"}}""", Settings::class.java)
         assertTrue(with.customCss?.light == ".a{}")
-        val without = Gson().fromJson("{}", Settings::class.java)
-        assertNull(without.customCss)
+        assertNull(Gson().fromJson("{}", Settings::class.java).customCss)
     }
 }
