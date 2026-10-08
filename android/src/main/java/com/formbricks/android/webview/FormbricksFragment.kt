@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
 import android.app.Dialog
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -19,6 +21,7 @@ import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -28,6 +31,7 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import com.formbricks.android.R
 import com.formbricks.android.databinding.FragmentFormbricksBinding
+import com.formbricks.android.helper.Appearance
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.model.error.SDKError
@@ -60,6 +64,13 @@ class FormbricksFragment : BottomSheetDialogFragment() {
 
     /** Only set on the no-overlay path. */
     private var passthroughLayout: SurveyPassthroughLayout? = null
+
+    /** What the open survey currently shows ("light" / "dark"), so only a real change is sent. */
+    private var appliedAppearance = "light"
+    private val appearanceListener: () -> Unit = {
+        // The host may call setAppearance from any thread; the WebView is main-thread only.
+        Handler(Looper.getMainLooper()).post { syncAppearance() }
+    }
 
     /** Scoped to this showing, so each interaction refreshes segments at most once. */
     private val interactionForwarder = SurveyInteractionForwarder()
@@ -253,9 +264,20 @@ class FormbricksFragment : BottomSheetDialogFragment() {
                 }
             }
 
+            // Stop the WebView from darkening the survey itself: it renders its own dark theme.
+            // API 33+ darkens algorithmically only when asked, 29-32 through force dark.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                it.settings.isAlgorithmicDarkeningAllowed = false
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                @Suppress("DEPRECATION")
+                it.settings.forceDark = WebSettings.FORCE_DARK_OFF
+            }
+
             it.setInitialScale(1)
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
-            viewModel.loadHtml(surveyId)
+            appliedAppearance = Appearance.resolve(requireActivity())
+            viewModel.loadHtml(surveyId, appliedAppearance)
+            Appearance.addListener(appearanceListener)
         }
     }
 
@@ -277,7 +299,24 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) { safeDismiss() }
     }
 
+    /** Sends the resolved appearance into the open survey, only when it actually changed. */
+    private fun syncAppearance() {
+        val activity = activity ?: return
+        if (!isAdded || view == null) return
+        val resolved = Appearance.resolve(activity)
+        if (resolved == appliedAppearance) return
+        appliedAppearance = resolved
+        binding.formbricksWebview.evaluateJavascript(Appearance.switchScript(resolved), null)
+    }
+
+    /** The app's night mode changed without recreating the Activity, which keeps the answers. */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        syncAppearance()
+    }
+
     override fun onDestroyView() {
+        Appearance.removeListener(appearanceListener)
         // The FragmentManager only removes views it placed itself; this one it did not.
         (view?.parent as? ViewGroup)?.removeView(view)
         passthroughLayout = null

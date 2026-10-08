@@ -10,6 +10,7 @@ import com.formbricks.android.extensions.guard
 import com.formbricks.android.manager.EmbeddedDataManager
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
+import com.formbricks.android.model.workspace.CustomCss
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.SurveyOverlay
 import com.formbricks.android.model.workspace.getSettingsStylingJson
@@ -139,9 +140,14 @@ class FormbricksViewModel : ViewModel() {
         </html>
 """
 
-    fun loadHtml(surveyId: String) {
+    /**
+     * Builds the survey page. [appearance] is what it opens with ("light" or "dark"); it is part of
+     * the page, so a change while the survey is open goes through `evaluateJavascript` instead of
+     * loading again, which would lose the respondent's answers.
+     */
+    fun loadHtml(surveyId: String, appearance: String = "light") {
         val workspace = SurveyManager.workspaceDataHolder.guard { return }
-        val json = getJson(workspace, surveyId)
+        val json = getJson(workspace, surveyId, appearance)
         // Base64-encode the payload before embedding it in the HTML. Base64 output is
         // limited to [A-Za-z0-9+/=], so survey content can no longer contain characters
         // (backticks, `${...}`, quotes, "</script>") that would break out of the
@@ -151,7 +157,7 @@ class FormbricksViewModel : ViewModel() {
         html.postValue(htmlString)
     }
 
-    private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String): String {
+    private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String, appearance: String): String {
         val jsonObject = JsonObject()
         workspaceDataHolder.getSurveyJson(surveyId).let { jsonObject.add("survey", it) }
         jsonObject.addProperty("isBrandingEnabled", workspaceDataHolder.data?.data?.settings?.inAppSurveyBranding ?: true)
@@ -162,6 +168,7 @@ class FormbricksViewModel : ViewModel() {
         jsonObject.addProperty("environmentId", Formbricks.workspaceId)
         jsonObject.addProperty("contactId", UserManager.contactId)
         jsonObject.addProperty("isWebEnvironment", false)
+        jsonObject.addProperty("appearance", appearance)
         // The Embedded Data bag, snapshotted here - loadHtml runs when the survey is actually
         // presented, after any configured delay - and frozen for the survey's life. Passed raw and
         // unfiltered: the ingest contract (allow-list, coercion, `locked`, size caps) lives in the
@@ -181,6 +188,8 @@ class FormbricksViewModel : ViewModel() {
         } else {
             jsonObject.addProperty("languageCode", "default")
         }
+
+        CustomCss.props(settings?.customCss, matchedSurvey?.customCss)?.let { jsonObject.add("customCss", it) }
 
         val hasCustomStyling = matchedSurvey?.styling != null
 

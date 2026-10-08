@@ -11,5 +11,6 @@ data class Settings(
     @SerializedName("overlay") val overlay: SurveyOverlay?,
     @SerializedName("placement") val placement: String?,
     @SerializedName("inAppSurveyBranding") val inAppSurveyBranding: Boolean?,
-    @SerializedName("styling") val styling: Styling?
+    @SerializedName("styling") val styling: Styling?,
+    @SerializedName("customCss") val customCss: CustomCss? = null
 )

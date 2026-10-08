@@ -127,6 +127,11 @@ android {
             pickFirsts += "**/formbrickssdk/DataBinderMapperImpl.class"
         }
     }
+    // Logger calls android.util.Log, which is a stub on the JVM; unit tests only need it not to throw.
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     buildFeatures {
         dataBinding = true
         viewBinding = true
@@ -164,6 +169,7 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.databinding.common)
 
+    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

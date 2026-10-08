@@ -8,6 +8,8 @@ import android.os.Looper
 import androidx.annotation.Keep
 import androidx.fragment.app.FragmentManager
 import com.formbricks.android.api.FormbricksApi
+import com.formbricks.android.helper.Appearance
+import com.formbricks.android.helper.FormbricksAppearance
 import com.formbricks.android.helper.FormbricksConfig
 import com.formbricks.android.logger.Logger
 import com.formbricks.android.manager.EmbeddedDataManager
@@ -66,6 +68,10 @@ object Formbricks {
      *
      */
     fun setup(context: Context, config: FormbricksConfig, forceRefresh: Boolean = false) {
+        // Local state, not part of the SDK config, and must be in place before the first survey
+        // renders, so it is applied ahead of everything else, even on a repeat setup.
+        config.appearance?.let { Appearance.set(it) }
+
         if (isInitialized && !forceRefresh) {
             val error = SDKError.sdkIsAlreadyInitialized
             Logger.e(error)
@@ -269,6 +275,29 @@ object Formbricks {
         }
         Formbricks.language = language
         UserManager.setLanguage(language)
+    }
+
+    /**
+     * Sets how surveys render: [FormbricksAppearance.LIGHT] (default), [FormbricksAppearance.DARK],
+     * or [FormbricksAppearance.SYSTEM] to follow the app's own night mode, not the phone's.
+     *
+     * Works before or after [setup], and switches an open survey in place without losing answers.
+     * Kept across [logout], forgotten when the app restarts, and never sent to the server.
+     *
+     * ```
+     * Formbricks.setAppearance(FormbricksAppearance.DARK)
+     * ```
+     */
+    fun setAppearance(appearance: FormbricksAppearance) {
+        Appearance.set(appearance)
+    }
+
+    /**
+     * String overload of [setAppearance] ("light", "dark" or "system"). An unknown value is logged
+     * and falls back to light.
+     */
+    fun setAppearance(appearance: String) {
+        Appearance.set(appearance)
     }
 
     /**
