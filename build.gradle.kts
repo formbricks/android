@@ -2,7 +2,7 @@
 
 // The Android Gradle Plugin drags its own tooling onto this build script's classpath: gRPC and
 // Netty (io.grpc:grpc-netty), Bouncy Castle (com.android.tools:sdk-common), commons-compress
-// (:repository), jose4j (bundletool) and JDOM (jetifier). The resolutionStrategy in
+// (:repository), jose4j (bundletool), JDOM (jetifier) and the Kotlin Gradle plugin. The resolutionStrategy in
 // android/build.gradle.kts cannot reach any of it - that block configures the :android project's
 // own configurations, which are resolved separately, so Netty was still landing at 4.1.93.Final
 // there while the floor read 4.1.138.Final.
@@ -23,6 +23,9 @@ buildscript {
             // Not from AGP directly: commons-compress 1.26+ depends on it, so the floor above
             // brings it onto this classpath.
             add("classpath", "org.apache.commons:commons-lang3:${libs.versions.commonsLang3.get()}")
+            // AGP 9.4.1 still resolves 2.2.10, which has an unsafe-deserialization flaw in the
+            // Kotlin build cache (fixed in 2.4.20-Beta1). It is already 2.4.20 in :android.
+            add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}")
         }
     }
 }
