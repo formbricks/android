@@ -18,7 +18,9 @@ class FormbricksConfig private constructor(
     val loggingEnabled: Boolean,
     val fragmentManager: FragmentManager?,
     /** True if this config was built using the deprecated `environmentId` entry point. */
-    val usedDeprecatedEnvironmentId: Boolean
+    val usedDeprecatedEnvironmentId: Boolean,
+    /** How surveys render; null leaves whatever [com.formbricks.android.Formbricks.setAppearance] already set. */
+    val appearance: FormbricksAppearance? = null
 ) {
     /** Backward-compatible alias for [workspaceId]. */
     @Deprecated(
@@ -34,6 +36,7 @@ class FormbricksConfig private constructor(
         private var loggingEnabled = false
         private var fragmentManager: FragmentManager? = null
         private var usedDeprecatedEnvironmentId: Boolean = false
+        private var appearance: FormbricksAppearance? = null
 
         fun setUserId(userId: String): Builder {
             this.userId = userId
@@ -85,6 +88,12 @@ class FormbricksConfig private constructor(
             return this
         }
 
+        /** Sets how surveys render: light (default), dark, or system. */
+        fun setAppearance(appearance: FormbricksAppearance): Builder {
+            this.appearance = appearance
+            return this
+        }
+
         fun build(): FormbricksConfig {
             return FormbricksConfig(
                 appUrl = appUrl,
@@ -93,7 +102,8 @@ class FormbricksConfig private constructor(
                 attributes = attributes,
                 loggingEnabled = loggingEnabled,
                 fragmentManager = fragmentManager,
-                usedDeprecatedEnvironmentId = usedDeprecatedEnvironmentId
+                usedDeprecatedEnvironmentId = usedDeprecatedEnvironmentId,
+                appearance = appearance
             )
         }
 

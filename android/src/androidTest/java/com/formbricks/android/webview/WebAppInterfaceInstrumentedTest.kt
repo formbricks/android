@@ -30,6 +30,8 @@ class WebAppInterfaceInstrumentedTest {
         override fun onFinished() { finished = true }
         override fun onFilePick(data: FileUploadData) { filePick = data }
         override fun onSurveyLibraryLoadError() { surveyLibraryLoadError = true }
+        var surveyRendered = false
+        override fun onSurveyRendered() { surveyRendered = true }
     }
 
     @Before
@@ -84,6 +86,13 @@ class WebAppInterfaceInstrumentedTest {
         assertNotNull(callback.filePick)
         assertEquals("jpg", callback.filePick?.fileUploadParams?.allowedFileExtensions)
         assertEquals(true, callback.filePick?.fileUploadParams?.allowMultipleFiles)
+    }
+
+    @Test
+    fun testMessage_onSurveyRendered() {
+        assertFalse(callback.surveyRendered)
+        webAppInterface.message("{\"event\":\"onSurveyRendered\"}")
+        assertTrue(callback.surveyRendered)
     }
 
     @Test

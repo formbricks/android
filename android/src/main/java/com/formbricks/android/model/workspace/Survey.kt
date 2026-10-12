@@ -37,7 +37,8 @@ data class Survey(
     @SerializedName("projectOverwrites") val projectOverwrites: SurveyProjectOverwrites? = null,
     // Whether interacting with this survey can change some live survey's segment
     // membership. Absent unless the workspace uses survey-interaction targeting.
-    @SerializedName("interactionRefresh") val interactionRefresh: InteractionRefresh? = null
+    @SerializedName("interactionRefresh") val interactionRefresh: InteractionRefresh? = null,
+    @SerializedName("customCss") val customCss: CustomCss? = null
 )
 
 /// Defines the overlay style displayed behind a survey modal.
