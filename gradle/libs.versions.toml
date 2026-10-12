@@ -47,7 +47,7 @@ dokka = "2.2.0"
 # tool already ships is a no-op, so a stale entry is inert rather than harmful.
 netty = "4.1.138.Final"
 protobuf = "3.25.9"
-jackson = "2.22.2"
+jackson = "2.22.3"
 jsoup = "1.23.2"
 bouncycastle = "1.85"
 jose4j = "0.9.6"
