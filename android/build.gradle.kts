@@ -40,8 +40,8 @@ jacoco {
 // Raise known-vulnerable transitive dependencies of the build toolchain to patched
 // versions. None of these is a dependency of the SDK itself - they are pulled in by the
 // Android Gradle Plugin's Unified Test Platform (netty, protobuf), by Dokka's engine
-// (jackson, jsoup, freemarker) and by the Kotlin plugin's signing helpers (Bouncy Castle),
-// so the published AAR and its POM are unaffected.
+// (jackson, jsoup, freemarker), by the Kotlin plugin's signing helpers (Bouncy Castle) and by the
+// Android lint tool (httpclient, commons-lang3), so the published AAR and its POM are unaffected.
 //
 // These are floors, not overrides: `useVersion` on its own would also drag a *newer*
 // version back down, so anything at or above the floor is left alone and only older
@@ -64,6 +64,15 @@ run {
         "org.bouncycastle" to libs.versions.bouncycastle.get(),
     )
 
+    // Floors for single artifacts whose group also holds artifacts that must not be moved.
+    val moduleFloors = mapOf(
+        // The Android lint tool pulls httpclient 4.5.6 (via httpmime) and commons-lang3 3.16.0
+        // (via commons-compress). commons-compress and commons-codec share the
+        // org.apache.commons group, hence the per-module floor.
+        "org.apache.httpcomponents:httpclient" to libs.versions.httpclient.get(),
+        "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
+    )
+
     fun isBelowFloor(current: String?, floor: String): Boolean {
         if (current.isNullOrBlank()) return true
         fun numericParts(v: String) = v.split('.', '-', '_').mapNotNull(String::toIntOrNull)
@@ -83,7 +92,9 @@ run {
             // pinned jackson-bom already pulls it to the matching line, so leave it alone.
             if (requested.name == "jackson-annotations") return@eachDependency
 
-            val floor = securityFloors[requested.group] ?: return@eachDependency
+            val floor = moduleFloors["${requested.group}:${requested.name}"]
+                ?: securityFloors[requested.group]
+                ?: return@eachDependency
             if (isBelowFloor(requested.version, floor)) {
                 useVersion(floor)
                 because("security floor - see gradle/libs.versions.toml")

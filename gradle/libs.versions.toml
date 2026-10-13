@@ -33,10 +33,12 @@ dokka = "2.2.0"
 # resolved independently:
 #
 #   - build.gradle.kts (root buildscript) - AGP's own plugin classpath. gRPC/Netty, Bouncy
-#     Castle, commons-compress (and its commons-lang3), jose4j and JDOM live here.
+#     Castle, commons-compress (and its commons-lang3), jose4j, JDOM and the Kotlin Gradle
+#     plugin (AGP 9 still ships 2.2.10; `kotlin` above is the floor) live here.
 #   - android/build.gradle.kts (resolutionStrategy) - the :android project's configurations,
 #     including AGP's Unified Test Platform, Dokka's engine (jackson, jsoup, freemarker) and
-#     the Kotlin plugin's signing helpers (Bouncy Castle again).
+#     the Kotlin plugin's signing helpers (Bouncy Castle again) and the Android lint tool
+#     (httpclient via httpmime, commons-lang3 via commons-compress).
 #
 # Dependabot reports both, attributing every alert to settings.gradle.kts - check which
 # classpath a version is on before adding a floor.
@@ -54,6 +56,7 @@ jose4j = "0.9.6"
 jdom2 = "2.0.6.1"
 commonsCompress = "1.27.1"
 commonsLang3 = "3.21.0"
+httpclient = "4.5.14"
 freemarker = "2.3.35"
 
 [libraries]
