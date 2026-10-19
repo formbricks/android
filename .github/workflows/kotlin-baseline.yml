@@ -1,0 +1,44 @@
+# Fails when the SDK we would publish needs a newer Kotlin than the one we support. A build
+# that merely compiles says nothing about this; see scripts/check-kotlin-baseline.py.
+name: Kotlin Baseline
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  kotlin-baseline:
+    name: Published SDK stays within the Kotlin baseline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      # The same two outputs publishing is built from, without signing or uploading anything.
+      - name: Build the POM and the AAR
+        run: ./gradlew :android:generatePomFileForMavenPublication :android:bundleReleaseAar --no-configuration-cache
+
+      - name: Check them against the Kotlin baseline
+        run: python3 scripts/check-kotlin-baseline.py android/build/publications/maven/pom-default.xml android/build/outputs/aar/android-release.aar
