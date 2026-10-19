@@ -28,7 +28,7 @@ plugins {
     id("org.sonarqube") version "7.5.0.8588"
 }
 
-version = "2.2.0"
+version = "2.3.0"
 val groupId = "com.formbricks"
 val artifactId = "android"
 
