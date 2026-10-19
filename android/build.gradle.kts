@@ -2,6 +2,7 @@ import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
 import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SourcesJar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 // The Dokka Gradle plugin puts Dokka's engine, and with it Jackson, on this build script's
 // own classpath, which the project-level resolutionStrategy below cannot reach. Importing the
@@ -148,11 +149,20 @@ android {
     }
 }
 
-// `kotlinOptions { jvmTarget = "11" }` became a script compilation error with Kotlin 2.4, so the
-// build could not even configure. This is the replacement the error points at.
+// The compiler here is newer than the Kotlin our users run (AGP 9 needs it, and the root build
+// raises it past a security advisory). A compiler stamps its own version into every class it
+// emits, and an app's compiler rejects anything more than one minor version above itself. So the
+// output is held at Kotlin 2.1: language and API level, and the stdlib the POM declares.
+// scripts/check-kotlin-baseline.py fails CI if any of this drifts.
+//
+// `kotlinOptions { jvmTarget = "11" }` became a script compilation error with Kotlin 2.4, hence
+// `compilerOptions`.
 kotlin {
+    coreLibrariesVersion = "2.1.0"
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
+        languageVersion.set(KotlinVersion.KOTLIN_2_1)
+        apiVersion.set(KotlinVersion.KOTLIN_2_1)
     }
 }
 

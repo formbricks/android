@@ -1,5 +1,7 @@
 [versions]
 agp = "9.4.1"
+# The compiler and build plugin only. What the SDK publishes is held at Kotlin 2.1 in
+# android/build.gradle.kts.
 kotlin = "2.4.20"
 # core-ktx 1.17+ needs a newer compileSdk / AGP than 8.9.2 supports; lift with the AGP 9 migration.
 coreKtx = "1.16.0"
@@ -13,7 +15,9 @@ material = "1.14.0"
 
 androidx-annotation = "1.11.0"
 
-kotlinx-serialization-json = "1.11.0"
+# Held at 1.8.x: later releases are built on newer Kotlin than our users run, and their compilers
+# cannot read them. scripts/check-kotlin-baseline.py enforces this.
+kotlinx-serialization-json = "1.8.0"
 
 retrofit = "3.0.0"
 # okhttp 5.x pulls in okhttp-android, which needs compileSdk 37; lift with the AGP 9 migration.
