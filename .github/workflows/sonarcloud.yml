@@ -14,9 +14,7 @@ permissions:
 jobs:
   sonarcloud:
     name: SonarCloud
-    # Pinned: ubuntu-latest is now 26.04, where `qemu-kvm` has no install candidate and the
-    # "Setup KVM" step fails. Move to a newer image only after reworking that step.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Harden Runner
@@ -44,14 +42,13 @@ jobs:
           # installed again by "Install SDK components" below, so this loses nothing.
           packages: platform-tools
 
-      # Setup KVM for hardware acceleration
-      - name: Setup KVM
+      # Hosted runners already expose /dev/kvm; the emulator only needs permission to use it.
+      # Installing qemu-kvm is not needed, and it has no install candidate on Ubuntu 26.04.
+      - name: Enable KVM
         run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
-          sudo adduser $USER kvm
-          sudo chown $USER /dev/kvm
-          sudo chmod 777 /dev/kvm
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
       # Accept Android SDK licenses
       - name: Accept Android SDK licenses
