@@ -6,9 +6,11 @@
         <activity
             android:name="androidx.activity.ComponentActivity"
             android:exported="false" />
-        <!-- A host with a FragmentManager, for FormbricksFragment.show. -->
+        <!-- A host with a FragmentManager, for FormbricksFragment.show. Themed like a real host: the
+             dialog path crashes under the bare framework theme, which draws an action bar into it. -->
         <activity
             android:name="androidx.fragment.app.FragmentActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
     </application>
 </manifest>
