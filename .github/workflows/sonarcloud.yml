@@ -14,7 +14,9 @@ permissions:
 jobs:
   sonarcloud:
     name: SonarCloud
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is now 26.04, where `qemu-kvm` has no install candidate and the
+    # "Setup KVM" step fails. Move to a newer image only after reworking that step.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Harden Runner
