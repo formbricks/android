@@ -366,21 +366,22 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         }
     }
 
-    private fun safeDismiss() {
+    /**
+     * Dismisses only the survey, whatever state the host is in.
+     *
+     * Once the host has saved its state (it is in the background) a plain `dismiss()` throws, so
+     * this allows state loss: the survey is over, there is nothing to restore. Finishing the host to
+     * get around it would restart the user's app, so the host Activity is never touched here.
+     */
+    internal fun safeDismiss() {
         if (isDismissing) return
         isDismissing = true
         
         try {
-            if (isAdded && !isStateSaved) {
-                dismiss()
-            } else {
-                // If we can't dismiss safely, just finish the activity
-                activity?.finish()
-            }
+            if (isAdded) dismissAllowingStateLoss()
         } catch (e: Exception) {
             val error = SDKError.somethingWentWrongError
             Logger.e(error)
-            activity?.finish()
         }
     }
 
