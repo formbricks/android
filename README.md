@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.formbricks:android:2.3.0") // replace with latest version
+    implementation("com.formbricks:android:2.3.1") // replace with latest version
 }
 ```
 
