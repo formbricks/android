@@ -29,7 +29,9 @@ plugins {
     id("org.sonarqube") version "7.5.0.8588"
 }
 
-version = "2.3.1"
+// A placeholder: the release workflow writes the version from the release tag into its own
+// checkout (scripts/release/version.py), so main never carries a real version. See RELEASING.md.
+version = "0.0.0-dev"
 val groupId = "com.formbricks"
 val artifactId = "android"
 
