@@ -1,0 +1,131 @@
+# Publishes com.formbricks:android to Maven Central when a GitHub release is published.
+# The version comes from the release tag; main only holds a placeholder. See RELEASING.md.
+#
+# build -> publish -> verify, nothing else: CI already ran on the commit being tagged.
+# Every job is safe to re-run: publish skips a version Maven Central already has.
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+# Two runs for the same tag would race to upload the same version; queue them instead.
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No Gradle cache in this workflow: a cache written by a PR run must not feed a release.
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Take the version from the tag
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          version="$(python3 scripts/release/version.py --tag "$TAG" --prerelease "$PRERELEASE" --gradle-file android/build.gradle.kts)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Fails a broken release before any credential is handed out.
+      - name: Build the release AAR and POM
+        run: ./gradlew :android:bundleReleaseAar :android:generatePomFileForMavenPublication --no-configuration-cache
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Take the version from the tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: python3 scripts/release/version.py --tag "$TAG" --prerelease "$PRERELEASE" --gradle-file android/build.gradle.kts
+
+      # Maven Central never accepts a version twice, so a re-run after a successful upload must
+      # skip rather than fail. The portal check covers the window before the repository syncs.
+      - name: Check whether Maven Central already has this version
+        id: existing
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          exists="$(python3 scripts/release/maven_central.py exists "$VERSION")"
+          echo "exists=$exists" >> "$GITHUB_OUTPUT"
+          if [ "$exists" = "true" ]; then
+            echo "::notice title=Publish skipped::com.formbricks:android:$VERSION is already on Maven Central"
+          fi
+
+      - name: Publish to Maven Central
+        if: steps.existing.outputs.exists == 'false'
+        run: ./gradlew :android:publishAndReleaseToMavenCentral --no-configuration-cache
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+
+  verify:
+    name: Verify
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    # The poll gives up after 45 minutes; the job timeout is only a backstop.
+    timeout-minutes: 50
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Wait until apps can resolve the version from Maven Central
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: python3 scripts/release/maven_central.py wait "$VERSION" --timeout-minutes 45
