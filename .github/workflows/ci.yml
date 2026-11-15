@@ -6,6 +6,7 @@
 #   format          ./gradlew :android:ktlintCheck          (fix: ./gradlew :android:ktlintFormat)
 #   build           ./gradlew :android:assemble :android:assembleDebugAndroidTest
 #   unit-tests      ./gradlew :android:testDebugUnitTest :android:connectedDebugAndroidTest
+#                   python3 -m unittest discover -s scripts/release
 #   api-check       ./gradlew :android:checkKotlinAbi       (update: ./gradlew :android:updateKotlinAbi)
 #   package-check   scripts/package-check.sh
 name: CI
@@ -151,6 +152,9 @@ jobs:
 
       - name: Run JVM unit tests
         run: ./gradlew :android:testDebugUnitTest
+
+      - name: Run the release script tests
+        run: python3 -m unittest discover -s scripts/release
 
       # jacocoAndroidTestReport runs connectedDebugAndroidTest, then writes the coverage report
       # the sonarqube job reads.
