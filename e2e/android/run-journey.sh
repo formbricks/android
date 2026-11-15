@@ -8,6 +8,7 @@ set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 # The workspace id lives in the server harness; read it in a subshell so the two libs stay apart.
+# shellcheck source-path=SCRIPTDIR source=../server/lib.sh
 E2E_WORKSPACE_ID="$(source "${E2E_ANDROID_DIR}/../server/lib.sh" && printf '%s' "${E2E_WORKSPACE_ID}")"
 
 : "${E2E_USER_ID:?set E2E_USER_ID to the userId the journey identifies as}"
