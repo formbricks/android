@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Formbricks Playground</string>
+    <string name="setup_status">Set up with %1$s, workspace %2$s</string>
+    <string name="user_id">User ID</string>
+    <string name="set_user_id">Set user ID</string>
+    <string name="attribute_key">Attribute key</string>
+    <string name="attribute_value">Attribute value</string>
+    <string name="set_attribute">Set attribute</string>
+    <string name="action">Action</string>
+    <string name="track_action">Track action</string>
+    <string name="log_out">Log out</string>
+    <string name="status_user_id">setUserId(%1$s)</string>
+    <string name="status_attribute">setAttribute(%1$s = %2$s)</string>
+    <string name="status_track">track(%1$s)</string>
+    <string name="status_logout">logout()</string>
+</resources>

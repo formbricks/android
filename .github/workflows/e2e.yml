@@ -1,0 +1,144 @@
+name: E2E
+
+# The SDK golden journey against a published Formbricks image. ci.yml calls it on every PR (fork PRs
+# skip it: no secrets) with the latest release; run it by hand with `server_version` (for example
+# 6.3.0-rc.1) as the pre-release QA. The server harness lives in e2e/server (shared with the other
+# SDKs), the emulator side in e2e/android, the journey in playground/src/androidTest.
+on:
+  workflow_call:
+    inputs:
+      server_version:
+        description: Formbricks image tag (ghcr.io/formbricks/formbricks) to test against
+        type: string
+        default: latest
+    secrets:
+      FORMBRICKS_QA_LICENSE_KEY:
+        description: QA Enterprise license with the Contacts feature
+        required: false
+  workflow_dispatch:
+    inputs:
+      server_version:
+        description: Formbricks image tag (ghcr.io/formbricks/formbricks) to test against, for example 6.3.0-rc.1
+        type: string
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  golden-journey:
+    name: Golden journey (Espresso)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      FORMBRICKS_VERSION: ${{ inputs.server_version || 'latest' }}
+      # Unique per attempt; the retry inside the journey step reuses it, which the survey allows.
+      E2E_USER_ID: qa-user-${{ github.run_id }}-${{ github.run_attempt }}
+      E2E_FEEDBACK: Golden journey feedback ${{ github.run_id }}
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the server version
+        run: |
+          if [[ ! "${FORMBRICKS_VERSION}" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "::error::server_version '${FORMBRICKS_VERSION}' is not a valid image tag"
+            exit 1
+          fi
+          echo "Testing against ghcr.io/formbricks/formbricks:${FORMBRICKS_VERSION}"
+
+      - name: Test the harness scripts
+        run: |
+          e2e/server/test/lib.test.sh
+          e2e/android/test/lib.test.sh
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          # The action's default "tools" package is delisted; see ci.yml unit-tests.
+          packages: platform-tools
+
+      # Hosted runners already expose /dev/kvm; the emulator only needs permission to use it.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      # google_apis, not google_play: install-ca.sh needs a rootable image.
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-33" "system-images;android-33;google_apis;x86_64"
+          sdkmanager --install "emulator"
+
+      # Before the server: it is up about a minute after the image pull, so build first.
+      - name: Build the playground and the journey
+        run: ./gradlew --console=plain :playground:assembleDebug :playground:assembleDebugAndroidTest
+
+      - name: Start the Formbricks server and bootstrap the tenant
+        env:
+          FORMBRICKS_QA_LICENSE_KEY: ${{ secrets.FORMBRICKS_QA_LICENSE_KEY }}
+        run: e2e/server/up.sh
+
+      # Stops with a clear error at the license gate when FORMBRICKS_QA_LICENSE_KEY is missing.
+      - name: Seed the survey through the V1 API
+        env:
+          FORMBRICKS_QA_LICENSE_KEY: ${{ secrets.FORMBRICKS_QA_LICENSE_KEY }}
+        run: e2e/server/seed.sh
+
+      # The SDK only accepts https:// URLs: the emulator reaches the server through this proxy.
+      - name: Start the TLS proxy for the emulator
+        run: e2e/android/https-proxy.sh up
+
+      # run-journey.sh installs the proxy's CA on the emulator, then runs the journey with one retry.
+      - name: Run the golden journey
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on -no-snapshot
+          disable-animations: true
+          script: e2e/android/run-journey.sh
+
+      - name: Assert the response through the V1 API
+        run: e2e/server/assert-response.sh
+
+      - name: Delete the seeded data through the V1 API
+        run: e2e/server/cleanup.sh
+
+      - name: Stop the server and collect its logs
+        if: always()
+        run: |
+          e2e/android/https-proxy.sh down e2e/server/logs
+          e2e/server/down.sh e2e/server/logs
+
+      - name: Upload the server logs and journey reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-golden-journey-attempt-${{ github.run_attempt }}
+          path: |
+            e2e/server/logs
+            e2e/android/reports
+          if-no-files-found: ignore
+          retention-days: 7

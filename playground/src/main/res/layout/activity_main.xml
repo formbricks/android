@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/setup_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:textIsSelectable="true" />
+
+        <EditText
+            android:id="@+id/user_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="username"
+            android:hint="@string/user_id"
+            android:inputType="text" />
+
+        <Button
+            android:id="@+id/set_user_id"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/set_user_id" />
+
+        <EditText
+            android:id="@+id/attribute_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/attribute_key"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:text="plan"
+            tools:ignore="HardcodedText" />
+
+        <EditText
+            android:id="@+id/attribute_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/attribute_value"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:text="pro"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/set_attribute"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/set_attribute" />
+
+        <EditText
+            android:id="@+id/action_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="@string/action"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:text="qa-action"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/track_action"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/track_action" />
+
+        <Button
+            android:id="@+id/log_out"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/log_out" />
+
+        <TextView
+            android:id="@+id/last_call"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textIsSelectable="true" />
+    </LinearLayout>
+</ScrollView>

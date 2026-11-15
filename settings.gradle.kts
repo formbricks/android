@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "formbricks-android-sdk"
 include(":android")
+// A host app for manual testing and the E2E golden journey (playground/src/androidTest). Never published.
+include(":playground")
