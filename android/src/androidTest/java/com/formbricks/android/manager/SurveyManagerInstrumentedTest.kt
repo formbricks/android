@@ -1,13 +1,19 @@
 package com.formbricks.android.manager
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.formbricks.android.model.workspace.*
 import com.formbricks.android.model.user.Display
-import org.junit.Assert.*
+import com.formbricks.android.model.workspace.LanguageDetail
+import com.formbricks.android.model.workspace.Survey
+import com.formbricks.android.model.workspace.SurveyLanguage
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import java.util.Date
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Date
 
 @RunWith(AndroidJUnit4::class)
 class SurveyManagerInstrumentedTest {
@@ -420,7 +426,10 @@ class SurveyManagerInstrumentedTest {
         val survey6 = createMockSurvey(recontactDays = 3.0)
         val testDate = Date(System.currentTimeMillis() - 4 * 24 * 60 * 60 * 1000) // 4 days ago
         UserManager.lastDisplayedAt = testDate
-        val result5 = SurveyManager.filterSurveysBasedOnRecontactDays(listOf(survey5, survey6), null)
+        val result5 = SurveyManager.filterSurveysBasedOnRecontactDays(
+            listOf(survey5, survey6),
+            null
+        )
         assertEquals(1, result5.size)
         assertEquals(survey6.id, result5[0].id)
     }
@@ -438,33 +447,29 @@ class SurveyManagerInstrumentedTest {
         displayOption: String? = null,
         displayLimit: Double? = null,
         recontactDays: Double? = null
-    ): Survey {
-        return Survey(
-            id = id,
-            triggers = null,
-            recontactDays = recontactDays,
-            displayLimit = displayLimit,
-            delay = null,
-            displayPercentage = null,
-            displayOption = displayOption,
-            segment = null,
-            styling = null,
-            languages = null
-        )
-    }
+    ): Survey = Survey(
+        id = id,
+        triggers = null,
+        recontactDays = recontactDays,
+        displayLimit = displayLimit,
+        delay = null,
+        displayPercentage = null,
+        displayOption = displayOption,
+        segment = null,
+        styling = null,
+        languages = null
+    )
 
-    private fun createMockSurvey(recontactDays: Double?): Survey {
-        return Survey(
-            id = "mockSurvey",
-            triggers = null,
-            recontactDays = recontactDays,
-            displayLimit = null,
-            delay = null,
-            displayPercentage = null,
-            displayOption = null,
-            segment = null,
-            styling = null,
-            languages = null
-        )
-    }
+    private fun createMockSurvey(recontactDays: Double?): Survey = Survey(
+        id = "mockSurvey",
+        triggers = null,
+        recontactDays = recontactDays,
+        displayLimit = null,
+        delay = null,
+        displayPercentage = null,
+        displayOption = null,
+        segment = null,
+        styling = null,
+        languages = null
+    )
 }

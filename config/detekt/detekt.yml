@@ -1,0 +1,23 @@
+# Overrides on top of detekt's default rule set (`buildUponDefaultConfig`). Each one says why;
+# everything not listed here runs at its default. Findings fail the build - there is no baseline.
+
+config:
+  # Rules that only warn still fail `./gradlew detekt`.
+  warningsAsErrors: true
+
+complexity:
+  TooManyFunctions:
+    # Private helpers are how a long function gets split; counting them punishes the fix.
+    ignorePrivate: true
+
+exceptions:
+  TooGenericExceptionCaught:
+    # The SDK runs inside other people's apps and must never crash them. Its catch blocks around
+    # parsing, WebView callbacks and network results are deliberately broad: an exception type
+    # nobody predicted is exactly the one that would otherwise take the host app down.
+    active: false
+
+style:
+  ReturnCount:
+    # Early `return` on a missing value is the house style for null guards (see `guard {}`).
+    excludeGuardClauses: true

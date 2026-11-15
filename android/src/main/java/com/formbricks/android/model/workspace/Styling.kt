@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Styling(
+public data class Styling(
     @SerializedName("roundness") val roundness: Double? = null,
-    @SerializedName("allowStyleOverwrite") val allowStyleOverwrite: Boolean? = null,
+    @SerializedName("allowStyleOverwrite") val allowStyleOverwrite: Boolean? = null
 )

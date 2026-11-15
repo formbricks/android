@@ -3,15 +3,17 @@ package com.formbricks.android.webview
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.formbricks.android.Formbricks
 import com.formbricks.android.manager.UserManager
-import com.formbricks.android.model.workspace.WorkspaceDataHolder
-import com.formbricks.android.model.workspace.WorkspaceResponseData
-import com.formbricks.android.model.workspace.WorkspaceData
 import com.formbricks.android.model.workspace.CustomCss
 import com.formbricks.android.model.workspace.Settings
 import com.formbricks.android.model.workspace.Survey
 import com.formbricks.android.model.workspace.SurveyOverlay
 import com.formbricks.android.model.workspace.SurveyProjectOverwrites
-import org.junit.Assert.*
+import com.formbricks.android.model.workspace.WorkspaceData
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.WorkspaceResponseData
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,7 +71,11 @@ class FormbricksViewModelInstrumentedTest {
             originalResponseMap = mapOf()
         )
         val viewModel = FormbricksViewModel()
-        val json = viewModel.javaClass.getDeclaredMethod("getJson", WorkspaceDataHolder::class.java, String::class.java)
+        val json = viewModel.javaClass.getDeclaredMethod(
+            "getJson",
+            WorkspaceDataHolder::class.java,
+            String::class.java
+        )
             .apply { isAccessible = true }
             .invoke(viewModel, wsHolder, surveyId) as String
         // Check that the output JSON string contains expected keys/values
@@ -394,30 +400,51 @@ class FormbricksViewModelInstrumentedTest {
     fun testGetJson_appearanceAndCustomCss() {
         val survey = Survey(
             id = "s1", triggers = null, recontactDays = null, displayLimit = null, delay = null,
-            displayPercentage = null, displayOption = null, segment = null, styling = null, languages = null,
-            customCss = CustomCss(dark = ".s{margin:0}")
+            displayPercentage = null, displayOption = null, segment = null, styling = null,
+            languages = null, customCss = CustomCss(dark = ".s{margin:0}")
         )
         val settings = Settings(
-            id = "proj1", recontactDays = null, clickOutsideClose = null, overlay = null, placement = null,
-            inAppSurveyBranding = null, styling = null, customCss = CustomCss(light = ".w{color:red}")
+            id = "proj1",
+            recontactDays = null,
+            clickOutsideClose = null,
+            overlay = null,
+            placement = null,
+            inAppSurveyBranding = null,
+            styling = null,
+            customCss = CustomCss(light = ".w{color:red}")
         )
         val holder = WorkspaceDataHolder(
             data = WorkspaceResponseData(
-                data = WorkspaceData(surveys = listOf(survey), actionClasses = null, settings = settings),
+                data = WorkspaceData(
+                    surveys = listOf(survey),
+                    actionClasses = null,
+                    settings = settings
+                ),
                 expiresAt = null
             ),
             originalResponseMap = mapOf()
         )
         val viewModel = FormbricksViewModel()
         val method = viewModel.javaClass.getDeclaredMethod(
-            "getJson", WorkspaceDataHolder::class.java, String::class.java, String::class.java
+            "getJson",
+            WorkspaceDataHolder::class.java,
+            String::class.java,
+            String::class.java
         ).apply { isAccessible = true }
 
-        val json = com.google.gson.JsonParser.parseString(method.invoke(viewModel, holder, "s1", "dark") as String).asJsonObject
+        val json = com.google.gson.JsonParser.parseString(
+            method.invoke(viewModel, holder, "s1", "dark") as String
+        ).asJsonObject
 
         assertEquals("dark", json["appearance"].asString)
-        assertEquals(".w{color:red}", json["customCss"].asJsonObject["workspace"].asJsonObject["light"].asString)
-        assertEquals(".s{margin:0}", json["customCss"].asJsonObject["survey"].asJsonObject["dark"].asString)
+        assertEquals(
+            ".w{color:red}",
+            json["customCss"].asJsonObject["workspace"].asJsonObject["light"].asString
+        )
+        assertEquals(
+            ".s{margin:0}",
+            json["customCss"].asJsonObject["survey"].asJsonObject["dark"].asString
+        )
     }
 
     @Test
@@ -435,7 +462,9 @@ class FormbricksViewModelInstrumentedTest {
             .apply { isAccessible = true }
             .get(FormbricksViewModel()) as String
         val render = html.indexOf("window.formbricksSurveys.renderSurvey(surveyProps);")
-        val rendered = html.indexOf("""FormbricksJavascript.message(JSON.stringify({ event: "onSurveyRendered" }));""")
+        val rendered = html.indexOf(
+            """FormbricksJavascript.message(JSON.stringify({ event: "onSurveyRendered" }));"""
+        )
         assertTrue("renderSurvey call missing", render >= 0)
         assertTrue("onSurveyRendered must be posted after renderSurvey", rendered > render)
     }

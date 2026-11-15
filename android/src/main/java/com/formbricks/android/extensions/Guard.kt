@@ -4,17 +4,17 @@ package com.formbricks.android.extensions
  * Swift like guard statement.
  * To achieve that, on null the statement must return an empty T object
  */
-inline fun <reified T> T?.guard(block: T?.() -> Unit): T {
+public inline fun <reified T> T?.guard(block: T?.() -> Unit): T {
     this?.let {
         return it
     } ?: run {
         block()
     }
 
-    return T::class.java.newInstance()
+    return T::class.java.getDeclaredConstructor().newInstance()
 }
 
-inline fun String?.guardEmpty(block: String?.() -> Unit): String {
+public inline fun String?.guardEmpty(block: String?.() -> Unit): String {
     if (isNullOrBlank()) {
         block()
     } else {
@@ -24,10 +24,12 @@ inline fun String?.guardEmpty(block: String?.() -> Unit): String {
     return ""
 }
 
-inline fun <T: Any> guardLet(vararg elements: T?, closure: () -> Nothing): List<T> {
-    return if (elements.all { it != null }) {
+public inline fun <T : Any> guardLet(vararg elements: T?, closure: () -> Nothing): List<T> =
+    if (elements.all {
+            it != null
+        }
+    ) {
         elements.filterNotNull()
     } else {
         closure()
     }
-}

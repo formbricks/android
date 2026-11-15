@@ -12,12 +12,12 @@ import java.util.TimerTask
  * The given properties will be sent to the backend and updated in
  * the user object when the debounce interval is reached.
  */
-object UpdateQueue {
+public object UpdateQueue {
     /**
      * Window over which `setUserId` / `setAttribute` calls are coalesced into a single
      * `POST /user`. A `var` only so tests can shorten it; the SDK never writes to it.
      */
-    internal var DEBOUNCE_INTERVAL_MS: Long = 500
+    internal var debounceIntervalMs: Long = 500
 
     /**
      * Ceiling on how long `track()` waits for a queued user update to land before it gives up
@@ -25,7 +25,7 @@ object UpdateQueue {
      * without it a host that tracks right after `setAttribute` would hang on a request that is
      * never going to answer. A `var` only so tests can shorten it; the SDK never writes to it.
      */
-    internal var PENDING_UPDATE_TIMEOUT_MS: Long = 5_000
+    internal var pendingUpdateTimeoutMs: Long = 5_000
 
     private val lock = Any()
 
@@ -72,28 +72,29 @@ object UpdateQueue {
     internal var syncUser: (String, Map<String, AttributeValue>?) -> Unit =
         { id, attributes -> UserManager.syncUser(id, attributes) }
 
-    fun setUserId(userId: String) {
+    public fun setUserId(userId: String) {
         synchronized(lock) { this.userId = userId }
         startDebounceTimer()
     }
 
-    fun setAttributes(attributes: Map<String, AttributeValue>) {
+    public fun setAttributes(attributes: Map<String, AttributeValue>) {
         synchronized(lock) { this.attributes = attributes.toMutableMap() }
         startDebounceTimer()
     }
 
-    fun addAttribute(key: String, attribute: AttributeValue) {
+    public fun addAttribute(key: String, attribute: AttributeValue) {
         // Under the lock: `commit()` moves the map out and nulls the field, so an unguarded
         // `put` could land on a map that is already on its way to the server, or on one that
         // nothing will ever send.
         synchronized(lock) {
-            val current = attributes ?: mutableMapOf<String, AttributeValue>().also { attributes = it }
+            val current =
+                attributes ?: mutableMapOf<String, AttributeValue>().also { attributes = it }
             current[key] = attribute
         }
         startDebounceTimer()
     }
 
-    fun setLanguage(language: String) {
+    public fun setLanguage(language: String) {
         val effectiveUserId = synchronized(lock) { effectiveUserIdLocked() }
 
         if (effectiveUserId != null) {
@@ -112,7 +113,7 @@ object UpdateQueue {
      * `POST /user` calls would race and the later response would overwrite segments, displays
      * and responses wholesale. It is replayed by [syncDidFinish].
      */
-    fun requestUserStateRefresh(userId: String) {
+    public fun requestUserStateRefresh(userId: String) {
         synchronized(lock) {
             if (isSyncInFlight) {
                 Logger.d("UpdateQueue - refresh deferred, a sync is already in flight")
@@ -128,7 +129,7 @@ object UpdateQueue {
     }
 
     /** Whether anything is queued for the server, or a request carrying such values is still out. */
-    fun hasPendingWork(): Boolean = synchronized(lock) { hasPendingWorkLocked() }
+    public fun hasPendingWork(): Boolean = synchronized(lock) { hasPendingWorkLocked() }
 
     /**
      * Calls [completion] once the queued user updates have reached the server, so the caller can
@@ -143,7 +144,7 @@ object UpdateQueue {
      * thread settles the request — the sync coroutine, the timeout timer, or the caller itself
      * when nothing is pending — so it must not assume a thread.
      */
-    fun waitForPendingWork(completion: (Boolean) -> Unit) {
+    public fun waitForPendingWork(completion: (Boolean) -> Unit) {
         var token = 0
         var shouldFlush = false
 
@@ -188,7 +189,7 @@ object UpdateQueue {
      * self-retrying failure would turn a dead network into a request every half second;
      * `UserManager.scheduleSyncRetry()` owns the backoff instead.
      */
-    fun syncDidFinish(success: Boolean = true) {
+    public fun syncDidFinish(success: Boolean = true) {
         val waiters: List<(Boolean) -> Unit>
         val deferredUserId: String?
         val hasNewWork: Boolean
@@ -244,7 +245,7 @@ object UpdateQueue {
      * parked until their timeout. `pendingRefreshUserId` is left to [clearPendingRefresh]; the
      * two are called together at logout.
      */
-    fun reset() {
+    public fun reset() {
         val waiters: List<(Boolean) -> Unit>
 
         synchronized(lock) {
@@ -264,7 +265,7 @@ object UpdateQueue {
     }
 
     /** Drops a deferred refresh instead of replaying it. */
-    fun clearPendingRefresh() {
+    public fun clearPendingRefresh() {
         synchronized(lock) {
             pendingRefreshUserId = null
         }
@@ -275,8 +276,7 @@ object UpdateQueue {
         userId != null || attributes != null || isSyncInFlight
 
     /** The id a commit would send. Must be read under [lock]. */
-    private fun effectiveUserIdLocked(): String? =
-        userId ?: inFlightUserId ?: UserManager.userId
+    private fun effectiveUserIdLocked(): String? = userId ?: inFlightUserId ?: UserManager.userId
 
     private fun startDebounceTimer() {
         synchronized(lock) {
@@ -286,11 +286,14 @@ object UpdateQueue {
             // a newer timer scheduled in the meantime could be cancelled instead of this one.
             val newTimer = Timer("debounceTimer", false)
             timer = newTimer
-            newTimer.schedule(object : TimerTask() {
-                override fun run() {
-                    commit()
-                }
-            }, DEBOUNCE_INTERVAL_MS)
+            newTimer.schedule(
+                object : TimerTask() {
+                    override fun run() {
+                        commit()
+                    }
+                },
+                debounceIntervalMs
+            )
         }
     }
 
@@ -307,14 +310,17 @@ object UpdateQueue {
     }
 
     private fun scheduleWaiterTimeout(token: Int) {
-        val timeout = PENDING_UPDATE_TIMEOUT_MS
-        timeoutTimer.schedule(object : TimerTask() {
-            override fun run() {
-                val waiter = synchronized(lock) { pendingWaiters.remove(token) } ?: return
-                Logger.d("UpdateQueue - a queued user update did not land within ${timeout}ms")
-                waiter(false)
-            }
-        }, timeout)
+        val timeout = pendingUpdateTimeoutMs
+        timeoutTimer.schedule(
+            object : TimerTask() {
+                override fun run() {
+                    val waiter = synchronized(lock) { pendingWaiters.remove(token) } ?: return
+                    Logger.d("UpdateQueue - a queued user update did not land within ${timeout}ms")
+                    waiter(false)
+                }
+            },
+            timeout
+        )
     }
 
     private fun commit() {
@@ -354,7 +360,9 @@ object UpdateQueue {
             return
         }
 
-        Logger.d("UpdateQueue - commit() called on UpdateQueue with $effectiveUserId and $effectiveAttributes")
+        Logger.d(
+            "UpdateQueue - commit() called on UpdateQueue with $effectiveUserId and $effectiveAttributes"
+        )
         syncUser(effectiveUserId, effectiveAttributes)
     }
 }

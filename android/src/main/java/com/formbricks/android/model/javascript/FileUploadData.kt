@@ -3,23 +3,22 @@ package com.formbricks.android.model.javascript
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 
-data class FileUploadData(
+public data class FileUploadData(
     @SerializedName("event") val event: EventType,
-    @SerializedName("fileUploadParams") val fileUploadParams: FileUploadParams,
+    @SerializedName("fileUploadParams") val fileUploadParams: FileUploadParams
 ) {
 
-    companion object {
-        fun from(string: String): FileUploadData {
-            return Gson().fromJson(string, FileUploadData::class.java)
-        }
+    public companion object {
+        public fun from(string: String): FileUploadData =
+            Gson().fromJson(string, FileUploadData::class.java)
     }
 }
 
-data class FileUploadParams(
+public data class FileUploadParams(
     @SerializedName("allowedFileExtensions") val allowedFileExtensions: String?,
     @SerializedName("allowMultipleFiles") val allowMultipleFiles: Boolean
 ) {
-    fun allowedExtensionsArray(): Array<String> {
-        return allowedFileExtensions?.split(",")?.map { it }?.toTypedArray() ?: arrayOf()
-    }
+    public fun allowedExtensionsArray(): Array<String> = allowedFileExtensions?.split(",")?.map {
+        it
+    }?.toTypedArray() ?: arrayOf()
 }

@@ -30,21 +30,21 @@ import java.lang.reflect.Type
  * ```
  */
 @JsonAdapter(AttributeValueAdapter::class)
-sealed class AttributeValue {
-    data class StringValue(val value: String) : AttributeValue()
-    data class NumberValue(val value: Double) : AttributeValue()
+public sealed class AttributeValue {
+    public data class StringValue(val value: String) : AttributeValue()
+    public data class NumberValue(val value: Double) : AttributeValue()
 
     /** The string representation of this attribute value, if it is a string. */
-    val stringValue: String?
+    public val stringValue: String?
         get() = (this as? StringValue)?.value
 
     /** The numeric representation of this attribute value, if it is a number. */
-    val numberValue: Double?
+    public val numberValue: Double?
         get() = (this as? NumberValue)?.value
 
-    companion object {
-        fun string(value: String): AttributeValue = StringValue(value)
-        fun number(value: Double): AttributeValue = NumberValue(value)
+    public companion object {
+        public fun string(value: String): AttributeValue = StringValue(value)
+        public fun number(value: Double): AttributeValue = NumberValue(value)
     }
 }
 
@@ -53,15 +53,23 @@ sealed class AttributeValue {
  * - `StringValue("hello")` serializes as `"hello"`
  * - `NumberValue(42.0)` serializes as `42.0`
  */
-class AttributeValueAdapter : JsonSerializer<AttributeValue>, JsonDeserializer<AttributeValue> {
-    override fun serialize(src: AttributeValue, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
-        return when (src) {
-            is AttributeValue.StringValue -> JsonPrimitive(src.value)
-            is AttributeValue.NumberValue -> JsonPrimitive(src.value)
-        }
+public class AttributeValueAdapter :
+    JsonSerializer<AttributeValue>,
+    JsonDeserializer<AttributeValue> {
+    override fun serialize(
+        src: AttributeValue,
+        typeOfSrc: Type,
+        context: JsonSerializationContext
+    ): JsonElement = when (src) {
+        is AttributeValue.StringValue -> JsonPrimitive(src.value)
+        is AttributeValue.NumberValue -> JsonPrimitive(src.value)
     }
 
-    override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): AttributeValue {
+    override fun deserialize(
+        json: JsonElement,
+        typeOfT: Type,
+        context: JsonDeserializationContext
+    ): AttributeValue {
         if (json.isJsonPrimitive) {
             val primitive = json.asJsonPrimitive
             return when {

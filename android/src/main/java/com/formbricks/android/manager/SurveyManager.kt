@@ -1,38 +1,40 @@
 package com.formbricks.android.manager
 
 import android.content.Context
+import androidx.core.content.edit
 import com.formbricks.android.Formbricks
 import com.formbricks.android.api.FormbricksApi
 import com.formbricks.android.extensions.expiresAt
 import com.formbricks.android.extensions.guard
 import com.formbricks.android.logger.Logger
+import com.formbricks.android.model.error.SDKError
+import com.formbricks.android.model.user.Display
 import com.formbricks.android.model.workspace.ActionClass
-import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.InteractionSource
 import com.formbricks.android.model.workspace.Segment
 import com.formbricks.android.model.workspace.SegmentDeserializer
 import com.formbricks.android.model.workspace.Survey
-import com.formbricks.android.model.error.SDKError
-import com.formbricks.android.model.user.Display
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.lang.RuntimeException
 import java.util.Date
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  *  The SurveyManager is responsible for managing the surveys that are displayed to the user.
  *  Filtering surveys based on the user's segments, responses, and displays.
  */
-object SurveyManager {
+public object SurveyManager {
     private const val REFRESH_STATE_ON_ERROR_TIMEOUT_IN_MINUTES = 10
     private const val FORMBRICKS_PREFS = "formbricks_prefs"
     internal const val PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER = "formbricksWorkspaceDataHolder"
+
     /** Pre-workspace-rename storage key. Read on first access so existing installs can be migrated. */
     internal const val PREF_LEGACY_ENVIRONMENT_DATA_HOLDER = "formbricksDataHolder"
 
@@ -40,25 +42,27 @@ object SurveyManager {
     internal var displayTimer = Timer()
     internal var hasApiError = false
     internal var isShowingSurvey = false
-    private val prefManager by lazy { Formbricks.applicationContext.getSharedPreferences(FORMBRICKS_PREFS, Context.MODE_PRIVATE) }
+    private val prefManager by lazy {
+        Formbricks.applicationContext.getSharedPreferences(FORMBRICKS_PREFS, Context.MODE_PRIVATE)
+    }
     internal var filteredSurveys: MutableList<Survey> = mutableListOf()
 
-    val gson = GsonBuilder()
+    public val gson: Gson = GsonBuilder()
         .registerTypeAdapter(Segment::class.java, SegmentDeserializer())
         .create()
 
     private var workspaceDataHolderJson: String?
         get() = prefManager.getString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, null)
         set(value) {
-            val editor = prefManager.edit()
-            if (null != value) {
-                editor.putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, value)
-            } else {
-                editor.remove(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER)
+            prefManager.edit {
+                if (null != value) {
+                    putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, value)
+                } else {
+                    remove(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER)
+                }
+                // Drop the legacy cache key once we've written to the new one.
+                remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
             }
-            // Drop the legacy cache key once we've written to the new one.
-            editor.remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
-            editor.apply()
         }
 
     /**
@@ -69,15 +73,16 @@ object SurveyManager {
     internal fun migrateLegacyCacheIfNeeded() {
         if (!prefManager.contains(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)) return
         val legacy = prefManager.getString(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER, null)
-        val editor = prefManager.edit().remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
-        if (legacy != null && !prefManager.contains(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER)) {
-            editor.putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, legacy)
+        val copyLegacy =
+            legacy != null && !prefManager.contains(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER)
+        prefManager.edit {
+            remove(PREF_LEGACY_ENVIRONMENT_DATA_HOLDER)
+            if (copyLegacy) putString(PREF_FORMBRICKS_WORKSPACE_DATA_HOLDER, legacy)
         }
-        editor.apply()
     }
 
     private var backingWorkspaceDataHolder: WorkspaceDataHolder? = null
-    var workspaceDataHolder: WorkspaceDataHolder?
+    public var workspaceDataHolder: WorkspaceDataHolder?
         get() {
             if (null != backingWorkspaceDataHolder) {
                 return backingWorkspaceDataHolder
@@ -87,7 +92,11 @@ object SurveyManager {
                     try {
                         gson.fromJson(json, WorkspaceDataHolder::class.java)
                     } catch (e: Exception) {
-                        Logger.e(RuntimeException("Unable to retrieve workspace data from the local storage."))
+                        Logger.e(
+                            RuntimeException(
+                                "Unable to retrieve workspace data from the local storage."
+                            )
+                        )
                         null
                     }
                 }
@@ -104,14 +113,19 @@ object SurveyManager {
     /**
      * Fills up the [filteredSurveys] array
      */
-    fun filterSurveys() {
+    public fun filterSurveys() {
         val surveys = workspaceDataHolder?.data?.data?.surveys.guard { return }
         val displays = UserManager.displays ?: listOf()
         val responses = UserManager.responses ?: listOf()
         val segments = UserManager.segments ?: listOf()
 
-        filteredSurveys = filterSurveysBasedOnDisplayType(surveys, displays, responses).toMutableList()
-        filteredSurveys = filterSurveysBasedOnRecontactDays(filteredSurveys, workspaceDataHolder?.data?.data?.settings?.recontactDays?.toInt()).toMutableList()
+        filteredSurveys =
+            filterSurveysBasedOnDisplayType(surveys, displays, responses).toMutableList()
+        filteredSurveys =
+            filterSurveysBasedOnRecontactDays(
+                filteredSurveys,
+                workspaceDataHolder?.data?.data?.settings?.recontactDays?.toInt()
+            ).toMutableList()
 
         if (UserManager.userId == null) {
             filteredSurveys = filteredSurveys.filter { survey ->
@@ -128,7 +142,8 @@ object SurveyManager {
                 return
             }
 
-            filteredSurveys = filterSurveysBasedOnSegments(filteredSurveys, segments).toMutableList()
+            filteredSurveys =
+                filterSurveysBasedOnSegments(filteredSurveys, segments).toMutableList()
         }
     }
 
@@ -136,7 +151,7 @@ object SurveyManager {
      * Checks if the workspace state needs to be refreshed based on its [expiresAt] property,
      * and if so, refreshes it, starts the refresh timer, and filters the surveys.
      */
-    fun refreshWorkspaceIfNeeded(force: Boolean = false) {
+    public fun refreshWorkspaceIfNeeded(force: Boolean = false) {
         if (!force) {
             workspaceDataHolder?.expiresAt()?.let {
                 if (it.after(Date())) {
@@ -174,14 +189,18 @@ object SurveyManager {
      * drops every segment-targeted survey, while a survey without segment filters renders with no
      * `contactId` and its response is recorded as anonymous.
      */
-    fun track(action: String) {
+    public fun track(action: String) {
         // Resolved before the wait: action classes come from workspace state, not user state, so
         // a typo'd action name is knowable now and should not cost the caller a network round trip.
         val actionClasses = workspaceDataHolder?.data?.data?.actionClasses ?: listOf()
         val codeActionClasses = actionClasses.filter { it.type == "code" }
         val actionClass = codeActionClasses.firstOrNull { it.key == action }
         if (actionClass == null) {
-            val error = RuntimeException("Action with identifier '$action' is unknown. Please add this action in Formbricks in order to use it via the SDK action tracking.")
+            val error =
+                RuntimeException(
+                    "Action with identifier '$action' is unknown. Please add this action in " +
+                        "Formbricks in order to use it via the SDK action tracking."
+                )
             Logger.e(error)
             return
         }
@@ -216,17 +235,24 @@ object SurveyManager {
         // survey with no segment filters is unaffected and still shows; one that targets a segment
         // would be a coin flip on stale membership, so it is skipped rather than shown wrongly.
         if (!didIdentify && firstSurveyWithActionClass.segment?.hasFilters == true) {
-            Logger.w("Skipping survey \"${firstSurveyWithActionClass.id}\": the pending user update did not land, so segment membership is stale.")
+            Logger.w(
+                "Skipping survey \"${firstSurveyWithActionClass.id}\": the pending user update " +
+                    "did not land, so segment membership is stale."
+            )
             return
         }
 
         val isMultiLangSurvey = (firstSurveyWithActionClass.languages?.size ?: 0) > 1
-        if(isMultiLangSurvey) {
+        if (isMultiLangSurvey) {
             val currentLanguage = Formbricks.language
             val languageCode = getLanguageCode(firstSurveyWithActionClass, currentLanguage)
 
             if (languageCode == null) {
-                val error = RuntimeException("Survey “${firstSurveyWithActionClass.id}” is not available in language “$currentLanguage”. Skipping.")
+                val error =
+                    RuntimeException(
+                        "Survey “${firstSurveyWithActionClass.id}” is not available in " +
+                            "language “$currentLanguage”. Skipping."
+                    )
                 Logger.e(error)
                 return
             }
@@ -234,22 +260,27 @@ object SurveyManager {
             Formbricks.setLanguage(languageCode)
         }
 
-        val shouldDisplay = shouldDisplayBasedOnPercentage(firstSurveyWithActionClass.displayPercentage)
+        val shouldDisplay =
+            shouldDisplayBasedOnPercentage(firstSurveyWithActionClass.displayPercentage)
 
         if (shouldDisplay) {
             firstSurveyWithActionClass.id.let {
                 isShowingSurvey = true
                 val timeout = firstSurveyWithActionClass.delay ?: 0.0
                 if (timeout > 0.0) {
-                    Logger.d("Delaying survey \"${firstSurveyWithActionClass.id}\" by $timeout seconds")
+                    Logger.d(
+                        "Delaying survey \"${firstSurveyWithActionClass.id}\" by $timeout seconds"
+                    )
                 }
                 stopDisplayTimer()
-                displayTimer.schedule(object : TimerTask() {
-                    override fun run() {
-                        Formbricks.showSurvey(it)
-                    }
-
-                }, Date(System.currentTimeMillis() + timeout.toLong() * 1000))
+                displayTimer.schedule(
+                    object : TimerTask() {
+                        override fun run() {
+                            Formbricks.showSurvey(it)
+                        }
+                    },
+                    Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeout.toLong()))
+                )
             }
         } else {
             val error = SDKError.surveyNotDisplayedError
@@ -265,7 +296,7 @@ object SurveyManager {
     /**
      * Posts a survey response to the Formbricks API.
      */
-    fun postResponse(surveyId: String?) {
+    public fun postResponse(surveyId: String?) {
         val id = surveyId.guard {
             val error = SDKError.missingSurveyId
             Logger.e(error)
@@ -278,7 +309,7 @@ object SurveyManager {
     /**
      * Creates a new display for the survey. It is called when the survey is displayed to the user.
      */
-    fun onNewDisplay(surveyId: String?) {
+    public fun onNewDisplay(surveyId: String?) {
         val id = surveyId.guard {
             val error = SDKError.missingSurveyId
             Logger.e(error)
@@ -292,7 +323,7 @@ object SurveyManager {
      * Forwards an in-survey interaction so the user manager can pull fresh `segments` when the
      * server flagged this survey/source pair as able to change segment membership.
      */
-    fun onSurveyInteraction(surveyId: String?, source: InteractionSource) {
+    public fun onSurveyInteraction(surveyId: String?, source: InteractionSource) {
         // Plain null checks rather than `guard`: its fallback path is
         // `T::class.java.newInstance()`, which would throw for a data class like `Survey`.
         val id = surveyId ?: return
@@ -301,32 +332,37 @@ object SurveyManager {
         UserManager.refreshSegmentsAfterInteraction(survey, source)
     }
 
-   /**
+    /**
      *  Starts a timer to refresh the workspace state after the given timeout [expiresAt].
      */
     private fun startRefreshTimer(expiresAt: Date?) {
         val date = expiresAt.guard { return }
-        refreshTimer.schedule(object: TimerTask() {
-            override fun run() {
-                Logger.d("Refreshing workspace state.")
-                refreshWorkspaceIfNeeded()
-            }
-
-        }, date)
+        refreshTimer.schedule(
+            object : TimerTask() {
+                override fun run() {
+                    Logger.d("Refreshing workspace state.")
+                    refreshWorkspaceIfNeeded()
+                }
+            },
+            date
+        )
     }
 
     /**
      *  When an error occurs, it starts a timer to refresh the workspace state after the given timeout.
      */
     private fun startErrorTimer() {
-        val targetDate = Date(System.currentTimeMillis() + 1000 * 60 * REFRESH_STATE_ON_ERROR_TIMEOUT_IN_MINUTES)
-        refreshTimer.schedule(object: TimerTask() {
-            override fun run() {
-                Logger.d("Refreshing workspace state after an error")
-                refreshWorkspaceIfNeeded()
-            }
-
-        }, targetDate)
+        val targetDate =
+            Date(System.currentTimeMillis() + 1000 * 60 * REFRESH_STATE_ON_ERROR_TIMEOUT_IN_MINUTES)
+        refreshTimer.schedule(
+            object : TimerTask() {
+                override fun run() {
+                    Logger.d("Refreshing workspace state after an error")
+                    refreshWorkspaceIfNeeded()
+                }
+            },
+            targetDate
+        )
     }
 
     /**
@@ -337,7 +373,11 @@ object SurveyManager {
      * @return Filtered list of surveys
      */
     @JvmStatic
-    fun filterSurveysBasedOnDisplayType(surveys: List<Survey>, displays: List<Display>, responses: List<String>): List<Survey> {
+    public fun filterSurveysBasedOnDisplayType(
+        surveys: List<Survey>,
+        displays: List<Display>,
+        responses: List<String>
+    ): List<Survey> {
         return surveys.filter { survey ->
             when (survey.displayOption) {
                 "respondMultiple" -> true
@@ -375,7 +415,10 @@ object SurveyManager {
      * @return Filtered list of surveys
      */
     @JvmStatic
-    fun filterSurveysBasedOnRecontactDays(surveys: List<Survey>, defaultRecontactDays: Int?): List<Survey> {
+    public fun filterSurveysBasedOnRecontactDays(
+        surveys: List<Survey>,
+        defaultRecontactDays: Int?
+    ): List<Survey> {
         return surveys.filter { survey ->
             val lastDisplayedAt = UserManager.lastDisplayedAt.guard { return@filter true }
 
@@ -393,7 +436,10 @@ object SurveyManager {
     /**
      * Filters the surveys based on the user's segments.
      */
-    private fun filterSurveysBasedOnSegments(surveys: List<Survey>, segments: List<String>): List<Survey> {
+    private fun filterSurveysBasedOnSegments(
+        surveys: List<Survey>,
+        segments: List<String>
+    ): List<Survey> {
         return surveys.filter { survey ->
             val segmentId = survey.segment?.id?.guard { return@filter false }
             segments.contains(segmentId)
@@ -404,9 +450,8 @@ object SurveyManager {
      * Test helper method to invoke shouldDisplayBasedOnPercentage
      */
     @JvmStatic
-    fun invokeShouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean {
-        return shouldDisplayBasedOnPercentage(displayPercentage)
-    }
+    public fun invokeShouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean =
+        shouldDisplayBasedOnPercentage(displayPercentage)
 
     private fun shouldDisplayBasedOnPercentage(displayPercentage: Double?): Boolean {
         val percentage = displayPercentage.guard { return true }
@@ -421,7 +466,7 @@ object SurveyManager {
      * Returns null if language is not found or disabled.
      */
     @JvmStatic
-    fun getLanguageCode(survey: Survey, language: String?): String? {
+    public fun getLanguageCode(survey: Survey, language: String?): String? {
         // 1) Gather all valid codes
         val availableLanguageCodes = survey.languages
             ?.map { it.language.code }
@@ -438,16 +483,16 @@ object SurveyManager {
         val selected = survey.languages
             ?.firstOrNull { entry ->
                 entry.language.code.lowercase() == raw ||
-                        entry.language.alias?.lowercase() == raw
+                    entry.language.alias?.lowercase() == raw
             }
 
         // 4) If that entry is marked default → default
         if (selected?.default == true) return "default"
 
         // 5) If missing, disabled, or not in the available list → null
-        if (selected == null
-            || !selected.enabled
-            || !availableLanguageCodes.contains(selected.language.code)
+        if (selected == null ||
+            !selected.enabled ||
+            !availableLanguageCodes.contains(selected.language.code)
         ) {
             return null
         }
@@ -455,5 +500,4 @@ object SurveyManager {
         // 6) Otherwise return its code
         return selected.language.code
     }
-
 }

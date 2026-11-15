@@ -13,7 +13,11 @@ import com.formbricks.android.network.queue.UpdateQueue
 import com.formbricks.android.webview.SurveyInteractionForwarder
 import com.google.gson.Gson
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,7 +63,8 @@ class SurveyInteractionRefreshInstrumentedTest {
 
     @Test
     fun surveyDecodesFullInteractionRefresh() {
-        val json = """{"id":"survey-a","interactionRefresh":{"onDisplay":true,"onResponse":false,"onFinished":true}}"""
+        val json =
+            """{"id":"survey-a","interactionRefresh":{"onDisplay":true,"onResponse":false,"onFinished":true}}"""
         val refresh = gson.fromJson(json, Survey::class.java).interactionRefresh
         assertNotNull(refresh)
         assertTrue(refresh!!.shouldRefresh(InteractionSource.ON_DISPLAY))
@@ -84,7 +89,8 @@ class SurveyInteractionRefreshInstrumentedTest {
     /** The server attaches an all-false object to every survey in such a workspace. */
     @Test
     fun allFalseInteractionRefreshIsPresentButNeverRefreshes() {
-        val json = """{"id":"survey-a","interactionRefresh":{"onDisplay":false,"onResponse":false,"onFinished":false}}"""
+        val json =
+            """{"id":"survey-a","interactionRefresh":{"onDisplay":false,"onResponse":false,"onFinished":false}}"""
         val refresh = gson.fromJson(json, Survey::class.java).interactionRefresh
         assertNotNull(refresh)
         InteractionSource.entries.forEach { assertFalse(refresh!!.shouldRefresh(it)) }
@@ -92,7 +98,8 @@ class SurveyInteractionRefreshInstrumentedTest {
 
     @Test
     fun unknownKeyInsideInteractionRefreshIsIgnored() {
-        val json = """{"id":"survey-a","interactionRefresh":{"onDisplay":true,"onSomethingNew":true}}"""
+        val json =
+            """{"id":"survey-a","interactionRefresh":{"onDisplay":true,"onSomethingNew":true}}"""
         val refresh = gson.fromJson(json, Survey::class.java).interactionRefresh
         assertTrue(refresh!!.shouldRefresh(InteractionSource.ON_DISPLAY))
     }
@@ -289,7 +296,7 @@ class SurveyInteractionRefreshInstrumentedTest {
     /** The failure retry backs off past the minimum interval rather than hammering. */
     @Test
     fun failureRetryBacksOffFurtherThanTheMinimumInterval() {
-        assertTrue(UserManager.RETRY_AFTER_FAILURE_MS > UserManager.MINIMUM_SYNC_INTERVAL_MS)
+        assertTrue(UserManager.retryAfterFailureMs > UserManager.minimumSyncIntervalMs)
     }
 
     // MARK: - Helpers
@@ -336,8 +343,7 @@ class SurveyInteractionRefreshInstrumentedTest {
 
     private fun queuedUserId(): String? = readQueueField("userId") as String?
 
-    private fun pendingRefreshUserId(): String? =
-        readQueueField("pendingRefreshUserId") as String?
+    private fun pendingRefreshUserId(): String? = readQueueField("pendingRefreshUserId") as String?
 
     private fun setSyncInFlight(value: Boolean) {
         val field = UpdateQueue::class.java.getDeclaredField("isSyncInFlight")

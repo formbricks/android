@@ -14,27 +14,23 @@ import com.google.gson.annotations.SerializedName
  * Values are CSS pixels relative to the viewport, so they must be scaled by the WebView's display
  * density before being compared against Android touch coordinates, which are in physical pixels.
  */
-data class CardRect(
+public data class CardRect(
     @SerializedName("x") val x: Float,
     @SerializedName("y") val y: Float,
     @SerializedName("width") val width: Float,
-    @SerializedName("height") val height: Float,
+    @SerializedName("height") val height: Float
 )
 
 /**
  * `onCardRectChange` payload. [rect] is absent or null when no card is on screen — while it
  * animates out, or before the first paint.
  */
-data class CardRectData(
-    @SerializedName("rect") val rect: CardRect?,
-) {
-    companion object {
-        fun from(string: String): CardRectData {
-            return try {
-                Gson().fromJson(string, CardRectData::class.java)
-            } catch (e: Exception) {
-                throw IllegalArgumentException("Invalid JSON format: ${e.message}", e)
-            }
+public data class CardRectData(@SerializedName("rect") val rect: CardRect?) {
+    public companion object {
+        public fun from(string: String): CardRectData = try {
+            Gson().fromJson(string, CardRectData::class.java)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Invalid JSON format: ${e.message}", e)
         }
     }
 }

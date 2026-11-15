@@ -7,7 +7,7 @@ import androidx.annotation.Keep
  * `AppCompatDelegate.setDefaultNightMode`), not the phone's.
  */
 @Keep
-enum class FormbricksAppearance(internal val value: String) {
+public enum class FormbricksAppearance(internal val value: String) {
     LIGHT("light"),
     DARK("dark"),
     SYSTEM("system");

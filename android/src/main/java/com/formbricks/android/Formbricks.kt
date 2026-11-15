@@ -26,7 +26,9 @@ import java.util.Locale
 import java.util.TimeZone
 
 @Keep
-object Formbricks {
+// The SDK's public API: every entry point a host app calls is a function on this object.
+@Suppress("TooManyFunctions")
+public object Formbricks {
     internal lateinit var applicationContext: Context
 
     internal lateinit var workspaceId: String
@@ -67,7 +69,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setup(context: Context, config: FormbricksConfig, forceRefresh: Boolean = false) {
+    public fun setup(context: Context, config: FormbricksConfig, forceRefresh: Boolean = false) {
         // Local state, not part of the SDK config, and must be in place before the first survey
         // renders, so it is applied ahead of everything else, even on a repeat setup.
         config.appearance?.let { Appearance.set(it) }
@@ -78,14 +80,16 @@ object Formbricks {
             return
         }
 
-
         // Validate HTTPS URL
         if (!config.appUrl.startsWith("https://", ignoreCase = true)) {
-            val error = RuntimeException("Only HTTPS URLs are allowed for security reasons. HTTP URLs are not permitted. Provided URL: ${config.appUrl}")
+            val error =
+                RuntimeException(
+                    "Only HTTPS URLs are allowed for security reasons. HTTP URLs are not " +
+                        "permitted. Provided URL: ${config.appUrl}"
+                )
             Logger.e(error)
             return
         }
-
 
         applicationContext = context
 
@@ -95,7 +99,9 @@ object Formbricks {
         fragmentManager = config.fragmentManager
 
         if (config.usedDeprecatedEnvironmentId) {
-            Logger.w("environmentId is deprecated and will be removed in a future version. Please use workspaceId instead.")
+            Logger.w(
+                "environmentId is deprecated and will be removed in a future version. Please use workspaceId instead."
+            )
         }
 
         config.userId?.let { UserManager.set(it) }
@@ -127,7 +133,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setUserId(userId: String) {
+    public fun setUserId(userId: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -164,7 +170,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setAttribute(attribute: String, key: String) {
+    public fun setAttribute(attribute: String, key: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -182,7 +188,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setAttribute(attribute: Double, key: String) {
+    public fun setAttribute(attribute: Double, key: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -201,7 +207,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setAttribute(attribute: Int, key: String) {
+    public fun setAttribute(attribute: Int, key: String) {
         setAttribute(attribute.toDouble(), key)
     }
 
@@ -215,7 +221,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setAttribute(attribute: Date, key: String) {
+    public fun setAttribute(attribute: Date, key: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -249,7 +255,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setAttributes(attributes: Map<String, AttributeValue>) {
+    public fun setAttributes(attributes: Map<String, AttributeValue>) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -267,7 +273,7 @@ object Formbricks {
      * ```
      *
      */
-    fun setLanguage(language: String) {
+    public fun setLanguage(language: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -288,7 +294,7 @@ object Formbricks {
      * Formbricks.setAppearance(FormbricksAppearance.DARK)
      * ```
      */
-    fun setAppearance(appearance: FormbricksAppearance) {
+    public fun setAppearance(appearance: FormbricksAppearance) {
         Appearance.set(appearance)
     }
 
@@ -296,12 +302,13 @@ object Formbricks {
      * String overload of [setAppearance] ("light", "dark" or "system"). An unknown value is logged
      * and falls back to light.
      */
-    fun setAppearance(appearance: String) {
+    public fun setAppearance(appearance: String) {
         Appearance.set(appearance)
     }
 
     /**
-     * Tracks an action with the given [String]. The SDK will process the action and it will present the survey if any of them can be triggered.
+     * Tracks an action with the given [String]. The SDK will process the action and it will
+     * present the survey if any of them can be triggered.
      * The SDK must be initialized before calling this method.
      *
      * ```
@@ -309,7 +316,7 @@ object Formbricks {
      * ```
      *
      */
-    fun track(action: String) {
+    public fun track(action: String) {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -334,7 +341,7 @@ object Formbricks {
      * ```
      *
      */
-    fun logout() {
+    public fun logout() {
         if (!isInitialized) {
             val error = SDKError.sdkIsNotInitialized
             Logger.e(error)
@@ -370,7 +377,7 @@ object Formbricks {
      * ))
      * ```
      */
-    fun setEmbeddedData(data: Map<String, EmbeddedDataValue?>) {
+    public fun setEmbeddedData(data: Map<String, EmbeddedDataValue?>) {
         EmbeddedDataManager.set(data)
     }
 
@@ -385,7 +392,7 @@ object Formbricks {
      * Formbricks.clearEmbeddedData("plan")
      * ```
      */
-    fun clearEmbeddedData(key: String) {
+    public fun clearEmbeddedData(key: String) {
         EmbeddedDataManager.remove(key)
     }
 
@@ -396,7 +403,7 @@ object Formbricks {
      * Formbricks.clearEmbeddedData()
      * ```
      */
-    fun clearEmbeddedData() {
+    public fun clearEmbeddedData() {
         EmbeddedDataManager.clear()
     }
 
@@ -410,19 +417,19 @@ object Formbricks {
      * ```
      *
      */
-    fun setFragmentManager(fragmentManager: FragmentManager) {
+    public fun setFragmentManager(fragmentManager: FragmentManager) {
         this.fragmentManager = fragmentManager
     }
 
-    /// Assembles the survey fragment and presents it.
-    ///
-    /// This is called from `SurveyManager`'s display timer, which runs on a
-    /// `java.util.Timer` thread. `DialogFragment.show()` commits a fragment
-    /// transaction, and androidx requires that on the main thread — committing from
-    /// the timer thread crashed the host app. The stored `FragmentManager` can also
-    /// outlive the Activity it came from, in which case committing throws
-    /// `IllegalStateException: FragmentManager has been destroyed`. See
-    /// https://github.com/formbricks/android/issues/43.
+    // / Assembles the survey fragment and presents it.
+    // /
+    // / This is called from `SurveyManager`'s display timer, which runs on a
+    // / `java.util.Timer` thread. `DialogFragment.show()` commits a fragment
+    // / transaction, and androidx requires that on the main thread — committing from
+    // / the timer thread crashed the host app. The stored `FragmentManager` can also
+    // / outlive the Activity it came from, in which case committing throws
+    // / `IllegalStateException: FragmentManager has been destroyed`. See
+    // / https://github.com/formbricks/android/issues/43.
     internal fun showSurvey(id: String) {
         Handler(Looper.getMainLooper()).post {
             // Read the manager here rather than at schedule time: the host may have handed us
@@ -458,9 +465,11 @@ object Formbricks {
         }
     }
 
-    /// Checks if the phone has active network connection
+    // / Checks if the phone has active network connection
     private fun isInternetAvailable(): Boolean {
-        val connectivityManager = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = applicationContext.getSystemService(
+            Context.CONNECTIVITY_SERVICE
+        ) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
