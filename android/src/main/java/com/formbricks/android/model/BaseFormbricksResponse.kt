@@ -1,3 +1,3 @@
 package com.formbricks.android.model
 
-interface BaseFormbricksResponse
+public interface BaseFormbricksResponse

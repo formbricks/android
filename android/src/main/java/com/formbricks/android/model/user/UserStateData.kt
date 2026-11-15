@@ -2,7 +2,7 @@ package com.formbricks.android.model.user
 
 import com.google.gson.annotations.SerializedName
 
-data class UserStateData(
+public data class UserStateData(
     @SerializedName("userId") val userId: String?,
     @SerializedName("contactId") val contactId: String?,
     @SerializedName("segments") val segments: List<String>?,

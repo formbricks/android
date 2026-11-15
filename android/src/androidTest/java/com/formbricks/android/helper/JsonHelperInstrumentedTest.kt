@@ -1,8 +1,16 @@
 package com.formbricks.android.helper
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.serialization.json.*
-import org.junit.Assert.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -31,7 +39,10 @@ class JsonHelperInstrumentedTest {
             )
         )
         val json = mapToJsonElement(map)
-        assertEquals("inside", json.jsonObject["outer"]?.jsonObject?.get("inner")?.jsonPrimitive?.content)
+        assertEquals(
+            "inside",
+            json.jsonObject["outer"]?.jsonObject?.get("inner")?.jsonPrimitive?.content
+        )
     }
 
     @Test
@@ -102,4 +113,4 @@ class JsonHelperInstrumentedTest {
     fun testMapToJsonElementItem_withUnsupportedType() {
         mapToJsonElementItem(Any())
     }
-} 
+}

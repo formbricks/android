@@ -15,10 +15,10 @@ import com.formbricks.android.model.javascript.CardRect
  * DOM probe stopped matching: a missing rect was read as "claim nothing", so the survey itself
  * stopped responding.
  */
-sealed interface SurveyTouchRegion {
+public sealed interface SurveyTouchRegion {
 
     /** Whether a touch at ([x], [y]) in physical pixels belongs to the survey. */
-    fun accepts(x: Float, y: Float): Boolean
+    public fun accepts(x: Float, y: Float): Boolean
 
     /**
      * Every touch belongs to the survey.
@@ -28,7 +28,7 @@ sealed interface SurveyTouchRegion {
      * never reports a rect — an older self-hosted server serves a bundle without
      * `onCardRectChange`, and behaving exactly as the SDK always did is the safe answer there.
      */
-    data object Everything : SurveyTouchRegion {
+    public data object Everything : SurveyTouchRegion {
         override fun accepts(x: Float, y: Float): Boolean = true
     }
 
@@ -39,7 +39,7 @@ sealed interface SurveyTouchRegion {
      * second before the close arrives. Without this state the SDK leaves a dead patch over a host
      * app that looks perfectly usable.
      */
-    data object Nothing : SurveyTouchRegion {
+    public data object Nothing : SurveyTouchRegion {
         override fun accepts(x: Float, y: Float): Boolean = false
     }
 
@@ -52,17 +52,13 @@ sealed interface SurveyTouchRegion {
      *
      * Right and bottom are exclusive, matching `RectF.contains`.
      */
-    data class Card(
-        val left: Float,
-        val top: Float,
-        val right: Float,
-        val bottom: Float,
-    ) : SurveyTouchRegion {
+    public data class Card(val left: Float, val top: Float, val right: Float, val bottom: Float) :
+        SurveyTouchRegion {
         override fun accepts(x: Float, y: Float): Boolean =
             x >= left && x < right && y >= top && y < bottom
     }
 
-    companion object {
+    public companion object {
         /**
          * Maps a rect reported by the renderer onto a region.
          *
@@ -73,13 +69,13 @@ sealed interface SurveyTouchRegion {
          * A missing rect means the card is not on screen — deliberately *not* [Everything], which
          * means the renderer never reported at all.
          */
-        fun forReported(rect: CardRect?, density: Float): SurveyTouchRegion {
+        public fun forReported(rect: CardRect?, density: Float): SurveyTouchRegion {
             if (rect == null) return Nothing
             return Card(
                 left = rect.x * density,
                 top = rect.y * density,
                 right = (rect.x + rect.width) * density,
-                bottom = (rect.y + rect.height) * density,
+                bottom = (rect.y + rect.height) * density
             )
         }
     }

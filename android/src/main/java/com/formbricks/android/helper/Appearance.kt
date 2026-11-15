@@ -65,12 +65,21 @@ internal object Appearance {
         }
     }
 
-    fun resolve(uiMode: Int, appearance: FormbricksAppearance = current): String = when (appearance) {
-        FormbricksAppearance.LIGHT -> "light"
-        FormbricksAppearance.DARK -> "dark"
-        FormbricksAppearance.SYSTEM ->
-            if (uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) "dark" else "light"
-    }
+    fun resolve(uiMode: Int, appearance: FormbricksAppearance = current): String =
+        when (appearance) {
+            FormbricksAppearance.LIGHT -> "light"
+
+            FormbricksAppearance.DARK -> "dark"
+
+            FormbricksAppearance.SYSTEM ->
+                if (uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+                    Configuration.UI_MODE_NIGHT_YES
+                ) {
+                    "dark"
+                } else {
+                    "light"
+                }
+        }
 
     /**
      * JavaScript that flips an open survey in place. Optional chaining: a server whose renderer

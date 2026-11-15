@@ -1,15 +1,15 @@
 package com.formbricks.android
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.formbricks.android.model.workspace.WorkspaceDataHolder
-import com.formbricks.android.model.workspace.WorkspaceResponse
+import com.formbricks.android.model.error.SDKError
 import com.formbricks.android.model.user.PostUserBody
 import com.formbricks.android.model.user.UserResponse
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.WorkspaceResponse
 import com.formbricks.android.network.FormbricksApiService
 import com.google.gson.Gson
-import com.formbricks.android.model.error.SDKError
 
-class MockFormbricksApiService: FormbricksApiService() {
+class MockFormbricksApiService : FormbricksApiService() {
     private val gson = Gson()
     private val workspace: WorkspaceResponse
     internal var user: UserResponse
@@ -24,19 +24,17 @@ class MockFormbricksApiService: FormbricksApiService() {
         user = gson.fromJson(userJson, UserResponse::class.java)
     }
 
-    override fun getWorkspaceStateObject(workspaceId: String): Result<WorkspaceDataHolder> {
-        return if (isErrorResponseNeeded) {
+    override fun getWorkspaceStateObject(workspaceId: String): Result<WorkspaceDataHolder> =
+        if (isErrorResponseNeeded) {
             Result.failure(SDKError.unableToRefreshEnvironment)
         } else {
             Result.success(WorkspaceDataHolder(workspace.data, mapOf()))
         }
-    }
 
-    override fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> {
-        return if (isErrorResponseNeeded) {
+    override fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> =
+        if (isErrorResponseNeeded) {
             Result.failure(SDKError.unableToPostResponse)
         } else {
             Result.success(user)
         }
-    }
 }

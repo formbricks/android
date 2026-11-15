@@ -23,7 +23,9 @@ internal class SurveyPassthroughLayout(context: Context) : FrameLayout(context) 
     /** Starts at [SurveyTouchRegion.Everything]: blocks like the dialog did until a rect arrives. */
     var touchRegion: SurveyTouchRegion = SurveyTouchRegion.Everything
 
-    private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { updateKeyboardPadding(null) }
+    private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+        updateKeyboardPadding(null)
+    }
 
     init {
         // Edge-to-edge windows (the default from Android 15) do not shrink for the keyboard, so
@@ -37,7 +39,9 @@ internal class SurveyPassthroughLayout(context: Context) : FrameLayout(context) 
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         // The rest of a gesture follows its down event, so deciding on the down is enough.
-        if (event.actionMasked == MotionEvent.ACTION_DOWN && !touchRegion.accepts(event.x, event.y)) {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN &&
+            !touchRegion.accepts(event.x, event.y)
+        ) {
             return false
         }
         return super.dispatchTouchEvent(event)
@@ -67,7 +71,7 @@ internal class SurveyPassthroughLayout(context: Context) : FrameLayout(context) 
         val padding = keyboardOverlap(
             viewBottom = location[1] + height,
             windowHeight = rootView.height,
-            keyboardHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom,
+            keyboardHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
         )
         if (padding != paddingBottom) setPadding(0, 0, 0, padding)
     }

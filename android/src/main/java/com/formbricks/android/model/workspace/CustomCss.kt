@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 /** Compiled custom CSS for one scope; either mode may be absent. Forwarded to the renderer untouched. */
 @Serializable
-data class CustomCss(
+public data class CustomCss(
     @SerializedName("light") val light: String? = null,
     @SerializedName("dark") val dark: String? = null
 ) {

@@ -2,7 +2,7 @@ package com.formbricks.android.model.upload
 
 import com.google.gson.annotations.SerializedName
 
-data class SigningData(
+public data class SigningData(
     @SerializedName("signature") val signature: String,
     @SerializedName("timestamp") val timestamp: Long,
     @SerializedName("uuid") val uuid: String

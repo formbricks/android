@@ -11,8 +11,9 @@ import com.formbricks.android.manager.EmbeddedDataManager
 import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.workspace.CustomCss
-import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import com.formbricks.android.model.workspace.Survey
 import com.formbricks.android.model.workspace.SurveyOverlay
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.getSettingsStylingJson
 import com.formbricks.android.model.workspace.getStyling
 import com.formbricks.android.model.workspace.getSurveyJson
@@ -22,8 +23,8 @@ import com.google.gson.JsonObject
  * A view model for the Formbricks WebView.
  * It generates the HTML string with the necessary data to render the survey.
  */
-class FormbricksViewModel : ViewModel() {
-    var html = MutableLiveData<String>()
+public class FormbricksViewModel : ViewModel() {
+    public var html: MutableLiveData<String> = MutableLiveData<String>()
 
     /**
      * The HTML template to render the Formbricks WebView.
@@ -146,7 +147,7 @@ class FormbricksViewModel : ViewModel() {
      * the page, so a change while the survey is open goes through `evaluateJavascript` instead of
      * loading again, which would lose the respondent's answers.
      */
-    fun loadHtml(surveyId: String, appearance: String = "light") {
+    public fun loadHtml(surveyId: String, appearance: String = "light") {
         val workspace = SurveyManager.workspaceDataHolder.guard { return }
         val json = getJson(workspace, surveyId, appearance)
         // Base64-encode the payload before embedding it in the HTML. Base64 output is
@@ -158,13 +159,24 @@ class FormbricksViewModel : ViewModel() {
         html.postValue(htmlString)
     }
 
+    /** The survey's own language only when it has more than one; otherwise the default. */
+    private fun languageCodeFor(survey: Survey?): String? =
+        if ((survey?.languages?.size ?: 0) > 1) Formbricks.language else "default"
+
     private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String): String =
         getJson(workspaceDataHolder, surveyId, "light")
 
-    private fun getJson(workspaceDataHolder: WorkspaceDataHolder, surveyId: String, appearance: String): String {
+    private fun getJson(
+        workspaceDataHolder: WorkspaceDataHolder,
+        surveyId: String,
+        appearance: String
+    ): String {
         val jsonObject = JsonObject()
         workspaceDataHolder.getSurveyJson(surveyId).let { jsonObject.add("survey", it) }
-        jsonObject.addProperty("isBrandingEnabled", workspaceDataHolder.data?.data?.settings?.inAppSurveyBranding ?: true)
+        jsonObject.addProperty(
+            "isBrandingEnabled",
+            workspaceDataHolder.data?.data?.settings?.inAppSurveyBranding ?: true
+        )
         jsonObject.addProperty("appUrl", Formbricks.appUrl)
         jsonObject.addProperty("workspaceId", Formbricks.workspaceId)
         // Keep `environmentId` in the payload for backward compatibility with older
@@ -180,30 +192,31 @@ class FormbricksViewModel : ViewModel() {
         // the server re-runs all of it on ingest.
         jsonObject.add("hiddenFieldsRecord", EmbeddedDataManager.snapshot())
 
-        val matchedSurvey = workspaceDataHolder.data?.data?.surveys?.firstOrNull { it.id == surveyId }
+        val matchedSurvey = workspaceDataHolder.data?.data?.surveys?.firstOrNull {
+            it.id == surveyId
+        }
         val settings = workspaceDataHolder.data?.data?.settings
 
-        val isMultiLangSurvey =
-            (matchedSurvey?.languages?.size
-                ?: 0) > 1
+        jsonObject.addProperty("languageCode", languageCodeFor(matchedSurvey))
 
-        if (isMultiLangSurvey) {
-            jsonObject.addProperty("languageCode", Formbricks.language)
-        } else {
-            jsonObject.addProperty("languageCode", "default")
+        CustomCss.props(settings?.customCss, matchedSurvey?.customCss)?.let {
+            jsonObject.add("customCss", it)
         }
-
-        CustomCss.props(settings?.customCss, matchedSurvey?.customCss)?.let { jsonObject.add("customCss", it) }
 
         val hasCustomStyling = matchedSurvey?.styling != null
 
         val placement = matchedSurvey?.projectOverwrites?.placement ?: settings?.placement
         if (placement != null) jsonObject.addProperty("placement", placement)
 
-        val clickOutside = matchedSurvey?.projectOverwrites?.clickOutsideClose ?: settings?.clickOutsideClose ?: false
+        val clickOutside =
+            matchedSurvey?.projectOverwrites?.clickOutsideClose ?: settings?.clickOutsideClose
+                ?: false
         jsonObject.addProperty("clickOutside", clickOutside)
 
-        val overlay = SurveyOverlay.resolve(matchedSurvey?.projectOverwrites?.overlay, settings?.overlay).value
+        val overlay = SurveyOverlay.resolve(
+            matchedSurvey?.projectOverwrites?.overlay,
+            settings?.overlay
+        ).value
         jsonObject.addProperty("overlay", overlay)
 
         val enabled = settings?.styling?.allowStyleOverwrite ?: false
@@ -221,7 +234,7 @@ class FormbricksViewModel : ViewModel() {
 }
 
 @BindingAdapter("htmlText")
-fun WebView.setHtmlText(htmlString: String?) {
+public fun WebView.setHtmlText(htmlString: String?) {
     // loadDataWithBaseURL (null base URL) loads the document verbatim, without the
     // URL-decoding that loadData applies to its data: URL. That keeps the base64-encoded
     // survey payload (which may contain +, / and =) intact. Mirrors iOS's baseURL: nil.

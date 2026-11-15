@@ -5,14 +5,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class SurveyLanguage(
+public data class SurveyLanguage(
     @SerializedName("enabled") val enabled: Boolean,
     @SerializedName("default") val default: Boolean,
     @SerializedName("language") val language: LanguageDetail
 )
 
 @Serializable
-data class LanguageDetail(
+public data class LanguageDetail(
     @SerializedName("id") val id: String,
     @SerializedName("code") val code: String,
     @SerializedName("alias") val alias: String?,
@@ -20,7 +20,7 @@ data class LanguageDetail(
 )
 
 @Serializable
-data class Survey(
+public data class Survey(
     @SerializedName("id") val id: String,
     // `name` intentionally omitted — internal label, not returned by the
     // public client API. Cached payloads from older SDK versions may still
@@ -41,17 +41,25 @@ data class Survey(
     @SerializedName("customCss") val customCss: CustomCss? = null
 )
 
-/// Defines the overlay style displayed behind a survey modal.
+// / Defines the overlay style displayed behind a survey modal.
 @Serializable
-enum class SurveyOverlay(val value: String) {
+public enum class SurveyOverlay(public val value: String) {
     // `@SerializedName` for Gson, `@SerialName` for kotlinx.serialization —
     // wire path is Gson, but kotlinx annotation kept for parity in case the
     // codec ever switches.
-    @SerializedName("none") @SerialName("none") NONE("none"),
-    @SerializedName("light") @SerialName("light") LIGHT("light"),
-    @SerializedName("dark") @SerialName("dark") DARK("dark");
+    @SerializedName("none")
+    @SerialName("none")
+    NONE("none"),
 
-    companion object {
+    @SerializedName("light")
+    @SerialName("light")
+    LIGHT("light"),
+
+    @SerializedName("dark")
+    @SerialName("dark")
+    DARK("dark");
+
+    public companion object {
         /**
          * The overlay a survey actually renders with: its own override, then the workspace
          * setting, then [NONE].
@@ -61,13 +69,15 @@ enum class SurveyOverlay(val value: String) {
          * disagree the user gets either a backdrop they can tap through or a corner card that
          * freezes the app.
          */
-        fun resolve(surveyOverride: SurveyOverlay?, workspaceSetting: SurveyOverlay?): SurveyOverlay =
-            surveyOverride ?: workspaceSetting ?: NONE
+        public fun resolve(
+            surveyOverride: SurveyOverlay?,
+            workspaceSetting: SurveyOverlay?
+        ): SurveyOverlay = surveyOverride ?: workspaceSetting ?: NONE
     }
 }
 
 @Serializable
-data class SurveyProjectOverwrites(
+public data class SurveyProjectOverwrites(
     @SerializedName("brandColor") val brandColor: String? = null,
     @SerializedName("highlightBorderColor") val highlightBorderColor: String? = null,
     @SerializedName("clickOutsideClose") val clickOutsideClose: Boolean? = null,

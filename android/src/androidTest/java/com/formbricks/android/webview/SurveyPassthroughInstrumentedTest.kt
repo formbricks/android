@@ -43,7 +43,7 @@ class SurveyPassthroughInstrumentedTest {
      */
     private fun withHostAndSurvey(
         region: (SurveyPassthroughLayout) -> Unit,
-        block: (content: ViewGroup, host: CountingView, survey: CountingView) -> Unit,
+        block: (content: ViewGroup, host: CountingView, survey: CountingView) -> Unit
     ) {
         ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
@@ -79,7 +79,9 @@ class SurveyPassthroughInstrumentedTest {
 
     @Test
     fun touchesOutsideTheCardReachTheHostAndTouchesOnItReachTheSurvey() {
-        withHostAndSurvey({ it.touchRegion = SurveyTouchRegion.Card(0f, 400f, 400f, 800f) }) { content, host, survey ->
+        withHostAndSurvey({
+            it.touchRegion = SurveyTouchRegion.Card(0f, 400f, 400f, 800f)
+        }) { content, host, survey ->
             tap(content, 200f, 100f)
             assertEquals("above the card belongs to the host app", 1, host.downs)
             assertEquals(0, survey.downs)
@@ -136,11 +138,17 @@ class SurveyPassthroughInstrumentedTest {
     fun keyboardOverlapCoversOnlyTheCoveredPartAndIsNeverNegative() {
         val window = 2400
         assertEquals(0, SurveyPassthroughLayout.keyboardOverlap(window, window, keyboardHeight = 0))
-        assertEquals(900, SurveyPassthroughLayout.keyboardOverlap(window, window, keyboardHeight = 900))
+        assertEquals(
+            900,
+            SurveyPassthroughLayout.keyboardOverlap(window, window, keyboardHeight = 900)
+        )
         // A host that already resized: padding on top would push the card twice as far up.
         assertEquals(0, SurveyPassthroughLayout.keyboardOverlap(1500, window, keyboardHeight = 900))
         assertEquals(0, SurveyPassthroughLayout.keyboardOverlap(1200, window, keyboardHeight = 900))
-        assertEquals(100, SurveyPassthroughLayout.keyboardOverlap(1600, window, keyboardHeight = 900))
+        assertEquals(
+            100,
+            SurveyPassthroughLayout.keyboardOverlap(1600, window, keyboardHeight = 900)
+        )
     }
 
     // Showing
@@ -171,8 +179,14 @@ class SurveyPassthroughInstrumentedTest {
 
     @Test
     fun aSurveyOverrideBeatsTheWorkspaceOverlay() {
-        assertEquals(SurveyOverlay.DARK, SurveyOverlay.resolve(SurveyOverlay.DARK, SurveyOverlay.NONE))
-        assertEquals(SurveyOverlay.NONE, SurveyOverlay.resolve(SurveyOverlay.NONE, SurveyOverlay.LIGHT))
+        assertEquals(
+            SurveyOverlay.DARK,
+            SurveyOverlay.resolve(SurveyOverlay.DARK, SurveyOverlay.NONE)
+        )
+        assertEquals(
+            SurveyOverlay.NONE,
+            SurveyOverlay.resolve(SurveyOverlay.NONE, SurveyOverlay.LIGHT)
+        )
     }
 
     @Test

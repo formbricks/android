@@ -38,8 +38,14 @@ class SurveyTouchRegionInstrumentedTest {
     fun aReportedRectClaimsOnlyTheCard() {
         val region = SurveyTouchRegion.forReported(reported, density)
 
-        assertTrue("the survey must stay usable", region.accepts(insideCard.first, insideCard.second))
-        assertFalse("the host app must stay usable", region.accepts(outsideCard.first, outsideCard.second))
+        assertTrue(
+            "the survey must stay usable",
+            region.accepts(insideCard.first, insideCard.second)
+        )
+        assertFalse(
+            "the host app must stay usable",
+            region.accepts(outsideCard.first, outsideCard.second)
+        )
     }
 
     @Test
@@ -85,7 +91,10 @@ class SurveyTouchRegionInstrumentedTest {
 
     @Test
     fun aZeroAreaCardClaimsNothing() {
-        val region = SurveyTouchRegion.forReported(CardRect(x = 10f, y = 10f, width = 0f, height = 0f), density)
+        val region = SurveyTouchRegion.forReported(
+            CardRect(x = 10f, y = 10f, width = 0f, height = 0f),
+            density
+        )
 
         assertFalse(region.accepts(30f, 30f))
     }
@@ -102,6 +111,9 @@ class SurveyTouchRegionInstrumentedTest {
         // throw would leave the SDK masking touches to a card that is no longer there.
         val withoutRect = CardRectData.from("""{"event":"onCardRectChange","rect":null}""")
         assertNull(withoutRect.rect)
-        assertEquals(SurveyTouchRegion.Nothing, SurveyTouchRegion.forReported(withoutRect.rect, density))
+        assertEquals(
+            SurveyTouchRegion.Nothing,
+            SurveyTouchRegion.forReported(withoutRect.rect, density)
+        )
     }
 }

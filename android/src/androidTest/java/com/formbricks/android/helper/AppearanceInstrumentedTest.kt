@@ -65,9 +65,14 @@ class AppearanceInstrumentedTest {
     fun systemResolvesFromAContextConfiguration() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         Appearance.set(FormbricksAppearance.SYSTEM)
-        val expected = if (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+        val expected = if (context.resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
-        ) "dark" else "light"
+        ) {
+            "dark"
+        } else {
+            "light"
+        }
         assertEquals(expected, Appearance.resolve(context))
     }
 
@@ -123,7 +128,10 @@ class AppearanceInstrumentedTest {
     @Test
     fun listenersHearChangesUntilRemoved() {
         var calls = 0
-        val listener = { calls++; Unit }
+        val listener = {
+            calls++
+            Unit
+        }
         Appearance.addListener(listener)
         Appearance.set(FormbricksAppearance.DARK)
         assertEquals(1, calls)
@@ -134,7 +142,10 @@ class AppearanceInstrumentedTest {
 
     @Test
     fun switchScriptToleratesAnOlderRenderer() {
-        assertEquals("window.formbricksSurveys?.setAppearance?.('dark');", Appearance.switchScript("dark"))
+        assertEquals(
+            "window.formbricksSurveys?.setAppearance?.('dark');",
+            Appearance.switchScript("dark")
+        )
     }
 
     @Test
@@ -145,7 +156,10 @@ class AppearanceInstrumentedTest {
 
     @Test
     fun customCssIsForwardedUntouchedWithEmptyFieldsOmitted() {
-        val props = CustomCss.props(CustomCss(light = ".a{color:red}"), CustomCss(dark = ".b{margin:0}"))!!
+        val props = CustomCss.props(
+            CustomCss(light = ".a{color:red}"),
+            CustomCss(dark = ".b{margin:0}")
+        )!!
         assertEquals(".a{color:red}", props["workspace"].asJsonObject["light"].asString)
         assertFalse(props["workspace"].asJsonObject.has("dark"))
         assertEquals(".b{margin:0}", props["survey"].asJsonObject["dark"].asString)

@@ -26,7 +26,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.addCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import com.formbricks.android.R
@@ -54,7 +56,7 @@ import java.io.InputStream
  * the same fragment without a dialog, with its view placed into the host Activity's content and
  * wrapped in [SurveyPassthroughLayout].
  */
-class FormbricksFragment : BottomSheetDialogFragment() {
+public class FormbricksFragment : BottomSheetDialogFragment() {
     private lateinit var binding: FragmentFormbricksBinding
     private lateinit var surveyId: String
     private val viewModel: FormbricksViewModel by viewModels()
@@ -67,6 +69,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
 
     /** What the open survey currently shows ("light" / "dark"), so only a real change is sent. */
     private var appliedAppearance = "light"
+
     /** Until the survey has rendered there is no `formbricksSurveys.setAppearance` to call. */
     private var surveyRendered = false
     private val appearanceListener: () -> Unit = {
@@ -145,57 +148,67 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             Handler(Looper.getMainLooper()).post {
                 val layout = passthroughLayout ?: return@post
                 // CSS pixels to physical pixels: the viewport is pinned at initial-scale=1.0.
-                layout.touchRegion = SurveyTouchRegion.forReported(rect, layout.resources.displayMetrics.density)
+                layout.touchRegion =
+                    SurveyTouchRegion.forReported(rect, layout.resources.displayMetrics.density)
             }
         }
     })
 
-    var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val intent: Intent? = result.data
-            var uriArray: MutableList<Uri> = mutableListOf()
+    public var resultLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val intent: Intent? = result.data
+                var uriArray: MutableList<Uri> = mutableListOf()
 
-            val dataString = intent?.dataString
-            if (null != dataString) {
-                uriArray = arrayOf(Uri.parse(dataString)).toMutableList()
-            } else {
-                val clipData = intent?.clipData
-                if (null != clipData) {
-                    for (i in 0 until clipData.itemCount) {
-                        val uri = clipData.getItemAt(i).uri
-                        uriArray.add(uri)
+                val dataString = intent?.dataString
+                if (null != dataString) {
+                    uriArray = arrayOf(dataString.toUri()).toMutableList()
+                } else {
+                    val clipData = intent?.clipData
+                    if (null != clipData) {
+                        for (i in 0 until clipData.itemCount) {
+                            val uri = clipData.getItemAt(i).uri
+                            uriArray.add(uri)
+                        }
                     }
                 }
-            }
 
-            val jsonArray = com.google.gson.JsonArray()
-            uriArray.forEach { uri ->
-                val type = activity?.contentResolver?.getType(uri)
-                val fileName = getFileName(uri)
-                val base64 = "data:${type};base64,${uriToBase64(uri)}"
-                val json = JsonObject()
-                json.addProperty("name", fileName)
-                json.addProperty("type", type)
-                json.addProperty("base64", base64)
-                jsonArray.add(json)
-            }
-            binding.formbricksWebview.evaluateJavascript("""window.formbricksSurveys.onFilePick($jsonArray)""") { result ->
-                print(result)
+                val jsonArray = com.google.gson.JsonArray()
+                uriArray.forEach { uri ->
+                    val type = activity?.contentResolver?.getType(uri)
+                    val fileName = getFileName(uri)
+                    val base64 = "data:$type;base64,${uriToBase64(uri)}"
+                    val json = JsonObject()
+                    json.addProperty("name", fileName)
+                    json.addProperty("type", type)
+                    json.addProperty("base64", base64)
+                    jsonArray.add(json)
+                }
+                binding.formbricksWebview.evaluateJavascript(
+                    """window.formbricksSurveys.onFilePick($jsonArray)"""
+                ) { result ->
+                    print(result)
+                }
             }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            surveyId = it.getString(ARG_SURVEY_ID) ?: throw IllegalArgumentException("Survey ID is required")
+            surveyId =
+                it.getString(ARG_SURVEY_ID)
+                    ?: throw IllegalArgumentException("Survey ID is required")
         }
         // Has to happen here: DialogFragment decides whether to build a dialog right after
         // onCreate, and a fragment added without a container would otherwise get one.
         if (isPassthrough) showsDialog = false
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         binding = FragmentFormbricksBinding.inflate(inflater).apply {
             lifecycleOwner = viewLifecycleOwner
         }
@@ -203,7 +216,11 @@ class FormbricksFragment : BottomSheetDialogFragment() {
 
         if (!isPassthrough) return binding.root
         return SurveyPassthroughLayout(requireContext()).also {
-            it.addView(binding.root, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            it.addView(
+                binding.root,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             passthroughLayout = it
         }
     }
@@ -218,7 +235,9 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         super.onStart()
         // The bottom-sheet setup below needs the dialog, which the no-overlay path does not have.
         if (isPassthrough) return
-        val view: FrameLayout = dialog?.findViewById(com.google.android.material.R.id.design_bottom_sheet)!!
+        val view: FrameLayout = dialog?.findViewById(
+            com.google.android.material.R.id.design_bottom_sheet
+        )!!
         view.layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT
         val behavior = BottomSheetBehavior.from(view)
         behavior.peekHeight = resources.displayMetrics.heightPixels
@@ -250,7 +269,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             it.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     consoleMessage?.let { cm ->
-                        val log = "[CONSOLE:${cm.messageLevel()}] \"${cm.message()}\", source: ${cm.sourceId()} (${cm.lineNumber()})"
+                        val log = "[CONSOLE:${cm.messageLevel()}] \"${cm.message()}\", " +
+                            "source: ${cm.sourceId()} (${cm.lineNumber()})"
                         Logger.d(log)
                     }
                     return super.onConsoleMessage(consoleMessage)
@@ -270,7 +290,9 @@ class FormbricksFragment : BottomSheetDialogFragment() {
 
             it.setOnFocusChangeListener { _, hasFocus ->
                 if (hasFocus) {
-                    dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+                    dialog?.window?.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                    )
                 }
             }
 
@@ -286,7 +308,8 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             it.setInitialScale(1)
             it.addJavascriptInterface(webAppInterface, WebAppInterface.INTERFACE_NAME)
             surveyRendered = false
-            Appearance.addListener(appearanceListener) // before resolving, so no change slips between
+            // Before resolving, so no change slips between.
+            Appearance.addListener(appearanceListener)
             appliedAppearance = Appearance.resolve(requireActivity())
             viewModel.loadHtml(surveyId, appliedAppearance)
         }
@@ -302,7 +325,11 @@ class FormbricksFragment : BottomSheetDialogFragment() {
      */
     private fun attachToHostContent(view: View) {
         val content = requireActivity().findViewById<ViewGroup>(android.R.id.content)
-        content.addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        content.addView(
+            view,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
 
         // The dialog swallowed back (it is not cancelable). Here back would otherwise reach the
         // host, which may navigate away and leave the survey floating over another screen, so it
@@ -345,25 +372,23 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         return fileName
     }
 
-    private fun uriToBase64(uri: Uri): String? {
-        return try {
-            val inputStream: InputStream? = activity?.contentResolver?.openInputStream(uri)
-            val outputStream = ByteArrayOutputStream()
-            val buffer = ByteArray(1024)
-            var bytesRead: Int
+    private fun uriToBase64(uri: Uri): String? = try {
+        val inputStream: InputStream? = activity?.contentResolver?.openInputStream(uri)
+        val outputStream = ByteArrayOutputStream()
+        val buffer = ByteArray(1024)
+        var bytesRead: Int
 
-            while (inputStream?.read(buffer).also { bytesRead = it ?: -1 } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-            }
-
-            inputStream?.close()
-            outputStream.close()
-
-            Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+        while (inputStream?.read(buffer).also { bytesRead = it ?: -1 } != -1) {
+            outputStream.write(buffer, 0, bytesRead)
         }
+
+        inputStream?.close()
+        outputStream.close()
+
+        Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+    } catch (e: Exception) {
+        Logger.w("Could not read the picked file: ${e.message}")
+        null
     }
 
     /**
@@ -376,7 +401,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
     internal fun safeDismiss() {
         if (isDismissing) return
         isDismissing = true
-        
+
         try {
             if (isAdded) dismissAllowingStateLoss()
         } catch (e: Exception) {
@@ -390,12 +415,12 @@ class FormbricksFragment : BottomSheetDialogFragment() {
         isDismissing = false
     }
 
-    companion object {
+    public companion object {
         private val TAG: String by lazy { FormbricksFragment::class.java.simpleName }
         private const val ARG_SURVEY_ID = "survey_id"
         private const val ARG_PASSTHROUGH = "passthrough"
 
-        fun show(childFragmentManager: FragmentManager, surveyId: String) {
+        public fun show(childFragmentManager: FragmentManager, surveyId: String) {
             // The host app stays usable while a no-overlay survey is open, so it can track again
             // mid-survey. Without this a second survey would stack on top of the first.
             //
@@ -411,7 +436,7 @@ class FormbricksFragment : BottomSheetDialogFragment() {
             val workspace = SurveyManager.workspaceDataHolder?.data?.data
             val overlay = SurveyOverlay.resolve(
                 workspace?.surveys?.firstOrNull { it.id == surveyId }?.projectOverwrites?.overlay,
-                workspace?.settings?.overlay,
+                workspace?.settings?.overlay
             )
             val passthrough = overlay == SurveyOverlay.NONE
 
