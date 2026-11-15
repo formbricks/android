@@ -21,10 +21,6 @@ on:
         description: Formbricks image tag (ghcr.io/formbricks/formbricks) to test against, for example 6.3.0-rc.1
         type: string
         default: latest
-  # TEMPORARY: `gh workflow run` 404s until e2e.yml is on main. Removed before merge.
-  push:
-    branches:
-      - dhruwang/eng-7210-android-playground-app-espresso-golden
 
 permissions:
   contents: read
