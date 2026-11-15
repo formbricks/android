@@ -24,9 +24,6 @@ while IFS= read -r line; do gradle_args+=("${line}"); done < <(
   journey_gradle_args "${E2E_EMULATOR_URL}" "${E2E_WORKSPACE_ID}" "${E2E_USER_ID}" "${E2E_FEEDBACK}"
 )
 
-# EXPERIMENT (reverted): an anonymous journey, to prove the emulator side without the license.
-[[ "${E2E_ANONYMOUS:-}" == "1" ]] && gradle_args+=("-Pandroid.testInstrumentationRunnerArguments.anonymous=true")
-
 attempt() {
   local n="$1" status=0
   log "Golden journey, attempt ${n}"

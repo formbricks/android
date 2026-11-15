@@ -58,9 +58,14 @@ class GoldenJourneyTest {
         ActivityScenario.launch<MainActivity>(
             MainActivity.intent(context, appUrl, workspaceId)
         ).use {
-            // EXPERIMENT (reverted): an anonymous run skips identification, which needs the license.
-            if (arg("anonymous") != "true") identify()
-
+            // 2. setUserId, then setAttribute(plan = pro).
+            onView(withId(R.id.user_id))
+                .perform(scrollTo(), replaceText(userId), closeSoftKeyboard())
+            onView(withId(R.id.set_user_id)).perform(scrollTo(), click())
+            onView(withId(R.id.attribute_key)).perform(scrollTo(), replaceText("plan"))
+            onView(withId(R.id.attribute_value))
+                .perform(scrollTo(), replaceText("pro"), closeSoftKeyboard())
+            onView(withId(R.id.set_attribute)).perform(scrollTo(), click())
 
             // 3. track('qa-action'), and 4. the survey targeted to plan = pro appears.
             onView(withId(R.id.action_key))
@@ -103,16 +108,6 @@ class GoldenJourneyTest {
             }
             closeTheSurvey()
         }
-    }
-
-    private fun identify() {
-        onView(withId(R.id.user_id))
-                .perform(scrollTo(), replaceText(userId), closeSoftKeyboard())
-        onView(withId(R.id.set_user_id)).perform(scrollTo(), click())
-        onView(withId(R.id.attribute_key)).perform(scrollTo(), replaceText("plan"))
-        onView(withId(R.id.attribute_value))
-            .perform(scrollTo(), replaceText("pro"), closeSoftKeyboard())
-        onView(withId(R.id.set_attribute)).perform(scrollTo(), click())
     }
 
     /** Fails fast, with the reason, when the emulator cannot reach the server over TLS. */

@@ -101,16 +101,11 @@ jobs:
           FORMBRICKS_QA_LICENSE_KEY: ${{ secrets.FORMBRICKS_QA_LICENSE_KEY }}
         run: e2e/server/up.sh
 
-      # EXPERIMENT (reverted): seeds an untargeted survey (no license needed) for an anonymous journey.
-      - name: Seed an untargeted survey (experiment)
-        run: |
-          source e2e/server/lib.sh
-          mkdir -p "$(dirname "${E2E_STATE_FILE}")"
-          action_class="$(api_ok POST /api/v1/management/action-classes "$(build_action_class_payload "${E2E_WORKSPACE_ID}")" | jq -c '.data')"
-          survey_id="$(api_ok POST /api/v1/management/surveys "$(build_survey_payload "${E2E_WORKSPACE_ID}" "${action_class}")" | jq -r '.data.id')"
-          printf 'ACTION_CLASS_ID=%q\nSURVEY_ID=%q\n' "$(jq -r '.id' <<<"${action_class}")" "${survey_id}" >"${E2E_STATE_FILE}"
-          authzed_expect drained outbox drain
-          cat "${E2E_STATE_FILE}"
+      # Stops with a clear error at the license gate when FORMBRICKS_QA_LICENSE_KEY is missing.
+      - name: Seed the survey through the V1 API
+        env:
+          FORMBRICKS_QA_LICENSE_KEY: ${{ secrets.FORMBRICKS_QA_LICENSE_KEY }}
+        run: e2e/server/seed.sh
 
       # The SDK only accepts https:// URLs: the emulator reaches the server through this proxy.
       - name: Start the TLS proxy for the emulator
@@ -127,22 +122,10 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on -no-snapshot
           disable-animations: true
-          script: E2E_ANONYMOUS=1 e2e/android/run-journey.sh
+          script: e2e/android/run-journey.sh
 
-      # EXPERIMENT (reverted): anonymous, so match on the answers only.
-      - name: Assert the response through the V1 API (experiment)
-        run: |
-          source e2e/server/lib.sh
-          require_state
-          for _ in $(seq 1 30); do
-            body="$(api_ok GET "/api/v1/management/responses?surveyId=${SURVEY_ID}&limit=50")"
-            if jq -e --arg fb "${E2E_FEEDBACK}" 'first(.data[] | select(.finished == true and .data.qa_nps == 9 and .data.qa_feedback == $fb))' <<<"${body}"; then
-              exit 0
-            fi
-            sleep 2
-          done
-          jq -c '.data[]? | {id, finished, data}' <<<"${body}"
-          exit 1
+      - name: Assert the response through the V1 API
+        run: e2e/server/assert-response.sh
 
       - name: Delete the seeded data through the V1 API
         run: e2e/server/cleanup.sh
