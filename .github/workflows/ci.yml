@@ -9,6 +9,8 @@
 #                   python3 -m unittest discover -s scripts/release
 #   api-check       ./gradlew :android:checkKotlinAbi       (update: ./gradlew :android:updateKotlinAbi)
 #   package-check   scripts/package-check.sh
+#   e2e-tests       .github/workflows/e2e.yml (server: e2e/server, emulator: e2e/android,
+#                   journey: playground/src/androidTest/.../GoldenJourneyTest.kt)
 name: CI
 
 on:
@@ -286,6 +288,15 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=android/build/reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml
             -Dsonar.qualitygate.wait=true
 
+  e2e-tests:
+    name: E2E Tests
+    # A PR from a fork gets no secrets, so there is no QA license to test with.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # actionlint 1.7.12 rejects the `$/` form zizmor suggests.
+    uses: ./.github/workflows/e2e.yml # zizmor: ignore[self-repository]
+    secrets:
+      FORMBRICKS_QA_LICENSE_KEY: ${{ secrets.FORMBRICKS_QA_LICENSE_KEY }}
+
   dependency-review:
     name: Dependency Review
     # Reviews the dependency diff of a PR or a merge-queue entry; a push to main has none.
@@ -350,6 +361,7 @@ jobs:
       - api-check
       - package-check
       - sonarqube
+      - e2e-tests
       - dependency-review
       - workflow-lint
     runs-on: ubuntu-latest
