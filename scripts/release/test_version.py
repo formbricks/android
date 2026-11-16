@@ -11,8 +11,10 @@ class VersionFromTagTest(unittest.TestCase):
     def test_a_bare_stable_tag_is_the_version(self):
         self.assertEqual(version_from_tag("2.4.0", prerelease=False), "2.4.0")
 
-    def test_a_leading_v_is_dropped_like_the_old_v1_0_2_tag(self):
-        self.assertEqual(version_from_tag("v1.0.2", prerelease=False), "1.0.2")
+    def test_a_leading_v_is_rejected_because_release_tags_are_plain_semver(self):
+        for tag in ["v2.4.0", "V2.4.0", "v2.4.0-rc.1"]:
+            with self.subTest(tag=tag), self.assertRaisesRegex(ValueError, "without a leading v"):
+                version_from_tag(tag, prerelease=tag.endswith("rc.1"))
 
     def test_a_prerelease_keeps_its_suffix(self):
         self.assertEqual(version_from_tag("2.4.0-beta.1", prerelease=True), "2.4.0-beta.1")
@@ -87,7 +89,7 @@ class CommandLineTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             gradle = Path(tmp, "build.gradle.kts")
             gradle.write_text(GRADLE)
-            result = self.run_script("v2.4.0-beta.1", "true", gradle)
+            result = self.run_script("2.4.0-beta.1", "true", gradle)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout, "2.4.0-beta.1\n")
             self.assertIn('version = "2.4.0-beta.1"', gradle.read_text())

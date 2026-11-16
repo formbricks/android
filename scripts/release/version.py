@@ -23,8 +23,10 @@ _SEMVER = re.compile(
 
 
 def version_from_tag(tag, prerelease):
-    version = tag[1:] if tag.startswith("v") else tag
-    match = _SEMVER.fullmatch(version)
+    """The tag is the version itself: plain semver, so `v2.4.0` is rejected like in every SDK."""
+    if tag[:1] in ("v", "V"):
+        raise ValueError(f"tag {tag!r} must be the bare version without a leading v, such as 2.4.0")
+    match = _SEMVER.fullmatch(tag)
     if not match:
         raise ValueError(f"tag {tag!r} is not a semver version such as 2.4.0 or 2.4.0-beta.1")
     has_suffix = match.group("prerelease") is not None
@@ -37,7 +39,7 @@ def version_from_tag(tag, prerelease):
         raise ValueError(
             f"{tag!r} has a pre-release suffix, so tick \"Set as a pre-release\" on the release"
         )
-    return version
+    return tag
 
 
 PLACEHOLDER = "0.0.0-dev"
