@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Turn a release tag into the SDK version and write it into the build script.
+"""Turn a release tag into the SDK version.
 
-main keeps `version = "0.0.0-dev"` in android/build.gradle.kts. The release workflow runs this
-on its own checkout only, so the real version never lands on main and no bump PR is needed.
+main keeps the placeholder `0.0.0-dev` in android/build.gradle.kts. The release workflow runs this
+once, then hands the version to Gradle as the `releaseVersion` property, so the real version never
+lands on main and no bump PR is needed.
 
-Usage: version.py --tag <tag> --prerelease <true|false> --gradle-file <build.gradle.kts>
-Prints the version on success; exits non-zero without touching the file otherwise.
+Usage: version.py --tag <tag> --prerelease <true|false>
+Prints the version on success; prints nothing and exits non-zero otherwise.
 """
 import argparse
 import re
 import sys
-from pathlib import Path
 
 # SemVer 2.0.0 (https://semver.org) without build metadata: Maven has no notion of build
 # metadata, so a "+build" part would ship as part of the version string.
@@ -42,34 +42,16 @@ def version_from_tag(tag, prerelease):
     return tag
 
 
-PLACEHOLDER = "0.0.0-dev"
-_PLACEHOLDER_LINE = re.compile(rf'^version = "{re.escape(PLACEHOLDER)}"$', re.MULTILINE)
-
-
-def write_version(gradle_text, version):
-    """Return the build script with its placeholder version replaced by `version`."""
-    found = len(_PLACEHOLDER_LINE.findall(gradle_text))
-    if found != 1:
-        raise ValueError(
-            f'expected exactly one `version = "{PLACEHOLDER}"` line in the build script, '
-            f"found {found}; main must keep the placeholder"
-        )
-    return _PLACEHOLDER_LINE.sub(f'version = "{version}"', gradle_text)
-
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tag", required=True)
     parser.add_argument("--prerelease", required=True, choices=["true", "false"])
-    parser.add_argument("--gradle-file", required=True, type=Path)
     args = parser.parse_args(argv)
     try:
         version = version_from_tag(args.tag, prerelease=args.prerelease == "true")
-        updated = write_version(args.gradle_file.read_text(), version)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
-    args.gradle_file.write_text(updated)
     print(version)
     return 0
 

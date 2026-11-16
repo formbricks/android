@@ -32,9 +32,10 @@ plugins {
     id("org.sonarqube") version "7.5.0.8588"
 }
 
-// A placeholder: the release workflow writes the version from the release tag into its own
-// checkout (scripts/release/version.py), so main never carries a real version. See RELEASING.md.
-version = "0.0.0-dev"
+// main only holds the placeholder. The release workflow passes the version from the release tag
+// (scripts/release/version.py) as the `releaseVersion` Gradle property, so main never carries a
+// real version. See RELEASING.md.
+version = providers.gradleProperty("releaseVersion").getOrElse("0.0.0-dev")
 val groupId = "com.formbricks"
 val artifactId = "android"
 

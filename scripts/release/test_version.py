@@ -1,10 +1,9 @@
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
-from version import version_from_tag, write_version
+from version import version_from_tag
 
 
 class VersionFromTagTest(unittest.TestCase):
@@ -49,60 +48,30 @@ class VersionFromTagTest(unittest.TestCase):
             version_from_tag("2.4.0-rc.1", prerelease=False)
 
 
-GRADLE = """plugins {
-    id("com.android.library")
-}
-
-version = "0.0.0-dev"
-val groupId = "com.formbricks"
-"""
-
-
-class WriteVersionTest(unittest.TestCase):
-    def test_replaces_the_placeholder_with_the_release_version(self):
-        self.assertEqual(
-            write_version(GRADLE, "2.4.0-beta.1"),
-            GRADLE.replace('version = "0.0.0-dev"', 'version = "2.4.0-beta.1"'),
-        )
-
-    def test_fails_when_the_placeholder_is_missing(self):
-        # A build file that already holds a real version means someone bumped it by hand.
-        with self.assertRaisesRegex(ValueError, "0.0.0-dev"):
-            write_version(GRADLE.replace("0.0.0-dev", "2.3.1"), "2.4.0")
-
-    def test_fails_when_the_placeholder_appears_twice(self):
-        with self.assertRaises(ValueError):
-            write_version(GRADLE + 'version = "0.0.0-dev"\n', "2.4.0")
-
-
 class CommandLineTest(unittest.TestCase):
     SCRIPT = Path(__file__).with_name("version.py")
 
-    def run_script(self, tag, prerelease, gradle_file):
+    def run_script(self, *args):
         return subprocess.run(
-            [sys.executable, str(self.SCRIPT), "--tag", tag, "--prerelease", prerelease,
-             "--gradle-file", str(gradle_file)],
-            capture_output=True, text=True,
+            [sys.executable, str(self.SCRIPT), *args], capture_output=True, text=True
         )
 
-    def test_prints_the_version_and_writes_it_into_the_build_script(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            gradle = Path(tmp, "build.gradle.kts")
-            gradle.write_text(GRADLE)
-            result = self.run_script("2.4.0-beta.1", "true", gradle)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout, "2.4.0-beta.1\n")
-            self.assertIn('version = "2.4.0-beta.1"', gradle.read_text())
+    def test_prints_the_version_for_the_release_workflow_to_pass_on(self):
+        result = self.run_script("--tag", "2.4.0-beta.1", "--prerelease", "true")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "2.4.0-beta.1\n")
 
-    def test_a_bad_tag_fails_and_leaves_the_build_script_alone(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            gradle = Path(tmp, "build.gradle.kts")
-            gradle.write_text(GRADLE)
-            result = self.run_script("2.4", "false", gradle)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("not a semver version", result.stderr)
-            self.assertEqual(result.stdout, "")
-            self.assertEqual(gradle.read_text(), GRADLE)
+    def test_a_bad_tag_fails_and_prints_no_version(self):
+        result = self.run_script("--tag", "2.4", "--prerelease", "false")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not a semver version", result.stderr)
+        self.assertEqual(result.stdout, "")
+
+    def test_the_build_script_is_no_longer_written(self):
+        # The workflow hands the version to Gradle as a property; nothing edits the checkout.
+        result = self.run_script("--tag", "2.4.0", "--prerelease", "false", "--gradle-file", "x")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unrecognized arguments", result.stderr)
 
 
 if __name__ == "__main__":
