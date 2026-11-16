@@ -290,12 +290,12 @@ jobs:
 
   e2e-tests:
     name: E2E Tests
-    # A PR from a fork gets no secrets, so there is no QA license to test with.
+    # A PR from a fork gets no secrets, so there is no Enterprise license to test with.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     # actionlint 1.7.12 rejects the `$/` form zizmor suggests.
     uses: ./.github/workflows/e2e.yml # zizmor: ignore[self-repository]
     secrets:
-      FORMBRICKS_QA_LICENSE_KEY: ${{ secrets.FORMBRICKS_QA_LICENSE_KEY }}
+      ENTERPRISE_LICENSE_KEY: ${{ secrets.ENTERPRISE_LICENSE_KEY }}
 
   dependency-review:
     name: Dependency Review
