@@ -24,8 +24,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  # Superseded PR runs are cancelled; runs on main and in the merge queue always finish.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  # Superseded PR runs are cancelled; every main commit and merge-queue entry gets its own run.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
