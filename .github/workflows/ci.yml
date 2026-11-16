@@ -10,6 +10,7 @@
 #                   .github/scripts/pr-check-summary.test.sh, e2e/*/test/*.sh
 #   api-check       ./gradlew :android:checkKotlinAbi       (update: ./gradlew :android:updateKotlinAbi)
 #   package-check   scripts/package-check.sh
+#   workflow-lint   actionlint, zizmor, shellcheck (see the job for the files)
 #   e2e-tests       .github/workflows/e2e.yml (server: e2e/server, emulator: e2e/android,
 #                   journey: playground/src/androidTest/.../GoldenJourneyTest.kt)
 name: CI
@@ -359,6 +360,12 @@ jobs:
           version: 1.32.0
           # Fail the job on findings instead of uploading them to code scanning.
           advanced-security: false
+
+      # shellcheck is preinstalled on the runner. actionlint already checks the run: blocks.
+      - name: Run shellcheck on the shell scripts
+        run: |
+          shellcheck .github/scripts/*.sh scripts/*.sh
+          find e2e -name '*.sh' -exec shellcheck {} +
 
   pr-check-summary:
     name: PR Check Summary

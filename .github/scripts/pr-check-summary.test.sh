@@ -12,7 +12,7 @@ expect() {
   status=$?
   if [[ "$status" -ne "$expected" ]]; then
     echo "FAIL: $description (exit $status, expected $expected)"
-    echo "$output" | sed 's/^/    /'
+    while IFS= read -r line; do echo "    $line"; done <<<"$output"
     failures=$((failures + 1))
   else
     echo "ok: $description"

@@ -24,12 +24,12 @@ bad="$(jq -r --argjson allowed "$allowed_json" '
   to_entries[]
   | select(.value.result != "success")
   | select(.value.result != "skipped" or (.key | IN($allowed[]) | not))
-  | "\(.key): \(.value.result)"
+  | "  \(.key): \(.value.result)"
 ' <<<"$NEEDS_JSON")"
 
 if [[ -n "$bad" ]]; then
   echo "These checks did not pass:"
-  echo "$bad" | sed 's/^/  /'
+  echo "$bad"
   exit 1
 fi
 echo "All checks passed."
