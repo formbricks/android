@@ -1,7 +1,5 @@
 package com.formbricks.playground
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.formbricks.android.Formbricks
@@ -12,8 +10,9 @@ import com.formbricks.playground.databinding.ActivityMainBinding
  * Sets the SDK up with a server URL and workspace, then offers one button per SDK call the golden
  * journey makes: set user, set attribute, track an action.
  *
- * The URL and workspace come from the launching intent ([intent]), else from the build
- * (`-Pformbricks.appUrl`, `-Pformbricks.workspaceId`; see build.gradle.kts).
+ * The URL and workspace are fixed at build time (`-Pformbricks.appUrl`, `-Pformbricks.workspaceId`;
+ * see build.gradle.kts), never read from the launching intent: any app can send an exported
+ * activity an intent, and the URL decides where the SDK sends its requests.
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -23,9 +22,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val appUrl = intent.getStringExtra(EXTRA_APP_URL) ?: BuildConfig.FORMBRICKS_APP_URL
-        val workspaceId =
-            intent.getStringExtra(EXTRA_WORKSPACE_ID) ?: BuildConfig.FORMBRICKS_WORKSPACE_ID
+        val appUrl = BuildConfig.FORMBRICKS_APP_URL
+        val workspaceId = BuildConfig.FORMBRICKS_WORKSPACE_ID
 
         // setup() is once per process; a recreated Activity only hands over its new FragmentManager.
         Formbricks.setup(
@@ -59,15 +57,5 @@ class MainActivity : AppCompatActivity() {
             Formbricks.logout()
             binding.lastCall.text = getString(R.string.status_logout)
         }
-    }
-
-    companion object {
-        const val EXTRA_APP_URL = "com.formbricks.playground.APP_URL"
-        const val EXTRA_WORKSPACE_ID = "com.formbricks.playground.WORKSPACE_ID"
-
-        fun intent(context: Context, appUrl: String, workspaceId: String): Intent =
-            Intent(context, MainActivity::class.java)
-                .putExtra(EXTRA_APP_URL, appUrl)
-                .putExtra(EXTRA_WORKSPACE_ID, workspaceId)
     }
 }

@@ -84,9 +84,10 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-33" "system-images;android-33;google_apis;x86_64"
           sdkmanager --install "emulator"
 
-      # Before the server: it is up about a minute after the image pull, so build first.
+      # Before the server: it is up about a minute after the image pull, so build first. The server
+      # URL (the TLS proxy below) and workspace are built into the playground, not passed at launch.
       - name: Build the playground and the journey
-        run: ./gradlew --console=plain :playground:assembleDebug :playground:assembleDebugAndroidTest
+        run: e2e/android/build-playground.sh
 
       - name: Start the Formbricks server and bootstrap the tenant
         env:

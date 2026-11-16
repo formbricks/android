@@ -39,13 +39,14 @@ import org.junit.runner.RunWith
  * e2e/server/seed.sh created the survey: NPS (qa_nps) then open text (qa_feedback), triggered by
  * `qa-action` and targeted to plan = pro. e2e/server/assert-response.sh then checks the stored
  * response through the V1 API, so the run passes the same userId and feedback (e2e/android/lib.sh
- * `journey_gradle_args`, percent-encoded because the runner splits arguments on spaces).
+ * `journey_gradle_args`, percent-encoded because the runner splits arguments on spaces). The server
+ * URL and workspace are built into the playground (`-Pformbricks.appUrl`, `-Pformbricks.workspaceId`),
+ * so the test reads them from the same BuildConfig MainActivity sets the SDK up with.
  */
 @RunWith(AndroidJUnit4::class)
 class GoldenJourneyTest {
     private val args = InstrumentationRegistry.getArguments()
-    private val appUrl = arg("formbricksUrl") ?: BuildConfig.FORMBRICKS_APP_URL
-    private val workspaceId = arg("workspaceId") ?: BuildConfig.FORMBRICKS_WORKSPACE_ID
+    private val appUrl = BuildConfig.FORMBRICKS_APP_URL
     private val userId = arg("userId") ?: "qa-user-local-${System.currentTimeMillis()}"
     private val feedback = arg("feedback") ?: "Golden journey feedback"
 
@@ -53,11 +54,8 @@ class GoldenJourneyTest {
     fun goldenJourney() {
         assertServerReachable()
 
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        // 1. Set up the SDK (MainActivity calls setup with this URL and workspace).
-        ActivityScenario.launch<MainActivity>(
-            MainActivity.intent(context, appUrl, workspaceId)
-        ).use {
+        // 1. Set up the SDK (MainActivity calls setup with the built-in URL and workspace).
+        ActivityScenario.launch(MainActivity::class.java).use {
             // 2. setUserId, then setAttribute(plan = pro).
             onView(withId(R.id.user_id))
                 .perform(scrollTo(), replaceText(userId), closeSoftKeyboard())

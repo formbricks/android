@@ -3,13 +3,12 @@
 # retry inside this step: the merge queue drops a PR before anyone could re-run the job. Each
 # attempt's test results and logcat are kept in $E2E_REPORT_DIR.
 # Env: E2E_USER_ID and E2E_FEEDBACK (the same values assert-response.sh checks).
-# Expects: https-proxy.sh up, an emulator (API <= 33, google_apis) and the playground APKs built.
+# Expects: https-proxy.sh up, an emulator (API <= 33, google_apis) and the playground APKs built by
+# build-playground.sh (the same server URL and workspace, so Gradle does not rebuild them).
 set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
-# The workspace id lives in the server harness; read it in a subshell so the two libs stay apart.
-# shellcheck source-path=SCRIPTDIR source=../server/lib.sh
-E2E_WORKSPACE_ID="$(source "${E2E_ANDROID_DIR}/../server/lib.sh" && printf '%s' "${E2E_WORKSPACE_ID}")"
+E2E_WORKSPACE_ID="$(server_workspace_id)"
 
 : "${E2E_USER_ID:?set E2E_USER_ID to the userId the journey identifies as}"
 : "${E2E_FEEDBACK:?set E2E_FEEDBACK to the open-text answer the journey types}"

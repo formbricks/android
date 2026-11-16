@@ -4,7 +4,8 @@
 //
 // The server it talks to defaults to the E2E harness as the emulator sees it. Point it elsewhere with
 //   ./gradlew :playground:installDebug -Pformbricks.appUrl=https://… -Pformbricks.workspaceId=…
-// The SDK only accepts https:// URLs.
+// The SDK only accepts https:// URLs. Both are fixed at build time, never taken from the launching
+// intent: the URL decides where the SDK sends its requests (e2e/android/build-playground.sh).
 plugins {
     id("com.android.application")
     alias(libs.plugins.detekt)
@@ -15,6 +16,14 @@ val defaultAppUrl = providers.gradleProperty("formbricks.appUrl")
     .getOrElse("https://10.0.2.2:3443")
 val defaultWorkspaceId = providers.gradleProperty("formbricks.workspaceId")
     .getOrElse("clsdkqaws00000000000000001")
+
+// Both end up inside a Java string literal in BuildConfig.
+require(Regex("https://[^\\s\"\\\\]+").matches(defaultAppUrl)) {
+    "formbricks.appUrl must be an https:// URL without spaces, quotes or backslashes: $defaultAppUrl"
+}
+require(Regex("[A-Za-z0-9]+").matches(defaultWorkspaceId)) {
+    "formbricks.workspaceId must be alphanumeric: $defaultWorkspaceId"
+}
 
 ktlint {
     version.set(libs.versions.ktlint)

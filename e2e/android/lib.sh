@@ -24,22 +24,41 @@ percent_encode() {
   jq -rn --arg v "$1" '$v | @uri'
 }
 
+# playground_gradle_args <appUrl> <workspaceId>
+# Prints the Gradle properties that build the playground against a server, one per line. They are
+# BuildConfig fields, not launch-intent extras: the app never takes its server URL from an intent.
+playground_gradle_args() {
+  local url="$1" workspace="$2"
+  [[ -n "${url}" && -n "${workspace}" ]] || {
+    echo "playground_gradle_args needs appUrl and workspaceId" >&2
+    return 1
+  }
+  printf '%s\n' "-Pformbricks.appUrl=${url}" "-Pformbricks.workspaceId=${workspace}"
+}
+
 # journey_gradle_args <appUrl> <workspaceId> <userId> <feedback>
-# Prints the Gradle arguments that run the golden journey, one per line. Every input goes in as a
-# percent-encoded instrumentation argument: the test runner splits `am instrument -e` values on
-# spaces, and the feedback has spaces. GoldenJourneyTest decodes them.
+# Prints the Gradle arguments that run the golden journey, one per line: the playground build
+# properties (the same as build-playground.sh, so Gradle reuses that build), then the userId and
+# feedback as percent-encoded instrumentation arguments. The test runner splits `am instrument -e`
+# values on spaces, and the feedback has spaces. GoldenJourneyTest decodes them.
 journey_gradle_args() {
   local url="$1" workspace="$2" user="$3" feedback="$4" prefix="-Pandroid.testInstrumentationRunnerArguments"
   [[ -n "${url}" && -n "${workspace}" && -n "${user}" && -n "${feedback}" ]] || {
     echo "journey_gradle_args needs appUrl, workspaceId, userId and feedback" >&2
     return 1
   }
+  printf '%s\n' ":playground:connectedDebugAndroidTest"
+  playground_gradle_args "${url}" "${workspace}"
   printf '%s\n' \
-    ":playground:connectedDebugAndroidTest" \
-    "${prefix}.formbricksUrl=$(percent_encode "${url}")" \
-    "${prefix}.workspaceId=$(percent_encode "${workspace}")" \
     "${prefix}.userId=$(percent_encode "${user}")" \
     "${prefix}.feedback=$(percent_encode "${feedback}")"
+}
+
+# server_workspace_id: the workspace id the server harness bootstraps (e2e/server/lib.sh). Read in a
+# subshell so the two libs stay apart.
+server_workspace_id() {
+  # shellcheck source-path=SCRIPTDIR source=../server/lib.sh
+  (source "${E2E_ANDROID_DIR}/../server/lib.sh" && printf '%s' "${E2E_WORKSPACE_ID}")
 }
 
 # --- I/O helpers ----------------------------------------------------------------------------------
