@@ -7,7 +7,7 @@ on:
     - cron: "41 3 * * 1"
   workflow_dispatch:
 
-permissions: read-all
+permissions: {}
 
 jobs:
   analysis:
@@ -15,8 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      security-events: write
-      id-token: write
+      contents: read
+      actions: read
+      security-events: write # Uploads the SARIF to code scanning.
+      id-token: write # Publishes the results to the OpenSSF API.
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
