@@ -3,7 +3,8 @@ name: E2E
 # The SDK golden journey against a published Formbricks image. ci.yml calls it on every PR (fork PRs
 # skip it: no secrets) with the latest release; run it by hand with `server_version` (for example
 # 6.3.0-rc.1) as the pre-release QA. The server harness lives in e2e/server (shared with the other
-# SDKs), the emulator side in e2e/android, the journey in playground/src/androidTest.
+# SDKs), the emulator side in e2e/android, the journey in playground/src/androidTest. The harness
+# scripts' own tests run in ci.yml unit-tests.
 on:
   workflow_call:
     inputs:
@@ -53,11 +54,6 @@ jobs:
             exit 1
           fi
           echo "Testing against ghcr.io/formbricks/formbricks:${FORMBRICKS_VERSION}"
-
-      - name: Test the harness scripts
-        run: |
-          e2e/server/test/lib.test.sh
-          e2e/android/test/lib.test.sh
 
       - name: Set up JDK 21
         uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0

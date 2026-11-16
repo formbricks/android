@@ -7,6 +7,7 @@
 #   build           ./gradlew :android:assemble :android:assembleDebugAndroidTest
 #   unit-tests      ./gradlew :android:testDebugUnitTest :android:connectedDebugAndroidTest
 #                   python3 -m unittest discover -s scripts/release
+#                   .github/scripts/pr-check-summary.test.sh, e2e/*/test/*.sh
 #   api-check       ./gradlew :android:checkKotlinAbi       (update: ./gradlew :android:updateKotlinAbi)
 #   package-check   scripts/package-check.sh
 #   e2e-tests       .github/workflows/e2e.yml (server: e2e/server, emulator: e2e/android,
@@ -155,8 +156,20 @@ jobs:
       - name: Run JVM unit tests
         run: ./gradlew :android:testDebugUnitTest
 
-      - name: Run the release script tests
+      # All script tests run here, so fork PRs run them too.
+      - name: Test the release scripts
         run: python3 -m unittest discover -s scripts/release
+
+      - name: Test the PR Check Summary script
+        run: .github/scripts/pr-check-summary.test.sh
+
+      - name: Test the E2E harness scripts
+        run: |
+          for t in e2e/*/test/*.sh; do
+            echo "::group::$t"
+            "$t"
+            echo "::endgroup::"
+          done
 
       # jacocoAndroidTestReport runs connectedDebugAndroidTest, then writes the coverage report
       # the sonarqube job reads.
@@ -346,9 +359,6 @@ jobs:
           version: 1.32.0
           # Fail the job on findings instead of uploading them to code scanning.
           advanced-security: false
-
-      - name: Test the PR Check Summary script
-        run: .github/scripts/pr-check-summary.test.sh
 
   pr-check-summary:
     name: PR Check Summary
