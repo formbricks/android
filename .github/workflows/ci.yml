@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint
+    name: lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -57,7 +57,7 @@ jobs:
         run: ./gradlew :android:detekt :android:lint
 
   format:
-    name: Format
+    name: format
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -82,7 +82,7 @@ jobs:
         run: ./gradlew :android:ktlintCheck
 
   build:
-    name: Build
+    name: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -109,7 +109,7 @@ jobs:
         run: ./gradlew :android:assemble :android:assembleDebugAndroidTest
 
   unit-tests:
-    name: Unit Tests
+    name: unit-tests
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -198,7 +198,7 @@ jobs:
           retention-days: 7
 
   api-check:
-    name: API Check
+    name: api-check
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -225,7 +225,7 @@ jobs:
         run: ./gradlew :android:checkKotlinAbi
 
   package-check:
-    name: Package Check
+    name: package-check
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -252,7 +252,7 @@ jobs:
         run: scripts/package-check.sh
 
   sonarqube:
-    name: SonarQube
+    name: sonarqube
     needs: unit-tests
     # A PR from a fork gets no secrets, so there is no token to scan with.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -303,7 +303,7 @@ jobs:
             -Dsonar.qualitygate.wait=true
 
   e2e-tests:
-    name: E2E Tests
+    name: e2e-tests
     # A PR from a fork gets no secrets, so there is no Enterprise license to test with.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     # actionlint 1.7.12 rejects the `$/` form zizmor suggests.
@@ -312,7 +312,7 @@ jobs:
       ENTERPRISE_LICENSE_KEY: ${{ secrets.ENTERPRISE_LICENSE_KEY }}
 
   dependency-review:
-    name: Dependency Review
+    name: dependency-review
     # Reviews the dependency diff of a PR or a merge-queue entry; a push to main has none.
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
@@ -335,7 +335,7 @@ jobs:
           head-ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
   workflow-lint:
-    name: Workflow Lint
+    name: workflow-lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
