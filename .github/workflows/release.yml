@@ -130,6 +130,8 @@ jobs:
         if: always() && steps.publish.outcome != 'skipped'
         run: |
           mkdir -p "$RUNNER_TEMP/deployments"
+          # A publish cancelled before Gradle started wrote no log, so it uploaded nothing.
+          [ -f "$RUNNER_TEMP/publish.log" ] || exit 0
           python3 scripts/release/maven_central.py deployment-ids "$RUNNER_TEMP/publish.log" \
             >> "$RUNNER_TEMP/deployments/deployment-ids.txt"
 
