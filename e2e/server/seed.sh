@@ -10,6 +10,12 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 mkdir -p "$(dirname "${E2E_STATE_FILE}")"
+# A second seed on the same stack would collide with the first one's action class and attribute
+# key, so delete what an earlier seed recorded before starting over.
+if [[ -s "${E2E_STATE_FILE}" ]]; then
+  log "Deleting what an earlier seed created"
+  "${E2E_SERVER_DIR}/cleanup.sh" || log "Cleanup of the earlier seed failed; seeding anyway"
+fi
 : >"${E2E_STATE_FILE}"
 save() {
   printf '%s=%q\n' "$1" "$2" >>"${E2E_STATE_FILE}"
@@ -23,7 +29,7 @@ save ACTION_CLASS_ID "$(jq -r '.id' <<<"${action_class}")"
 log "Creating the app survey"
 survey_id="$(api_ok POST /api/v1/management/surveys "$(build_survey_payload "${E2E_WORKSPACE_ID}" "${action_class}")" | jq -r '.data.id')"
 save SURVEY_ID "${survey_id}"
-authzed_expect drained outbox drain
+authzed_drain_outbox
 
 log "Targeting the survey to ${E2E_ATTRIBUTE_KEY} = ${E2E_ATTRIBUTE_VALUE}"
 updated="$(build_segment_filter_sql "${E2E_WORKSPACE_ID}" "${survey_id}" | psql_exec -f - 2>&1)"
