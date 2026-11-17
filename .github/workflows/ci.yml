@@ -2,9 +2,10 @@
 # it fails unless every job above it succeeded (or skipped where skipping is expected).
 #
 # Each check runs locally with the same command:
-#   lint            ./gradlew :android:detekt :android:lint
-#   format          ./gradlew :android:ktlintCheck          (fix: ./gradlew :android:ktlintFormat)
+#   lint            ./gradlew :android:detekt :android:lint :playground:detekt :playground:lint
+#   format          ./gradlew :android:ktlintCheck :playground:ktlintCheck   (fix: ktlintFormat)
 #   build           ./gradlew :android:assemble :android:assembleDebugAndroidTest
+#                             :playground:assembleDebug :playground:assembleDebugAndroidTest
 #   unit-tests      ./gradlew :android:testDebugUnitTest :android:connectedDebugAndroidTest
 #                   python3 -m unittest discover -s scripts/release
 #                   .github/scripts/pr-check-summary.test.sh, e2e/*/test/*.sh
@@ -54,7 +55,7 @@ jobs:
           cache: gradle
 
       - name: Run detekt and Android Lint
-        run: ./gradlew :android:detekt :android:lint
+        run: ./gradlew :android:detekt :android:lint :playground:detekt :playground:lint
 
   format:
     name: format
@@ -79,7 +80,7 @@ jobs:
           cache: gradle
 
       - name: Run ktlint
-        run: ./gradlew :android:ktlintCheck
+        run: ./gradlew :android:ktlintCheck :playground:ktlintCheck
 
   build:
     name: build
@@ -104,9 +105,10 @@ jobs:
           cache: gradle
 
       # Kotlin warnings are errors and explicit API mode is on (android/build.gradle.kts), so
-      # compiling every variant and the instrumented tests is the check.
+      # compiling every variant and the instrumented tests is the check. The playground and its
+      # golden journey are compiled too, so a break shows here rather than only in e2e-tests.
       - name: Build all variants and the instrumented tests
-        run: ./gradlew :android:assemble :android:assembleDebugAndroidTest
+        run: ./gradlew :android:assemble :android:assembleDebugAndroidTest :playground:assembleDebug :playground:assembleDebugAndroidTest
 
   unit-tests:
     name: unit-tests
