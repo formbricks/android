@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  * The names match the source names used by the JS SDK so both platforms key the gate off
  * the same vocabulary.
  */
-enum class InteractionSource(val value: String) {
+public enum class InteractionSource(public val value: String) {
     ON_DISPLAY("onDisplay"),
     ON_RESPONSE("onResponse"),
     ON_FINISHED("onFinished")
@@ -31,17 +31,15 @@ enum class InteractionSource(val value: String) {
  * undefined state. Nullable plus `== true` treats anything missing as "do not refresh".
  */
 @Serializable
-data class InteractionRefresh(
+public data class InteractionRefresh(
     @SerializedName("onDisplay") val onDisplay: Boolean? = null,
     @SerializedName("onResponse") val onResponse: Boolean? = null,
     @SerializedName("onFinished") val onFinished: Boolean? = null
 ) {
     /** Whether an interaction of this kind should trigger a user-state refresh. */
-    fun shouldRefresh(source: InteractionSource): Boolean {
-        return when (source) {
-            InteractionSource.ON_DISPLAY -> onDisplay == true
-            InteractionSource.ON_RESPONSE -> onResponse == true
-            InteractionSource.ON_FINISHED -> onFinished == true
-        }
+    public fun shouldRefresh(source: InteractionSource): Boolean = when (source) {
+        InteractionSource.ON_DISPLAY -> onDisplay == true
+        InteractionSource.ON_RESPONSE -> onResponse == true
+        InteractionSource.ON_FINISHED -> onFinished == true
     }
 }

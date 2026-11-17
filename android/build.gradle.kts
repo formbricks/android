@@ -3,6 +3,7 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.SourcesJar
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 // The Dokka Gradle plugin puts Dokka's engine, and with it Jackson, on this build script's
 // own classpath, which the project-level resolutionStrategy below cannot reach. Importing the
@@ -24,14 +25,31 @@ plugins {
     kotlin("plugin.serialization") version "2.4.20"
     alias(libs.plugins.dokka)
     alias(libs.plugins.dokka.javadoc)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
     id("jacoco")
     id("com.vanniktech.maven.publish") version "0.37.0"
     id("org.sonarqube") version "7.5.0.8588"
 }
 
-version = "2.3.1"
+// main only holds the placeholder. The release workflow passes the version from the release tag
+// (scripts/release/version.py) as the `releaseVersion` Gradle property, so main never carries a
+// real version. See RELEASING.md.
+version = providers.gradleProperty("releaseVersion").getOrElse("0.0.0-dev")
 val groupId = "com.formbricks"
 val artifactId = "android"
+
+// format: `./gradlew ktlintCheck`; `./gradlew ktlintFormat` fixes most findings in place.
+ktlint {
+    version.set(libs.versions.ktlint)
+}
+
+// lint: `./gradlew detekt`. The rule set is detekt's defaults plus config/detekt/detekt.yml.
+detekt {
+    buildUponDefaultConfig.set(true)
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    source.setFrom("src/main/java", "src/androidTest/java")
+}
 
 // Configure JaCoCo version
 jacoco {
@@ -62,7 +80,7 @@ run {
         "org.freemarker" to libs.versions.freemarker.get(),
         // Kotlin 2.4's `kotlinBouncyCastleConfiguration` backs its PGP key and signing check
         // tasks. This build never runs them, but the dependency graph still resolves it.
-        "org.bouncycastle" to libs.versions.bouncycastle.get(),
+        "org.bouncycastle" to libs.versions.bouncycastle.get()
     )
 
     // Floors for single artifacts whose group also holds artifacts that must not be moved.
@@ -71,7 +89,7 @@ run {
         // (via commons-compress). commons-compress and commons-codec share the
         // org.apache.commons group, hence the per-module floor.
         "org.apache.httpcomponents:httpclient" to libs.versions.httpclient.get(),
-        "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
+        "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get()
     )
 
     fun isBelowFloor(current: String?, floor: String): Boolean {
@@ -143,6 +161,15 @@ android {
         dataBinding = true
         viewBinding = true
     }
+    // lint: `./gradlew lint`. Warnings fail the build like errors do.
+    lint {
+        warningsAsErrors = true
+        abortOnError = true
+        // These report that something newer was released upstream, not a defect in this code, so
+        // they would turn CI red on any day a dependency ships. Versions are pinned on purpose
+        // (see gradle/libs.versions.toml) and raised through Dependabot.
+        disable += setOf("AndroidGradlePluginVersion", "GradleDependency", "NewerVersionAvailable")
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -159,10 +186,26 @@ android {
 // `compilerOptions`.
 kotlin {
     coreLibrariesVersion = "2.1.0"
+
+    // Every public declaration states its visibility, so nothing joins the API by accident.
+    explicitApi()
+
+    // api-check: `checkKotlinAbi` diffs the public API against android/api/android.api.
+    // After an intended API change, run `./gradlew updateKotlinAbi` and commit the new dump.
+    @OptIn(ExperimentalAbiValidation::class)
+    abiValidation {
+        // AGP's built-in Kotlin leaves this convention unset, so the update task fails without it.
+        referenceDumpDir.set(layout.projectDirectory.dir("api"))
+    }
+
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
         languageVersion.set(KotlinVersion.KOTLIN_2_1)
         apiVersion.set(KotlinVersion.KOTLIN_2_1)
+        allWarningsAsErrors.set(true)
+        // Holding the language at 2.1 is deliberate (see above), so the compiler's "language
+        // version 2.1 is deprecated" notice is silenced rather than failing the build.
+        freeCompilerArgs.add("-Xsuppress-version-warnings")
     }
 }
 
@@ -204,7 +247,8 @@ dokka {
 
 val dokkaJavadocJar = tasks.register<Jar>("dokkaJavadocJar") {
     group = "documentation"
-    description = "Packages the Dokka Javadoc output into the -javadoc jar published to Maven Central."
+    description =
+        "Packages the Dokka Javadoc output into the -javadoc jar published to Maven Central."
     from(tasks.named("dokkaGeneratePublicationJavadoc"))
     archiveClassifier.set("javadoc")
 }
@@ -220,7 +264,7 @@ mavenPublishing {
         AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = SourcesJar.Sources(),
-            javadocJar = JavadocJar.None(),
+            javadocJar = JavadocJar.None()
         )
     )
 
@@ -288,32 +332,68 @@ tasks.register<JacocoReport>("jacocoAndroidTestReport") {
         "**/*Module_*Factory.class"
     )
 
-    val debugTree = fileTree(mapOf(
-        "dir" to layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes").get().asFile,
-        "excludes" to fileFilter
-    ))
+    val debugTree = fileTree(
+        mapOf(
+            "dir" to
+                layout.buildDirectory.dir(
+                    "intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes"
+                ).get().asFile,
+            "excludes" to fileFilter
+        )
+    )
 
     val mainSrc = "${project.projectDir}/src/main/java"
 
     sourceDirectories.setFrom(files(mainSrc))
     classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(mapOf(
-        "dir" to layout.buildDirectory.get().asFile,
-        "includes" to listOf(
-            "outputs/code_coverage/debugAndroidTest/connected/**/*.ec",
-            "outputs/code_coverage/debugAndroidTest/connected/**/*.exec"
+    executionData.setFrom(
+        fileTree(
+            mapOf(
+                "dir" to layout.buildDirectory.get().asFile,
+                "includes" to listOf(
+                    "outputs/code_coverage/debugAndroidTest/connected/**/*.ec",
+                    "outputs/code_coverage/debugAndroidTest/connected/**/*.exec"
+                )
+            )
         )
-    )))
+    )
 }
 
 // Configure Sonar
 sonar {
     properties {
-        property("sonar.coverage.jacoco.xmlReportPaths",
-            layout.buildDirectory.file("reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml").get().asFile.path)
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            layout.buildDirectory.file(
+                "reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml"
+            ).get().asFile.path
+        )
     }
 }
 
 tasks.sonar {
     dependsOn("jacocoAndroidTestReport")
+}
+
+// KGP 2.4 registers the ABI tasks for AGP's built-in Kotlin but never hands the dump task any
+// classes: its Android wiring only runs for the separate kotlin-android plugin, which AGP 9 no
+// longer applies. Left alone, the dump is empty and the check passes vacuously. Feed it the
+// release classes the same way KGP does for a single JVM target. The dump task is internal to
+// KGP, hence reflection; if a KGP upgrade changes it, this fails the build instead of silently
+// checking nothing (and an empty dump would also fail against the committed one).
+tasks.named("internalDumpKotlinAbi") {
+    val releaseClasses = files(
+        tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compileReleaseKotlin")
+            .flatMap { it.destinationDirectory }
+    )
+    inputs.files(releaseClasses).withPropertyName("releaseClasses")
+    val targetInfo = Class.forName(
+        "org.jetbrains.kotlin.gradle.tasks.abi.KotlinAbiDumpTaskImpl\$JvmTargetInfo",
+        true,
+        javaClass.classLoader
+    ).getConstructor(String::class.java, FileCollection::class.java)
+
+    @Suppress("UNCHECKED_CAST")
+    val jvm = javaClass.getMethod("getJvm").invoke(this) as ListProperty<Any>
+    jvm.add(targetInfo.newInstance("", releaseClasses))
 }

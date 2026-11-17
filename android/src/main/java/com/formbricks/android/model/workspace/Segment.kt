@@ -3,8 +3,8 @@ package com.formbricks.android.model.workspace
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
-import kotlinx.serialization.Serializable
 import java.lang.reflect.Type
+import kotlinx.serialization.Serializable
 
 /**
  * Public client API returns the minimal `{ id, hasFilters }` shape — full
@@ -18,12 +18,9 @@ import java.lang.reflect.Type
  * during the cache window after an SDK upgrade.
  */
 @Serializable
-data class Segment(
-    val id: String,
-    val hasFilters: Boolean
-)
+public data class Segment(val id: String, val hasFilters: Boolean)
 
-class SegmentDeserializer : JsonDeserializer<Segment> {
+public class SegmentDeserializer : JsonDeserializer<Segment> {
     override fun deserialize(
         json: JsonElement,
         typeOfT: Type,
@@ -37,8 +34,10 @@ class SegmentDeserializer : JsonDeserializer<Segment> {
         val hasFilters = when {
             obj.has("hasFilters") && !obj.get("hasFilters").isJsonNull ->
                 obj.get("hasFilters").asBoolean
+
             obj.has("filters") && obj.get("filters").isJsonArray ->
                 obj.get("filters").asJsonArray.size() > 0
+
             else -> true
         }
         return Segment(id = id, hasFilters = hasFilters)

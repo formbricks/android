@@ -5,6 +5,5 @@ import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class WorkspaceResponse(
-    @SerializedName("data") val data: WorkspaceResponseData,
-): BaseFormbricksResponse
+public data class WorkspaceResponse(@SerializedName("data") val data: WorkspaceResponseData) :
+    BaseFormbricksResponse

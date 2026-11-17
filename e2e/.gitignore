@@ -1,0 +1,4 @@
+server/.state/
+server/logs/
+android/.state/
+android/reports/

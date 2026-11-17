@@ -38,7 +38,8 @@ class FormbricksFragmentDismissInstrumentedTest {
 
     @Before
     fun setUp() {
-        Formbricks.applicationContext = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+        Formbricks.applicationContext =
+            InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
         Formbricks.appUrl = "https://test.formbricks.com"
         Formbricks.workspaceId = "test-workspace"
         workspaceBefore = SurveyManager.workspaceDataHolder
@@ -62,15 +63,18 @@ class FormbricksFragmentDismissInstrumentedTest {
                     overlay = overlay,
                     placement = null,
                     inAppSurveyBranding = null,
-                    styling = null,
-                ),
+                    styling = null
+                )
             ),
-            expiresAt = null,
+            expiresAt = null
         ),
-        originalResponseMap = mapOf(),
+        originalResponseMap = mapOf()
     )
 
-    private fun inOneTurn(overlay: SurveyOverlay, block: (FragmentActivity, FormbricksFragment) -> Unit) {
+    private fun inOneTurn(
+        overlay: SurveyOverlay,
+        block: (FragmentActivity, FormbricksFragment) -> Unit
+    ) {
         SurveyManager.workspaceDataHolder = workspaceWith(overlay)
         ActivityScenario.launch(FragmentActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
@@ -86,15 +90,23 @@ class FormbricksFragmentDismissInstrumentedTest {
     /** Pass-through surveys put their own layer into the host's content; it must not outlive them. */
     private fun surveyLayersOn(activity: FragmentActivity): Int {
         val content = activity.findViewById<ViewGroup>(android.R.id.content)
-        return (0 until content.childCount).count { content.getChildAt(it) is SurveyPassthroughLayout }
+        return (0 until content.childCount).count {
+            content.getChildAt(it) is SurveyPassthroughLayout
+        }
     }
 
     /** What the framework does to a host on its way to the background, without waiting for the stop. */
     private fun saveHostState(activity: FragmentActivity) {
-        InstrumentationRegistry.getInstrumentation().callActivityOnSaveInstanceState(activity, Bundle())
+        InstrumentationRegistry.getInstrumentation().callActivityOnSaveInstanceState(
+            activity,
+            Bundle()
+        )
     }
 
-    private fun closeAfterTheHostSavedItsState(overlay: SurveyOverlay) = inOneTurn(overlay) { activity, survey ->
+    private fun closeAfterTheHostSavedItsState(overlay: SurveyOverlay) = inOneTurn(overlay) {
+            activity,
+            survey
+        ->
         saveHostState(activity)
         assertTrue("the host must be past onSaveInstanceState", survey.isStateSaved)
 
@@ -106,7 +118,10 @@ class FormbricksFragmentDismissInstrumentedTest {
         assertEquals("no survey layer is left over the host", 0, surveyLayersOn(activity))
     }
 
-    private fun closeInTheForeground(overlay: SurveyOverlay) = inOneTurn(overlay) { activity, survey ->
+    private fun closeInTheForeground(overlay: SurveyOverlay) = inOneTurn(overlay) {
+            activity,
+            survey
+        ->
         assertFalse(survey.isStateSaved)
 
         survey.safeDismiss()
@@ -126,7 +141,8 @@ class FormbricksFragmentDismissInstrumentedTest {
         closeAfterTheHostSavedItsState(SurveyOverlay.LIGHT)
 
     @Test
-    fun aForegroundCloseDismissesASurveyWithoutAnOverlay() = closeInTheForeground(SurveyOverlay.NONE)
+    fun aForegroundCloseDismissesASurveyWithoutAnOverlay() =
+        closeInTheForeground(SurveyOverlay.NONE)
 
     @Test
     fun aForegroundCloseDismissesASurveyBehindADialog() = closeInTheForeground(SurveyOverlay.LIGHT)
@@ -156,12 +172,19 @@ class FormbricksFragmentDismissInstrumentedTest {
             scenario.moveToState(Lifecycle.State.RESUMED)
             scenario.onActivity { activity ->
                 activity.supportFragmentManager.executePendingTransactions()
-                assertTrue("the survey is gone once the host is back", surveysIn(activity).isEmpty())
+                assertTrue(
+                    "the survey is gone once the host is back",
+                    surveysIn(activity).isEmpty()
+                )
                 assertEquals("no survey layer is left over the host", 0, surveyLayersOn(activity))
 
                 FormbricksFragment.show(activity.supportFragmentManager, "survey-two")
                 activity.supportFragmentManager.executePendingTransactions()
-                assertEquals("the host can show a survey again, and only one", 1, surveysIn(activity).size)
+                assertEquals(
+                    "the host can show a survey again, and only one",
+                    1,
+                    surveysIn(activity).size
+                )
             }
         }
     }

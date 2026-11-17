@@ -1,5 +1,6 @@
 package com.formbricks.android
 
+import android.content.Context
 import androidx.fragment.app.FragmentManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,6 +11,8 @@ import com.formbricks.android.manager.SurveyManager
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.user.AttributeValue
 import com.formbricks.android.network.queue.UpdateQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -19,8 +22,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -60,6 +61,13 @@ class FormbricksInstrumentedTest {
         assertNull(UserManager.userId)
         assertEquals("default", Formbricks.language)
 
+        assertCallsBeforeSetupAreIgnored()
+        setUpAndAssertInitialState(appContext)
+        identifyUserAndTrackSurvey()
+        assertDisplayResponseAndLogout()
+    }
+
+    private fun assertCallsBeforeSetupAreIgnored() {
         // Use methods before init should have no effect
         Formbricks.setUserId("userId")
         Formbricks.setLanguage("de")
@@ -73,9 +81,14 @@ class FormbricksInstrumentedTest {
         Formbricks.logout()
         Formbricks.setFragmentManager(MockFragmentManager())
         Formbricks.setLanguage("")
+    }
 
+    private fun setUpAndAssertInitialState(appContext: Context) {
         // Call the setup and initialize the SDK
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         // Should be ignored, becuase we don't have user ID yet
@@ -103,7 +116,9 @@ class FormbricksInstrumentedTest {
         waitForSeconds(3) // Increased wait time to 3 seconds
         assertTrue(SurveyManager.hasApiError)
         (FormbricksApi.service as MockFormbricksApiService).isErrorResponseNeeded = false
+    }
 
+    private fun identifyUserAndTrackSurvey() {
         // Authenticate the user
         Formbricks.setUserId(userId)
         waitForSeconds(2)
@@ -123,25 +138,30 @@ class FormbricksInstrumentedTest {
 
         // Track a known event, thus, the survey should be shown.
         SurveyManager.isShowingSurvey = false
-        
+
         // Track the event but don't show the survey
         val firstSurveyBeforeTrack = SurveyManager.filteredSurveys.firstOrNull()
         assertNotNull("Should have a survey before tracking", firstSurveyBeforeTrack)
         assertEquals("Should have the correct survey ID", surveyID, firstSurveyBeforeTrack?.id)
-        
+
         val actionClasses = SurveyManager.workspaceDataHolder?.data?.data?.actionClasses ?: listOf()
         val clickDemoButtonAction = actionClasses.firstOrNull { it.key == "click_demo_button" }
         assertNotNull("Should have click_demo_button action class", clickDemoButtonAction)
-        
+
         val triggers = firstSurveyBeforeTrack?.triggers ?: listOf()
-        val matchingTrigger = triggers.firstOrNull { it.actionClass?.name == clickDemoButtonAction?.name }
+        val matchingTrigger = triggers.firstOrNull {
+            it.actionClass?.name ==
+                clickDemoButtonAction?.name
+        }
         assertNotNull("Survey should have matching trigger", matchingTrigger)
-        
+
         // Now track the event
         Formbricks.track("click_demo_button")
         waitForSeconds(1)
         assertTrue("Survey should be marked as showing", SurveyManager.isShowingSurvey)
+    }
 
+    private fun assertDisplayResponseAndLogout() {
         // Validate display and response
         SurveyManager.onNewDisplay(surveyID)
         SurveyManager.postResponse(surveyID)
@@ -186,7 +206,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testSetAttributesWithUserId() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         // Set userId first, then set attributes - exercises UpdateQueue.setAttributes with a valid userId
@@ -194,10 +217,12 @@ class FormbricksInstrumentedTest {
         waitForSeconds(2)
         assertEquals(userId, UserManager.userId)
 
-        Formbricks.setAttributes(mapOf(
-            "plan" to AttributeValue.string("premium"),
-            "score" to AttributeValue.number(99.5)
-        ))
+        Formbricks.setAttributes(
+            mapOf(
+                "plan" to AttributeValue.string("premium"),
+                "score" to AttributeValue.number(99.5)
+            )
+        )
         waitForSeconds(1)
 
         // User should still be synced
@@ -207,7 +232,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testAddAttributeWithUserId() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         // Set userId first, then add attributes - exercises UpdateQueue.addAttribute with a valid userId
@@ -226,7 +254,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testSetLanguageWithUserId() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         // Set userId first, then set language - exercises the if-branch in UpdateQueue.setLanguage
@@ -244,7 +275,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testSetUserIdSameValueIsNoOp() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         Formbricks.setUserId(userId)
@@ -259,7 +293,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testSetUserIdDifferentValueOverridesPrevious() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         Formbricks.setUserId(userId)
@@ -295,7 +332,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testSyncUserSetsLanguageFromResponse() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         assertEquals("default", Formbricks.language)
@@ -324,7 +364,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testSyncUserCatchBlockOnApiError() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         // Enable error mode so postUser returns a failure, exercising the catch block
@@ -340,7 +383,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testLogoutClearsAllUserState() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         // Set up a user so we have state to clear
@@ -379,7 +425,11 @@ class FormbricksInstrumentedTest {
         waitForSeconds(1)
 
         assertTrue(Formbricks.isInitialized)
-        assertEquals("environmentId should be stored as workspaceId", legacyId, Formbricks.workspaceId)
+        assertEquals(
+            "environmentId should be stored as workspaceId",
+            legacyId,
+            Formbricks.workspaceId
+        )
         assertTrue(config.usedDeprecatedEnvironmentId)
     }
 
@@ -403,7 +453,10 @@ class FormbricksInstrumentedTest {
     @Test
     fun testLegacyEnvironmentIdAccessorMirrorsWorkspaceId() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Formbricks.setup(appContext, FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build())
+        Formbricks.setup(
+            appContext,
+            FormbricksConfig.Builder(appUrl, workspaceId).setLoggingEnabled(true).build()
+        )
         waitForSeconds(1)
 
         assertEquals(workspaceId, Formbricks.environmentId)

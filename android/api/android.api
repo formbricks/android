@@ -1,0 +1,1255 @@
+public final class com/formbricks/android/Formbricks {
+	public static final field INSTANCE Lcom/formbricks/android/Formbricks;
+	public final fun clearEmbeddedData ()V
+	public final fun clearEmbeddedData (Ljava/lang/String;)V
+	public final fun logout ()V
+	public final fun setAppearance (Lcom/formbricks/android/helper/FormbricksAppearance;)V
+	public final fun setAppearance (Ljava/lang/String;)V
+	public final fun setAttribute (DLjava/lang/String;)V
+	public final fun setAttribute (ILjava/lang/String;)V
+	public final fun setAttribute (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun setAttribute (Ljava/util/Date;Ljava/lang/String;)V
+	public final fun setAttributes (Ljava/util/Map;)V
+	public final fun setEmbeddedData (Ljava/util/Map;)V
+	public final fun setFragmentManager (Landroidx/fragment/app/FragmentManager;)V
+	public final fun setLanguage (Ljava/lang/String;)V
+	public final fun setUserId (Ljava/lang/String;)V
+	public final fun setup (Landroid/content/Context;Lcom/formbricks/android/helper/FormbricksConfig;Z)V
+	public static synthetic fun setup$default (Lcom/formbricks/android/Formbricks;Landroid/content/Context;Lcom/formbricks/android/helper/FormbricksConfig;ZILjava/lang/Object;)V
+	public final fun track (Ljava/lang/String;)V
+}
+
+public final class com/formbricks/android/api/FormbricksApi {
+	public static final field INSTANCE Lcom/formbricks/android/api/FormbricksApi;
+	public final fun getService ()Lcom/formbricks/android/network/FormbricksApiService;
+	public final fun getWorkspaceState-IoAF18A (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun initialize ()V
+	public final fun postUser-0E7RQCE (Ljava/lang/String;Ljava/util/Map;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun setService (Lcom/formbricks/android/network/FormbricksApiService;)V
+}
+
+public final class com/formbricks/android/api/error/FormbricksAPIError : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lcom/formbricks/android/api/error/FormbricksAPIError;
+	public static synthetic fun copy$default (Lcom/formbricks/android/api/error/FormbricksAPIError;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/formbricks/android/api/error/FormbricksAPIError;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getDetails ()Ljava/util/Map;
+	public final fun getMessageText ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/extensions/DateExtensionsKt {
+	public static final fun dateString (Ljava/util/Date;)Ljava/lang/String;
+	public static final fun expiresAt (Lcom/formbricks/android/model/user/UserState;)Ljava/util/Date;
+	public static final fun expiresAt (Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;)Ljava/util/Date;
+	public static final fun lastDisplayAt (Lcom/formbricks/android/model/user/UserStateData;)Ljava/util/Date;
+}
+
+public final class com/formbricks/android/extensions/GuardKt {
+	public static final fun guardEmpty (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/String;
+	public static final fun guardLet ([Ljava/lang/Object;Lkotlin/jvm/functions/Function0;)Ljava/util/List;
+}
+
+public final class com/formbricks/android/helper/FormbricksAppearance : java/lang/Enum {
+	public static final field DARK Lcom/formbricks/android/helper/FormbricksAppearance;
+	public static final field LIGHT Lcom/formbricks/android/helper/FormbricksAppearance;
+	public static final field SYSTEM Lcom/formbricks/android/helper/FormbricksAppearance;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/formbricks/android/helper/FormbricksAppearance;
+	public static fun values ()[Lcom/formbricks/android/helper/FormbricksAppearance;
+}
+
+public final class com/formbricks/android/helper/FormbricksConfig {
+	public final fun getAppUrl ()Ljava/lang/String;
+	public final fun getAppearance ()Lcom/formbricks/android/helper/FormbricksAppearance;
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getEnvironmentId ()Ljava/lang/String;
+	public final fun getFragmentManager ()Landroidx/fragment/app/FragmentManager;
+	public final fun getLoggingEnabled ()Z
+	public final fun getUsedDeprecatedEnvironmentId ()Z
+	public final fun getUserId ()Ljava/lang/String;
+	public final fun getWorkspaceId ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/helper/FormbricksConfig$Builder {
+	public static final field Companion Lcom/formbricks/android/helper/FormbricksConfig$Builder$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun addAttribute (Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public final fun build ()Lcom/formbricks/android/helper/FormbricksConfig;
+	public final fun setAppearance (Lcom/formbricks/android/helper/FormbricksAppearance;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public final fun setAttributes (Ljava/util/Map;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public final fun setFragmentManager (Landroidx/fragment/app/FragmentManager;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public final fun setLoggingEnabled (Z)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public final fun setStringAttributes (Ljava/util/Map;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public final fun setUserId (Ljava/lang/String;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+	public static final fun withEnvironmentId (Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+}
+
+public final class com/formbricks/android/helper/FormbricksConfig$Builder$Companion {
+	public final fun withEnvironmentId (Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/helper/FormbricksConfig$Builder;
+}
+
+public final class com/formbricks/android/helper/JsonHelperKt {
+	public static final fun mapToJsonElement (Ljava/util/Map;)Lkotlinx/serialization/json/JsonElement;
+	public static final fun mapToJsonElementItem (Ljava/lang/Object;)Lkotlinx/serialization/json/JsonElement;
+}
+
+public final class com/formbricks/android/logger/Logger {
+	public static final field INSTANCE Lcom/formbricks/android/logger/Logger;
+	public final fun d (Ljava/lang/String;)V
+	public final fun e (Ljava/lang/RuntimeException;)V
+	public final fun w (Ljava/lang/String;Ljava/lang/RuntimeException;)V
+	public static synthetic fun w$default (Lcom/formbricks/android/logger/Logger;Ljava/lang/String;Ljava/lang/RuntimeException;ILjava/lang/Object;)V
+}
+
+public final class com/formbricks/android/manager/EmbeddedDataManager {
+	public static final field INSTANCE Lcom/formbricks/android/manager/EmbeddedDataManager;
+	public final fun clear ()V
+	public final fun remove (Ljava/lang/String;)V
+	public final fun set (Ljava/util/Map;)V
+	public final fun snapshot ()Lcom/google/gson/JsonObject;
+}
+
+public final class com/formbricks/android/manager/SurveyManager {
+	public static final field INSTANCE Lcom/formbricks/android/manager/SurveyManager;
+	public final fun filterSurveys ()V
+	public static final fun filterSurveysBasedOnDisplayType (Ljava/util/List;Ljava/util/List;Ljava/util/List;)Ljava/util/List;
+	public static final fun filterSurveysBasedOnRecontactDays (Ljava/util/List;Ljava/lang/Integer;)Ljava/util/List;
+	public final fun getGson ()Lcom/google/gson/Gson;
+	public static final fun getLanguageCode (Lcom/formbricks/android/model/workspace/Survey;Ljava/lang/String;)Ljava/lang/String;
+	public final fun getWorkspaceDataHolder ()Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;
+	public static final fun invokeShouldDisplayBasedOnPercentage (Ljava/lang/Double;)Z
+	public final fun onNewDisplay (Ljava/lang/String;)V
+	public final fun onSurveyInteraction (Ljava/lang/String;Lcom/formbricks/android/model/workspace/InteractionSource;)V
+	public final fun postResponse (Ljava/lang/String;)V
+	public final fun refreshWorkspaceIfNeeded (Z)V
+	public static synthetic fun refreshWorkspaceIfNeeded$default (Lcom/formbricks/android/manager/SurveyManager;ZILjava/lang/Object;)V
+	public final fun setWorkspaceDataHolder (Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;)V
+	public final fun track (Ljava/lang/String;)V
+}
+
+public final class com/formbricks/android/manager/UserManager {
+	public static final field INSTANCE Lcom/formbricks/android/manager/UserManager;
+	public final fun addAttribute (Lcom/formbricks/android/model/user/AttributeValue;Ljava/lang/String;)V
+	public final fun getContactId ()Ljava/lang/String;
+	public final fun getDisplays ()Ljava/util/List;
+	public final fun getExpiresAt ()Ljava/util/Date;
+	public final fun getLastDisplayedAt ()Ljava/util/Date;
+	public final fun getResponses ()Ljava/util/List;
+	public final fun getSegments ()Ljava/util/List;
+	public final fun getUserId ()Ljava/lang/String;
+	public final fun logout ()V
+	public final fun onDisplay (Ljava/lang/String;)V
+	public final fun onResponse (Ljava/lang/String;)V
+	public final fun refreshSegmentsAfterInteraction (Lcom/formbricks/android/model/workspace/Survey;Lcom/formbricks/android/model/workspace/InteractionSource;)V
+	public final fun set (Ljava/lang/String;)V
+	public final fun setAttributes (Ljava/util/Map;)V
+	public final fun setLanguage (Ljava/lang/String;)V
+	public final fun syncUser (Ljava/lang/String;Ljava/util/Map;)V
+	public static synthetic fun syncUser$default (Lcom/formbricks/android/manager/UserManager;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
+	public final fun syncUserStateIfNeeded ()V
+	public final fun waitForPendingUpdates (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract interface class com/formbricks/android/model/BaseFormbricksResponse {
+}
+
+public abstract class com/formbricks/android/model/embeddeddata/EmbeddedDataValue {
+	public static final field Companion Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$Companion;
+}
+
+public final class com/formbricks/android/model/embeddeddata/EmbeddedDataValue$BooleanValue : com/formbricks/android/model/embeddeddata/EmbeddedDataValue {
+	public fun <init> (Z)V
+	public final fun component1 ()Z
+	public final fun copy (Z)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$BooleanValue;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$BooleanValue;ZILjava/lang/Object;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$BooleanValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/embeddeddata/EmbeddedDataValue$Companion {
+	public final fun boolean (Z)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue;
+	public final fun date (Ljava/util/Date;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue;
+	public final fun number (D)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue;
+	public final fun string (Ljava/lang/String;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue;
+}
+
+public final class com/formbricks/android/model/embeddeddata/EmbeddedDataValue$DateValue : com/formbricks/android/model/embeddeddata/EmbeddedDataValue {
+	public fun <init> (Ljava/util/Date;)V
+	public final fun component1 ()Ljava/util/Date;
+	public final fun copy (Ljava/util/Date;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$DateValue;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$DateValue;Ljava/util/Date;ILjava/lang/Object;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$DateValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/util/Date;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/embeddeddata/EmbeddedDataValue$NumberValue : com/formbricks/android/model/embeddeddata/EmbeddedDataValue {
+	public fun <init> (D)V
+	public final fun component1 ()D
+	public final fun copy (D)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$NumberValue;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$NumberValue;DILjava/lang/Object;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$NumberValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/embeddeddata/EmbeddedDataValue$StringValue : com/formbricks/android/model/embeddeddata/EmbeddedDataValue {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$StringValue;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$StringValue;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/embeddeddata/EmbeddedDataValue$StringValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/enums/SuccessType : java/lang/Enum {
+	public static final field GET_ENVIRONMENT_SUCCESS Lcom/formbricks/android/model/enums/SuccessType;
+	public static final field LOGOUT_SUCCESS Lcom/formbricks/android/model/enums/SuccessType;
+	public static final field SET_USER_SUCCESS Lcom/formbricks/android/model/enums/SuccessType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/formbricks/android/model/enums/SuccessType;
+	public static fun values ()[Lcom/formbricks/android/model/enums/SuccessType;
+}
+
+public final class com/formbricks/android/model/error/SDKError {
+	public static final field INSTANCE Lcom/formbricks/android/model/error/SDKError;
+	public final fun getConnectionIsNotAvailable ()Ljava/lang/RuntimeException;
+	public final fun getCouldNotCreateDisplayError ()Ljava/lang/RuntimeException;
+	public final fun getCouldNotCreateResponseError ()Ljava/lang/RuntimeException;
+	public final fun getFragmentManagerIsDestroyed ()Ljava/lang/RuntimeException;
+	public final fun getFragmentManagerIsNotSet ()Ljava/lang/RuntimeException;
+	public final fun getInvalidDisplayOption ()Ljava/lang/RuntimeException;
+	public final fun getMissingSurveyId ()Ljava/lang/RuntimeException;
+	public final fun getNoUserIdSetError ()Ljava/lang/RuntimeException;
+	public final fun getSdkIsAlreadyInitialized ()Ljava/lang/RuntimeException;
+	public final fun getSdkIsNotInitialized ()Ljava/lang/RuntimeException;
+	public final fun getSomethingWentWrongError ()Ljava/lang/RuntimeException;
+	public final fun getSurveyDisplayFetchError ()Ljava/lang/RuntimeException;
+	public final fun getSurveyNotDisplayedError ()Ljava/lang/RuntimeException;
+	public final fun getSurveyNotFoundError ()Ljava/lang/RuntimeException;
+	public final fun getUnableToLoadFormbicksJs ()Ljava/lang/RuntimeException;
+	public final fun getUnableToPostResponse ()Ljava/lang/RuntimeException;
+	public final fun getUnableToRefreshEnvironment ()Ljava/lang/RuntimeException;
+}
+
+public final class com/formbricks/android/model/javascript/CardRect {
+	public fun <init> (FFFF)V
+	public final fun component1 ()F
+	public final fun component2 ()F
+	public final fun component3 ()F
+	public final fun component4 ()F
+	public final fun copy (FFFF)Lcom/formbricks/android/model/javascript/CardRect;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/javascript/CardRect;FFFFILjava/lang/Object;)Lcom/formbricks/android/model/javascript/CardRect;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHeight ()F
+	public final fun getWidth ()F
+	public final fun getX ()F
+	public final fun getY ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/javascript/CardRectData {
+	public static final field Companion Lcom/formbricks/android/model/javascript/CardRectData$Companion;
+	public fun <init> (Lcom/formbricks/android/model/javascript/CardRect;)V
+	public final fun component1 ()Lcom/formbricks/android/model/javascript/CardRect;
+	public final fun copy (Lcom/formbricks/android/model/javascript/CardRect;)Lcom/formbricks/android/model/javascript/CardRectData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/javascript/CardRectData;Lcom/formbricks/android/model/javascript/CardRect;ILjava/lang/Object;)Lcom/formbricks/android/model/javascript/CardRectData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRect ()Lcom/formbricks/android/model/javascript/CardRect;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/javascript/CardRectData$Companion {
+	public final fun from (Ljava/lang/String;)Lcom/formbricks/android/model/javascript/CardRectData;
+}
+
+public final class com/formbricks/android/model/javascript/EventType : java/lang/Enum {
+	public static final field ON_CARD_RECT_CHANGE Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_CLOSE Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_DISPLAY_CREATED Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_FILE_PICK Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_FINISHED Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_RESPONSE_CREATED Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_SURVEY_LIBRARY_LOAD_ERROR Lcom/formbricks/android/model/javascript/EventType;
+	public static final field ON_SURVEY_RENDERED Lcom/formbricks/android/model/javascript/EventType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/formbricks/android/model/javascript/EventType;
+	public static fun values ()[Lcom/formbricks/android/model/javascript/EventType;
+}
+
+public final class com/formbricks/android/model/javascript/FileUploadData {
+	public static final field Companion Lcom/formbricks/android/model/javascript/FileUploadData$Companion;
+	public fun <init> (Lcom/formbricks/android/model/javascript/EventType;Lcom/formbricks/android/model/javascript/FileUploadParams;)V
+	public final fun component1 ()Lcom/formbricks/android/model/javascript/EventType;
+	public final fun component2 ()Lcom/formbricks/android/model/javascript/FileUploadParams;
+	public final fun copy (Lcom/formbricks/android/model/javascript/EventType;Lcom/formbricks/android/model/javascript/FileUploadParams;)Lcom/formbricks/android/model/javascript/FileUploadData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/javascript/FileUploadData;Lcom/formbricks/android/model/javascript/EventType;Lcom/formbricks/android/model/javascript/FileUploadParams;ILjava/lang/Object;)Lcom/formbricks/android/model/javascript/FileUploadData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Lcom/formbricks/android/model/javascript/EventType;
+	public final fun getFileUploadParams ()Lcom/formbricks/android/model/javascript/FileUploadParams;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/javascript/FileUploadData$Companion {
+	public final fun from (Ljava/lang/String;)Lcom/formbricks/android/model/javascript/FileUploadData;
+}
+
+public final class com/formbricks/android/model/javascript/FileUploadParams {
+	public fun <init> (Ljava/lang/String;Z)V
+	public final fun allowedExtensionsArray ()[Ljava/lang/String;
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lcom/formbricks/android/model/javascript/FileUploadParams;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/javascript/FileUploadParams;Ljava/lang/String;ZILjava/lang/Object;)Lcom/formbricks/android/model/javascript/FileUploadParams;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowMultipleFiles ()Z
+	public final fun getAllowedFileExtensions ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/javascript/JsMessageData {
+	public static final field Companion Lcom/formbricks/android/model/javascript/JsMessageData$Companion;
+	public fun <init> (Lcom/formbricks/android/model/javascript/EventType;)V
+	public final fun component1 ()Lcom/formbricks/android/model/javascript/EventType;
+	public final fun copy (Lcom/formbricks/android/model/javascript/EventType;)Lcom/formbricks/android/model/javascript/JsMessageData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/javascript/JsMessageData;Lcom/formbricks/android/model/javascript/EventType;ILjava/lang/Object;)Lcom/formbricks/android/model/javascript/JsMessageData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Lcom/formbricks/android/model/javascript/EventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/javascript/JsMessageData$Companion {
+	public final fun from (Ljava/lang/String;)Lcom/formbricks/android/model/javascript/JsMessageData;
+}
+
+public final class com/formbricks/android/model/upload/FetchStorageUrlRequestBody {
+	public static final field Companion Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAccessType ()Ljava/lang/String;
+	public final fun getAllowedFileExtensions ()Ljava/util/List;
+	public final fun getFileName ()Ljava/lang/String;
+	public final fun getFileType ()Ljava/lang/String;
+	public final fun getSurveyId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/upload/FetchStorageUrlRequestBody$Companion {
+	public final fun create (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody;
+	public static synthetic fun create$default (Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody$Companion;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/upload/FetchStorageUrlRequestBody;
+}
+
+public final class com/formbricks/android/model/upload/FetchStorageUrlResponse {
+	public fun <init> (Lcom/formbricks/android/model/upload/StorageData;)V
+	public final fun component1 ()Lcom/formbricks/android/model/upload/StorageData;
+	public final fun copy (Lcom/formbricks/android/model/upload/StorageData;)Lcom/formbricks/android/model/upload/FetchStorageUrlResponse;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/upload/FetchStorageUrlResponse;Lcom/formbricks/android/model/upload/StorageData;ILjava/lang/Object;)Lcom/formbricks/android/model/upload/FetchStorageUrlResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Lcom/formbricks/android/model/upload/StorageData;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/upload/SigningData {
+	public fun <init> (Ljava/lang/String;JLjava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()J
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;JLjava/lang/String;)Lcom/formbricks/android/model/upload/SigningData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/upload/SigningData;Ljava/lang/String;JLjava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/upload/SigningData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSignature ()Ljava/lang/String;
+	public final fun getTimestamp ()J
+	public final fun getUuid ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/upload/StorageData {
+	public fun <init> (Ljava/lang/String;Lcom/formbricks/android/model/upload/SigningData;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/formbricks/android/model/upload/SigningData;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Lcom/formbricks/android/model/upload/SigningData;Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/upload/StorageData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/upload/StorageData;Ljava/lang/String;Lcom/formbricks/android/model/upload/SigningData;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/upload/StorageData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFileUrl ()Ljava/lang/String;
+	public final fun getSignedUrl ()Ljava/lang/String;
+	public final fun getSigningData ()Lcom/formbricks/android/model/upload/SigningData;
+	public final fun getUpdatedFileName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/formbricks/android/model/user/AttributeValue {
+	public static final field Companion Lcom/formbricks/android/model/user/AttributeValue$Companion;
+	public final fun getNumberValue ()Ljava/lang/Double;
+	public final fun getStringValue ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/AttributeValue$Companion {
+	public final fun number (D)Lcom/formbricks/android/model/user/AttributeValue;
+	public final fun string (Ljava/lang/String;)Lcom/formbricks/android/model/user/AttributeValue;
+}
+
+public final class com/formbricks/android/model/user/AttributeValue$NumberValue : com/formbricks/android/model/user/AttributeValue {
+	public fun <init> (D)V
+	public final fun component1 ()D
+	public final fun copy (D)Lcom/formbricks/android/model/user/AttributeValue$NumberValue;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/AttributeValue$NumberValue;DILjava/lang/Object;)Lcom/formbricks/android/model/user/AttributeValue$NumberValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/AttributeValue$StringValue : com/formbricks/android/model/user/AttributeValue {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/formbricks/android/model/user/AttributeValue$StringValue;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/AttributeValue$StringValue;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/user/AttributeValue$StringValue;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getValue ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/AttributeValueAdapter : com/google/gson/JsonDeserializer, com/google/gson/JsonSerializer {
+	public fun <init> ()V
+	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lcom/formbricks/android/model/user/AttributeValue;
+	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
+	public fun serialize (Lcom/formbricks/android/model/user/AttributeValue;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+	public synthetic fun serialize (Ljava/lang/Object;Ljava/lang/reflect/Type;Lcom/google/gson/JsonSerializationContext;)Lcom/google/gson/JsonElement;
+}
+
+public final class com/formbricks/android/model/user/Display {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/user/Display;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/Display;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/user/Display;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCreatedAt ()Ljava/lang/String;
+	public final fun getSurveyId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/PostUserBody {
+	public static final field Companion Lcom/formbricks/android/model/user/PostUserBody$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/util/Map;)Lcom/formbricks/android/model/user/PostUserBody;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/PostUserBody;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lcom/formbricks/android/model/user/PostUserBody;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAttributes ()Ljava/util/Map;
+	public final fun getUserId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/PostUserBody$Companion {
+	public final fun create (Ljava/lang/String;Ljava/util/Map;)Lcom/formbricks/android/model/user/PostUserBody;
+}
+
+public final class com/formbricks/android/model/user/UserResponse {
+	public fun <init> (Lcom/formbricks/android/model/user/UserResponseData;)V
+	public final fun component1 ()Lcom/formbricks/android/model/user/UserResponseData;
+	public final fun copy (Lcom/formbricks/android/model/user/UserResponseData;)Lcom/formbricks/android/model/user/UserResponse;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/UserResponse;Lcom/formbricks/android/model/user/UserResponseData;ILjava/lang/Object;)Lcom/formbricks/android/model/user/UserResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Lcom/formbricks/android/model/user/UserResponseData;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/UserResponseData {
+	public fun <init> (Lcom/formbricks/android/model/user/UserState;Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun <init> (Lcom/formbricks/android/model/user/UserState;Ljava/util/List;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/formbricks/android/model/user/UserState;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/util/List;
+	public final fun copy (Lcom/formbricks/android/model/user/UserState;Ljava/util/List;Ljava/util/List;)Lcom/formbricks/android/model/user/UserResponseData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/UserResponseData;Lcom/formbricks/android/model/user/UserState;Ljava/util/List;Ljava/util/List;ILjava/lang/Object;)Lcom/formbricks/android/model/user/UserResponseData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getErrors ()Ljava/util/List;
+	public final fun getMessages ()Ljava/util/List;
+	public final fun getState ()Lcom/formbricks/android/model/user/UserState;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/UserState {
+	public fun <init> (Lcom/formbricks/android/model/user/UserStateData;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/formbricks/android/model/user/UserStateData;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/formbricks/android/model/user/UserStateData;Ljava/lang/String;)Lcom/formbricks/android/model/user/UserState;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/UserState;Lcom/formbricks/android/model/user/UserStateData;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/user/UserState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Lcom/formbricks/android/model/user/UserStateData;
+	public final fun getExpiresAt ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/user/UserStateData {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5 ()Ljava/util/List;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/user/UserStateData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/user/UserStateData;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/user/UserStateData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContactId ()Ljava/lang/String;
+	public final fun getDisplays ()Ljava/util/List;
+	public final fun getLanguage ()Ljava/lang/String;
+	public final fun getLastDisplayAt ()Ljava/lang/String;
+	public final fun getResponses ()Ljava/util/List;
+	public final fun getSegments ()Ljava/util/List;
+	public final fun getUserId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/workspace/ActionClass {
+	public static final field Companion Lcom/formbricks/android/model/workspace/ActionClass$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/workspace/ActionClass;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/ActionClass;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/ActionClass;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/ActionClass$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/ActionClass$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/ActionClass;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/ActionClass;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/ActionClass$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/ActionClassReference {
+	public static final field Companion Lcom/formbricks/android/model/workspace/ActionClassReference$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/formbricks/android/model/workspace/ActionClassReference;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/ActionClassReference;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/ActionClassReference;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/ActionClassReference$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/ActionClassReference$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/ActionClassReference;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/ActionClassReference;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/ActionClassReference$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/BrandColor {
+	public static final field Companion Lcom/formbricks/android/model/workspace/BrandColor$Companion;
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/formbricks/android/model/workspace/BrandColor;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/BrandColor;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/BrandColor;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getLight ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/BrandColor$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/BrandColor$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/BrandColor;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/BrandColor;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/BrandColor$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/CustomCss {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/workspace/CustomCss;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/CustomCss;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/CustomCss;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDark ()Ljava/lang/String;
+	public final fun getLight ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/CustomCss$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/CustomCss$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/CustomCss;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/CustomCss;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/InteractionRefresh {
+	public static final field Companion Lcom/formbricks/android/model/workspace/InteractionRefresh$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Boolean;
+	public final fun component2 ()Ljava/lang/Boolean;
+	public final fun component3 ()Ljava/lang/Boolean;
+	public final fun copy (Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;)Lcom/formbricks/android/model/workspace/InteractionRefresh;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/InteractionRefresh;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/InteractionRefresh;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getOnDisplay ()Ljava/lang/Boolean;
+	public final fun getOnFinished ()Ljava/lang/Boolean;
+	public final fun getOnResponse ()Ljava/lang/Boolean;
+	public fun hashCode ()I
+	public final fun shouldRefresh (Lcom/formbricks/android/model/workspace/InteractionSource;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/InteractionRefresh$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/InteractionRefresh$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/InteractionRefresh;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/InteractionRefresh;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/InteractionRefresh$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/InteractionSource : java/lang/Enum {
+	public static final field ON_DISPLAY Lcom/formbricks/android/model/workspace/InteractionSource;
+	public static final field ON_FINISHED Lcom/formbricks/android/model/workspace/InteractionSource;
+	public static final field ON_RESPONSE Lcom/formbricks/android/model/workspace/InteractionSource;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/formbricks/android/model/workspace/InteractionSource;
+	public static fun values ()[Lcom/formbricks/android/model/workspace/InteractionSource;
+}
+
+public final class com/formbricks/android/model/workspace/LanguageDetail {
+	public static final field Companion Lcom/formbricks/android/model/workspace/LanguageDetail$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/formbricks/android/model/workspace/LanguageDetail;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/LanguageDetail;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/LanguageDetail;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlias ()Ljava/lang/String;
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getProjectId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/LanguageDetail$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/LanguageDetail$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/LanguageDetail;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/LanguageDetail;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/LanguageDetail$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Segment {
+	public static final field Companion Lcom/formbricks/android/model/workspace/Segment$Companion;
+	public fun <init> (Ljava/lang/String;Z)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Z
+	public final fun copy (Ljava/lang/String;Z)Lcom/formbricks/android/model/workspace/Segment;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/Segment;Ljava/lang/String;ZILjava/lang/Object;)Lcom/formbricks/android/model/workspace/Segment;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHasFilters ()Z
+	public final fun getId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/Segment$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/Segment$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/Segment;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/Segment;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Segment$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/SegmentDeserializer : com/google/gson/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lcom/formbricks/android/model/workspace/Segment;
+	public synthetic fun deserialize (Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Ljava/lang/Object;
+}
+
+public final class com/formbricks/android/model/workspace/Settings {
+	public static final field Companion Lcom/formbricks/android/model/workspace/Settings$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/SurveyOverlay;Ljava/lang/String;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/Styling;Lcom/formbricks/android/model/workspace/CustomCss;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/SurveyOverlay;Ljava/lang/String;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/Styling;Lcom/formbricks/android/model/workspace/CustomCss;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Double;
+	public final fun component3 ()Ljava/lang/Boolean;
+	public final fun component4 ()Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/Boolean;
+	public final fun component7 ()Lcom/formbricks/android/model/workspace/Styling;
+	public final fun component8 ()Lcom/formbricks/android/model/workspace/CustomCss;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/SurveyOverlay;Ljava/lang/String;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/Styling;Lcom/formbricks/android/model/workspace/CustomCss;)Lcom/formbricks/android/model/workspace/Settings;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/Settings;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/SurveyOverlay;Ljava/lang/String;Ljava/lang/Boolean;Lcom/formbricks/android/model/workspace/Styling;Lcom/formbricks/android/model/workspace/CustomCss;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/Settings;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getClickOutsideClose ()Ljava/lang/Boolean;
+	public final fun getCustomCss ()Lcom/formbricks/android/model/workspace/CustomCss;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getInAppSurveyBranding ()Ljava/lang/Boolean;
+	public final fun getOverlay ()Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public final fun getPlacement ()Ljava/lang/String;
+	public final fun getRecontactDays ()Ljava/lang/Double;
+	public final fun getStyling ()Lcom/formbricks/android/model/workspace/Styling;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/Settings$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/Settings$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/Settings;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/Settings;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Settings$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Styling {
+	public static final field Companion Lcom/formbricks/android/model/workspace/Styling$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/Double;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (Ljava/lang/Double;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/Double;
+	public final fun component2 ()Ljava/lang/Boolean;
+	public final fun copy (Ljava/lang/Double;Ljava/lang/Boolean;)Lcom/formbricks/android/model/workspace/Styling;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/Styling;Ljava/lang/Double;Ljava/lang/Boolean;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/Styling;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAllowStyleOverwrite ()Ljava/lang/Boolean;
+	public final fun getRoundness ()Ljava/lang/Double;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/Styling$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/Styling$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/Styling;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/Styling;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Styling$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Survey {
+	public static final field Companion Lcom/formbricks/android/model/workspace/Survey$Companion;
+	public fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Lcom/formbricks/android/model/workspace/Segment;Lcom/formbricks/android/model/workspace/Styling;Ljava/util/List;Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;Lcom/formbricks/android/model/workspace/InteractionRefresh;Lcom/formbricks/android/model/workspace/CustomCss;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Lcom/formbricks/android/model/workspace/Segment;Lcom/formbricks/android/model/workspace/Styling;Ljava/util/List;Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;Lcom/formbricks/android/model/workspace/InteractionRefresh;Lcom/formbricks/android/model/workspace/CustomCss;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component10 ()Ljava/util/List;
+	public final fun component11 ()Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;
+	public final fun component12 ()Lcom/formbricks/android/model/workspace/InteractionRefresh;
+	public final fun component13 ()Lcom/formbricks/android/model/workspace/CustomCss;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Ljava/lang/Double;
+	public final fun component4 ()Ljava/lang/Double;
+	public final fun component5 ()Ljava/lang/Double;
+	public final fun component6 ()Ljava/lang/Double;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Lcom/formbricks/android/model/workspace/Segment;
+	public final fun component9 ()Lcom/formbricks/android/model/workspace/Styling;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Lcom/formbricks/android/model/workspace/Segment;Lcom/formbricks/android/model/workspace/Styling;Ljava/util/List;Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;Lcom/formbricks/android/model/workspace/InteractionRefresh;Lcom/formbricks/android/model/workspace/CustomCss;)Lcom/formbricks/android/model/workspace/Survey;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/Survey;Ljava/lang/String;Ljava/util/List;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Lcom/formbricks/android/model/workspace/Segment;Lcom/formbricks/android/model/workspace/Styling;Ljava/util/List;Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;Lcom/formbricks/android/model/workspace/InteractionRefresh;Lcom/formbricks/android/model/workspace/CustomCss;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/Survey;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCustomCss ()Lcom/formbricks/android/model/workspace/CustomCss;
+	public final fun getDelay ()Ljava/lang/Double;
+	public final fun getDisplayLimit ()Ljava/lang/Double;
+	public final fun getDisplayOption ()Ljava/lang/String;
+	public final fun getDisplayPercentage ()Ljava/lang/Double;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getInteractionRefresh ()Lcom/formbricks/android/model/workspace/InteractionRefresh;
+	public final fun getLanguages ()Ljava/util/List;
+	public final fun getProjectOverwrites ()Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;
+	public final fun getRecontactDays ()Ljava/lang/Double;
+	public final fun getSegment ()Lcom/formbricks/android/model/workspace/Segment;
+	public final fun getStyling ()Lcom/formbricks/android/model/workspace/Styling;
+	public final fun getTriggers ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/Survey$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/Survey$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/Survey;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/Survey;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Survey$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/SurveyLanguage {
+	public static final field Companion Lcom/formbricks/android/model/workspace/SurveyLanguage$Companion;
+	public fun <init> (ZZLcom/formbricks/android/model/workspace/LanguageDetail;)V
+	public final fun component1 ()Z
+	public final fun component2 ()Z
+	public final fun component3 ()Lcom/formbricks/android/model/workspace/LanguageDetail;
+	public final fun copy (ZZLcom/formbricks/android/model/workspace/LanguageDetail;)Lcom/formbricks/android/model/workspace/SurveyLanguage;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/SurveyLanguage;ZZLcom/formbricks/android/model/workspace/LanguageDetail;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/SurveyLanguage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDefault ()Z
+	public final fun getEnabled ()Z
+	public final fun getLanguage ()Lcom/formbricks/android/model/workspace/LanguageDetail;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/SurveyLanguage$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/SurveyLanguage$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/SurveyLanguage;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/SurveyLanguage;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/SurveyLanguage$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/SurveyOverlay : java/lang/Enum {
+	public static final field Companion Lcom/formbricks/android/model/workspace/SurveyOverlay$Companion;
+	public static final field DARK Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public static final field LIGHT Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public static final field NONE Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public static fun values ()[Lcom/formbricks/android/model/workspace/SurveyOverlay;
+}
+
+public final class com/formbricks/android/model/workspace/SurveyOverlay$Companion {
+	public final fun resolve (Lcom/formbricks/android/model/workspace/SurveyOverlay;Lcom/formbricks/android/model/workspace/SurveyOverlay;)Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/SurveyProjectOverwrites {
+	public static final field Companion Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites$Companion;
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Lcom/formbricks/android/model/workspace/SurveyOverlay;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Lcom/formbricks/android/model/workspace/SurveyOverlay;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Boolean;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Lcom/formbricks/android/model/workspace/SurveyOverlay;)Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;Ljava/lang/String;Lcom/formbricks/android/model/workspace/SurveyOverlay;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBrandColor ()Ljava/lang/String;
+	public final fun getClickOutsideClose ()Ljava/lang/Boolean;
+	public final fun getHighlightBorderColor ()Ljava/lang/String;
+	public final fun getOverlay ()Lcom/formbricks/android/model/workspace/SurveyOverlay;
+	public final fun getPlacement ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/SurveyProjectOverwrites$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/SurveyProjectOverwrites;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/SurveyProjectOverwrites$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Trigger {
+	public static final field Companion Lcom/formbricks/android/model/workspace/Trigger$Companion;
+	public fun <init> (Lcom/formbricks/android/model/workspace/ActionClassReference;)V
+	public final fun component1 ()Lcom/formbricks/android/model/workspace/ActionClassReference;
+	public final fun copy (Lcom/formbricks/android/model/workspace/ActionClassReference;)Lcom/formbricks/android/model/workspace/Trigger;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/Trigger;Lcom/formbricks/android/model/workspace/ActionClassReference;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/Trigger;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActionClass ()Lcom/formbricks/android/model/workspace/ActionClassReference;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/Trigger$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/Trigger$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/Trigger;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/Trigger;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/Trigger$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceData {
+	public static final field Companion Lcom/formbricks/android/model/workspace/WorkspaceData$Companion;
+	public fun <init> (Ljava/util/List;Ljava/util/List;Lcom/formbricks/android/model/workspace/Settings;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()Ljava/util/List;
+	public final fun component3 ()Lcom/formbricks/android/model/workspace/Settings;
+	public final fun copy (Ljava/util/List;Ljava/util/List;Lcom/formbricks/android/model/workspace/Settings;)Lcom/formbricks/android/model/workspace/WorkspaceData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/WorkspaceData;Ljava/util/List;Ljava/util/List;Lcom/formbricks/android/model/workspace/Settings;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/WorkspaceData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActionClasses ()Ljava/util/List;
+	public final fun getSettings ()Lcom/formbricks/android/model/workspace/Settings;
+	public final fun getSurveys ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/WorkspaceData$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/WorkspaceData$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/WorkspaceData;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/WorkspaceData;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceData$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceDataHolder {
+	public fun <init> (Lcom/formbricks/android/model/workspace/WorkspaceResponseData;Ljava/util/Map;)V
+	public final fun component1 ()Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public final fun component2 ()Ljava/util/Map;
+	public final fun copy (Lcom/formbricks/android/model/workspace/WorkspaceResponseData;Ljava/util/Map;)Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;Lcom/formbricks/android/model/workspace/WorkspaceResponseData;Ljava/util/Map;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public final fun getOriginalResponseMap ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceDataHolderKt {
+	public static final fun getSettingsStylingJson (Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;)Lcom/google/gson/JsonElement;
+	public static final fun getStyling (Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;Ljava/lang/String;)Lcom/google/gson/JsonElement;
+	public static final fun getSurveyJson (Lcom/formbricks/android/model/workspace/WorkspaceDataHolder;Ljava/lang/String;)Lcom/google/gson/JsonElement;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceResponse : com/formbricks/android/model/BaseFormbricksResponse {
+	public static final field Companion Lcom/formbricks/android/model/workspace/WorkspaceResponse$Companion;
+	public fun <init> (Lcom/formbricks/android/model/workspace/WorkspaceResponseData;)V
+	public final fun component1 ()Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public final fun copy (Lcom/formbricks/android/model/workspace/WorkspaceResponseData;)Lcom/formbricks/android/model/workspace/WorkspaceResponse;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/WorkspaceResponse;Lcom/formbricks/android/model/workspace/WorkspaceResponseData;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/WorkspaceResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/WorkspaceResponse$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/WorkspaceResponse$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/WorkspaceResponse;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/WorkspaceResponse;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceResponse$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceResponseData {
+	public static final field Companion Lcom/formbricks/android/model/workspace/WorkspaceResponseData$Companion;
+	public fun <init> (Lcom/formbricks/android/model/workspace/WorkspaceData;Ljava/lang/String;)V
+	public final fun component1 ()Lcom/formbricks/android/model/workspace/WorkspaceData;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Lcom/formbricks/android/model/workspace/WorkspaceData;Ljava/lang/String;)Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public static synthetic fun copy$default (Lcom/formbricks/android/model/workspace/WorkspaceResponseData;Lcom/formbricks/android/model/workspace/WorkspaceData;Ljava/lang/String;ILjava/lang/Object;)Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Lcom/formbricks/android/model/workspace/WorkspaceData;
+	public final fun getExpiresAt ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final synthetic class com/formbricks/android/model/workspace/WorkspaceResponseData$$serializer : kotlinx/serialization/internal/GeneratedSerializer {
+	public static final field INSTANCE Lcom/formbricks/android/model/workspace/WorkspaceResponseData$$serializer;
+	public final fun childSerializers ()[Lkotlinx/serialization/KSerializer;
+	public final fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Lcom/formbricks/android/model/workspace/WorkspaceResponseData;
+	public synthetic fun deserialize (Lkotlinx/serialization/encoding/Decoder;)Ljava/lang/Object;
+	public final fun getDescriptor ()Lkotlinx/serialization/descriptors/SerialDescriptor;
+	public final fun serialize (Lkotlinx/serialization/encoding/Encoder;Lcom/formbricks/android/model/workspace/WorkspaceResponseData;)V
+	public synthetic fun serialize (Lkotlinx/serialization/encoding/Encoder;Ljava/lang/Object;)V
+	public fun typeParametersSerializers ()[Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/formbricks/android/model/workspace/WorkspaceResponseData$Companion {
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public class com/formbricks/android/network/FormbricksApiService {
+	public fun <init> ()V
+	public fun getWorkspaceStateObject-IoAF18A (Ljava/lang/String;)Ljava/lang/Object;
+	public final fun initialize (Ljava/lang/String;Z)V
+	public fun postUser-gIAlu-s (Ljava/lang/String;Lcom/formbricks/android/model/user/PostUserBody;)Ljava/lang/Object;
+}
+
+public final class com/formbricks/android/network/FormbricksRetrofitBuilder {
+	public static final field Companion Lcom/formbricks/android/network/FormbricksRetrofitBuilder$Companion;
+	public fun <init> (Ljava/lang/String;Z)V
+	public final fun getBuilder ()Lretrofit2/Retrofit$Builder;
+}
+
+public final class com/formbricks/android/network/FormbricksRetrofitBuilder$Companion {
+}
+
+public abstract interface class com/formbricks/android/network/FormbricksService {
+	public static final field API_PREFIX Ljava/lang/String;
+	public static final field Companion Lcom/formbricks/android/network/FormbricksService$Companion;
+	public abstract fun getWorkspaceState (Ljava/lang/String;)Lretrofit2/Call;
+	public abstract fun postUser (Ljava/lang/String;Lcom/formbricks/android/model/user/PostUserBody;)Lretrofit2/Call;
+}
+
+public final class com/formbricks/android/network/FormbricksService$Companion {
+	public static final field API_PREFIX Ljava/lang/String;
+}
+
+public final class com/formbricks/android/network/queue/UpdateQueue {
+	public static final field INSTANCE Lcom/formbricks/android/network/queue/UpdateQueue;
+	public final fun addAttribute (Ljava/lang/String;Lcom/formbricks/android/model/user/AttributeValue;)V
+	public final fun clearPendingRefresh ()V
+	public final fun hasPendingWork ()Z
+	public final fun requestUserStateRefresh (Ljava/lang/String;)V
+	public final fun reset ()V
+	public final fun setAttributes (Ljava/util/Map;)V
+	public final fun setLanguage (Ljava/lang/String;)V
+	public final fun setUserId (Ljava/lang/String;)V
+	public final fun syncDidFinish (Z)V
+	public static synthetic fun syncDidFinish$default (Lcom/formbricks/android/network/queue/UpdateQueue;ZILjava/lang/Object;)V
+	public final fun waitForPendingWork (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class com/formbricks/android/webview/FormbricksFragment : com/google/android/material/bottomsheet/BottomSheetDialogFragment {
+	public static final field Companion Lcom/formbricks/android/webview/FormbricksFragment$Companion;
+	public fun <init> ()V
+	public final fun getResultLauncher ()Landroidx/activity/result/ActivityResultLauncher;
+	public fun onConfigurationChanged (Landroid/content/res/Configuration;)V
+	public fun onCreate (Landroid/os/Bundle;)V
+	public fun onCreateDialog (Landroid/os/Bundle;)Landroid/app/Dialog;
+	public fun onCreateView (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;
+	public fun onDestroy ()V
+	public fun onDestroyView ()V
+	public fun onStart ()V
+	public fun onViewCreated (Landroid/view/View;Landroid/os/Bundle;)V
+	public final fun setResultLauncher (Landroidx/activity/result/ActivityResultLauncher;)V
+}
+
+public final class com/formbricks/android/webview/FormbricksFragment$Companion {
+	public final fun show (Landroidx/fragment/app/FragmentManager;Ljava/lang/String;)V
+}
+
+public final class com/formbricks/android/webview/FormbricksViewModel : androidx/lifecycle/ViewModel {
+	public fun <init> ()V
+	public final fun getHtml ()Landroidx/lifecycle/MutableLiveData;
+	public final fun loadHtml (Ljava/lang/String;Ljava/lang/String;)V
+	public static synthetic fun loadHtml$default (Lcom/formbricks/android/webview/FormbricksViewModel;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)V
+	public final fun setHtml (Landroidx/lifecycle/MutableLiveData;)V
+}
+
+public final class com/formbricks/android/webview/FormbricksViewModelKt {
+	public static final fun setHtmlText (Landroid/webkit/WebView;Ljava/lang/String;)V
+}
+
+public abstract interface class com/formbricks/android/webview/SurveyTouchRegion {
+	public static final field Companion Lcom/formbricks/android/webview/SurveyTouchRegion$Companion;
+	public abstract fun accepts (FF)Z
+}
+
+public final class com/formbricks/android/webview/SurveyTouchRegion$Card : com/formbricks/android/webview/SurveyTouchRegion {
+	public fun <init> (FFFF)V
+	public fun accepts (FF)Z
+	public final fun component1 ()F
+	public final fun component2 ()F
+	public final fun component3 ()F
+	public final fun component4 ()F
+	public final fun copy (FFFF)Lcom/formbricks/android/webview/SurveyTouchRegion$Card;
+	public static synthetic fun copy$default (Lcom/formbricks/android/webview/SurveyTouchRegion$Card;FFFFILjava/lang/Object;)Lcom/formbricks/android/webview/SurveyTouchRegion$Card;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBottom ()F
+	public final fun getLeft ()F
+	public final fun getRight ()F
+	public final fun getTop ()F
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/webview/SurveyTouchRegion$Companion {
+	public final fun forReported (Lcom/formbricks/android/model/javascript/CardRect;F)Lcom/formbricks/android/webview/SurveyTouchRegion;
+}
+
+public final class com/formbricks/android/webview/SurveyTouchRegion$Everything : com/formbricks/android/webview/SurveyTouchRegion {
+	public static final field INSTANCE Lcom/formbricks/android/webview/SurveyTouchRegion$Everything;
+	public fun accepts (FF)Z
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/webview/SurveyTouchRegion$Nothing : com/formbricks/android/webview/SurveyTouchRegion {
+	public static final field INSTANCE Lcom/formbricks/android/webview/SurveyTouchRegion$Nothing;
+	public fun accepts (FF)Z
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/formbricks/android/webview/WebAppInterface {
+	public static final field Companion Lcom/formbricks/android/webview/WebAppInterface$Companion;
+	public static final field INTERFACE_NAME Ljava/lang/String;
+	public fun <init> (Lcom/formbricks/android/webview/WebAppInterface$WebAppCallback;)V
+	public final fun message (Ljava/lang/String;)V
+}
+
+public final class com/formbricks/android/webview/WebAppInterface$Companion {
+}
+
+public abstract interface class com/formbricks/android/webview/WebAppInterface$WebAppCallback {
+	public abstract fun onCardRectChange (Lcom/formbricks/android/model/javascript/CardRect;)V
+	public abstract fun onClose ()V
+	public abstract fun onDisplayCreated ()V
+	public abstract fun onFilePick (Lcom/formbricks/android/model/javascript/FileUploadData;)V
+	public abstract fun onFinished ()V
+	public abstract fun onResponseCreated ()V
+	public abstract fun onSurveyLibraryLoadError ()V
+	public abstract fun onSurveyRendered ()V
+}
+
+public final class com/formbricks/android/webview/WebAppInterface$WebAppCallback$DefaultImpls {
+	public static fun onCardRectChange (Lcom/formbricks/android/webview/WebAppInterface$WebAppCallback;Lcom/formbricks/android/model/javascript/CardRect;)V
+	public static fun onFinished (Lcom/formbricks/android/webview/WebAppInterface$WebAppCallback;)V
+	public static fun onSurveyRendered (Lcom/formbricks/android/webview/WebAppInterface$WebAppCallback;)V
+}
+

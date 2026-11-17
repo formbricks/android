@@ -29,7 +29,7 @@ import com.google.gson.JsonObject
  * - **No network.** Every method is a synchronous memory write, so calling it on every screen change
  *   is free. Values ride the existing response payload.
  */
-object EmbeddedDataManager {
+public object EmbeddedDataManager {
     private val lock = Any()
     private val data = LinkedHashMap<String, EmbeddedDataValue>()
 
@@ -41,27 +41,32 @@ object EmbeddedDataManager {
      * value for this screen. `null` is the deliberate "remove this" spelling, matching the JS SDK's
      * `{ key: null }`.
      */
-    fun set(values: Map<String, EmbeddedDataValue?>) {
+    public fun set(values: Map<String, EmbeddedDataValue?>) {
         val setKeys = mutableListOf<String>()
         val removedKeys = mutableListOf<String>()
         val held: List<String>
         synchronized(lock) {
             for ((key, value) in values) {
-                if (value == null) {
-                    data.remove(key)
-                    removedKeys.add(key)
-                    continue
+                when {
+                    value == null -> {
+                        data.remove(key)
+                        removedKeys.add(key)
+                    }
+
+                    // Refused rather than stored: a non-finite Double serializes as bare `NaN` or
+                    // `Infinity`, which is not valid JSON, so `JSON.parse` in the WebView would
+                    // throw and the survey would never render. One bad value must cost the field,
+                    // not the survey. Never fatal, always logged.
+                    value is EmbeddedDataValue.NumberValue && !value.value.isFinite() ->
+                        Logger.w(
+                            "setEmbeddedData: \"$key\" is not a finite number - the key was skipped"
+                        )
+
+                    else -> {
+                        data[key] = value
+                        setKeys.add(key)
+                    }
                 }
-                // Refused rather than stored: a non-finite Double serializes as bare `NaN` or
-                // `Infinity`, which is not valid JSON, so `JSON.parse` in the WebView would throw
-                // and the survey would never render. One bad value must cost the field, not the
-                // survey. Never fatal, always logged.
-                if (value is EmbeddedDataValue.NumberValue && !value.value.isFinite()) {
-                    Logger.w("setEmbeddedData: \"$key\" is not a finite number - the key was skipped")
-                    continue
-                }
-                data[key] = value
-                setKeys.add(key)
             }
             held = data.keys.toList()
         }
@@ -78,25 +83,39 @@ object EmbeddedDataManager {
      * Keys only, never values: the documented use of this bag includes hashed identity fields.
      * Separated from the logging call so that property is directly assertable in a test.
      */
-    internal fun setTrace(setKeys: List<String>, removedKeys: List<String>, held: List<String>): String {
-        val removed = if (removedKeys.isEmpty()) "" else ", removed [${removedKeys.joinToString(", ")}]"
+    internal fun setTrace(
+        setKeys: List<String>,
+        removedKeys: List<String>,
+        held: List<String>
+    ): String {
+        val removed = if (removedKeys.isEmpty()) {
+            ""
+        } else {
+            ", removed [${removedKeys.joinToString(
+                ", "
+            )}]"
+        }
         return "setEmbeddedData: set [${setKeys.joinToString(", ")}]$removed - the bag now holds " +
-            "[${held.joinToString(", ")}]. Keys land on a response only if the survey declares them " +
+            "[${held.joinToString(
+                ", "
+            )}]. Keys land on a response only if the survey declares them " +
             "as ingested Embedded Data fields."
     }
 
     /** Removes one key. A key that is not set is a no-op. */
-    fun remove(key: String) {
+    public fun remove(key: String) {
         val held: List<String>
         synchronized(lock) {
             data.remove(key)
             held = data.keys.toList()
         }
-        Logger.d("clearEmbeddedData: removed \"$key\" - the bag now holds [${held.joinToString(", ")}]")
+        Logger.d(
+            "clearEmbeddedData: removed \"$key\" - the bag now holds [${held.joinToString(", ")}]"
+        )
     }
 
     /** Removes everything - logout, or a hard context switch. */
-    fun clear() {
+    public fun clear() {
         val clearedCount: Int
         synchronized(lock) {
             clearedCount = data.size
@@ -109,16 +128,22 @@ object EmbeddedDataManager {
      * A detached, JSON-safe copy for the display-time snapshot: mutating the bag after a survey has
      * rendered must not reach that survey's response.
      */
-    fun snapshot(): JsonObject {
+    public fun snapshot(): JsonObject {
         val json = JsonObject()
         synchronized(lock) {
             for ((key, value) in data) {
                 when (value) {
                     is EmbeddedDataValue.StringValue -> json.addProperty(key, value.value)
+
                     is EmbeddedDataValue.NumberValue -> json.addProperty(key, value.value)
+
                     is EmbeddedDataValue.BooleanValue -> json.addProperty(key, value.value)
+
                     // ISO 8601 is what the renderer's ingest contract accepts for a `date` field.
-                    is EmbeddedDataValue.DateValue -> json.addProperty(key, value.value.dateString())
+                    is EmbeddedDataValue.DateValue -> json.addProperty(
+                        key,
+                        value.value.dateString()
+                    )
                 }
             }
         }

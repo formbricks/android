@@ -3,13 +3,13 @@ package com.formbricks.android.model.workspace
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 
-data class WorkspaceDataHolder(
+public data class WorkspaceDataHolder(
     val data: WorkspaceResponseData?,
     val originalResponseMap: Map<String, Any>
 )
 
 @Suppress("UNCHECKED_CAST")
-fun WorkspaceDataHolder.getSurveyJson(surveyId: String): JsonElement? {
+public fun WorkspaceDataHolder.getSurveyJson(surveyId: String): JsonElement? {
     val responseMap = originalResponseMap["data"] as? Map<*, *>
     val dataMap = responseMap?.get("data") as? Map<*, *>
     val surveyArray = dataMap?.get("surveys") as? ArrayList<Map<String, Any?>>
@@ -22,7 +22,7 @@ fun WorkspaceDataHolder.getSurveyJson(surveyId: String): JsonElement? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun WorkspaceDataHolder.getStyling(surveyId: String): JsonElement? {
+public fun WorkspaceDataHolder.getStyling(surveyId: String): JsonElement? {
     val responseMap = originalResponseMap["data"] as? Map<*, *>
     val dataMap = responseMap?.get("data") as? Map<*, *>
     val surveyArray = dataMap?.get("surveys") as? ArrayList<Map<String, Any?>>
@@ -35,7 +35,7 @@ fun WorkspaceDataHolder.getStyling(surveyId: String): JsonElement? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun WorkspaceDataHolder.getSettingsStylingJson(): JsonElement? {
+public fun WorkspaceDataHolder.getSettingsStylingJson(): JsonElement? {
     val responseMap = originalResponseMap["data"] as? Map<*, *>
     val dataMap = responseMap?.get("data") as? Map<*, *>
     // Server may respond with `settings`, `workspace`, or legacy `project` — all carry the same shape.

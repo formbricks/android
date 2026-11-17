@@ -1,14 +1,15 @@
 package com.formbricks.android.extensions
 
-import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.user.UserState
 import com.formbricks.android.model.user.UserStateData
+import com.formbricks.android.model.workspace.WorkspaceDataHolder
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-internal const val dateFormatPattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+internal const val DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
 
 /**
  * Formats as ISO 8601 UTC for the wire — a machine-facing value, never shown to a user.
@@ -22,50 +23,23 @@ internal const val dateFormatPattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
  * because `DecimalFormat` falls back to `Character.digit` and reads the server's ASCII digits under
  * any locale.
  */
-fun Date.dateString(): String {
-    val dateFormat = SimpleDateFormat(dateFormatPattern, Locale.ROOT)
+public fun Date.dateString(): String {
+    val dateFormat = SimpleDateFormat(DATE_FORMAT_PATTERN, Locale.ROOT)
     dateFormat.timeZone = TimeZone.getTimeZone("UTC")
     return dateFormat.format(this)
 }
 
-fun UserStateData.lastDisplayAt(): Date? {
-    lastDisplayAt?.let {
-        try {
-            val formatter = SimpleDateFormat(dateFormatPattern, Locale.getDefault())
-            formatter.timeZone = TimeZone.getTimeZone("UTC")
-            return formatter.parse(it)
-        } catch (e: Exception) {
-           return null
-        }
-    }
+public fun UserStateData.lastDisplayAt(): Date? = lastDisplayAt?.let(::parseUtcDate)
 
-    return null
-}
+public fun UserState.expiresAt(): Date? = expiresAt?.let(::parseUtcDate)
 
-fun UserState.expiresAt(): Date? {
-    expiresAt?.let {
-        try {
-            val formatter = SimpleDateFormat(dateFormatPattern, Locale.getDefault())
-            formatter.timeZone = TimeZone.getTimeZone("UTC")
-            return formatter.parse(it)
-        } catch (e: Exception) {
-            return null
-        }
-    }
+public fun WorkspaceDataHolder.expiresAt(): Date? = data?.expiresAt?.let(::parseUtcDate)
 
-    return null
-}
-
-fun WorkspaceDataHolder.expiresAt(): Date? {
-    data?.expiresAt?.let {
-        try {
-            val formatter = SimpleDateFormat(dateFormatPattern, Locale.getDefault())
-            formatter.timeZone = TimeZone.getTimeZone("UTC")
-            return formatter.parse(it)
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
-    return null
+/** Parses a server timestamp in [DATE_FORMAT_PATTERN]; null when it is not in that format. */
+private fun parseUtcDate(value: String): Date? = try {
+    val formatter = SimpleDateFormat(DATE_FORMAT_PATTERN, Locale.getDefault())
+    formatter.timeZone = TimeZone.getTimeZone("UTC")
+    formatter.parse(value)
+} catch (e: ParseException) {
+    null
 }

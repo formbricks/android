@@ -22,16 +22,16 @@ import java.util.Date
  *
  * Dates serialize as ISO 8601, which is what the ingest contract accepts for a `date` field.
  */
-sealed class EmbeddedDataValue {
-    data class StringValue(val value: String) : EmbeddedDataValue()
-    data class NumberValue(val value: Double) : EmbeddedDataValue()
-    data class BooleanValue(val value: Boolean) : EmbeddedDataValue()
-    data class DateValue(val value: Date) : EmbeddedDataValue()
+public sealed class EmbeddedDataValue {
+    public data class StringValue(val value: String) : EmbeddedDataValue()
+    public data class NumberValue(val value: Double) : EmbeddedDataValue()
+    public data class BooleanValue(val value: Boolean) : EmbeddedDataValue()
+    public data class DateValue(val value: Date) : EmbeddedDataValue()
 
-    companion object {
-        fun string(value: String): EmbeddedDataValue = StringValue(value)
-        fun number(value: Double): EmbeddedDataValue = NumberValue(value)
-        fun boolean(value: Boolean): EmbeddedDataValue = BooleanValue(value)
-        fun date(value: Date): EmbeddedDataValue = DateValue(value)
+    public companion object {
+        public fun string(value: String): EmbeddedDataValue = StringValue(value)
+        public fun number(value: Double): EmbeddedDataValue = NumberValue(value)
+        public fun boolean(value: Boolean): EmbeddedDataValue = BooleanValue(value)
+        public fun date(value: Date): EmbeddedDataValue = DateValue(value)
     }
 }

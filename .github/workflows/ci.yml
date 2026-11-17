@@ -1,0 +1,405 @@
+# Every check a change must pass. `PR Check Summary` at the bottom is the only required check:
+# it fails unless every job above it succeeded (or skipped where skipping is expected).
+#
+# Each check runs locally with the same command:
+#   lint            ./gradlew :android:detekt :android:lint :playground:detekt :playground:lint
+#   format          ./gradlew :android:ktlintCheck :playground:ktlintCheck   (fix: ktlintFormat)
+#   build           ./gradlew :android:assemble :android:assembleDebugAndroidTest
+#                             :playground:assembleDebug :playground:assembleDebugAndroidTest
+#   unit-tests      ./gradlew :android:testDebugUnitTest :android:connectedDebugAndroidTest
+#                   python3 -m unittest discover -s scripts/release
+#                   .github/scripts/pr-check-summary.test.sh, e2e/*/test/*.sh
+#   api-check       ./gradlew :android:checkKotlinAbi       (update: ./gradlew :android:updateKotlinAbi)
+#   package-check   scripts/package-check.sh
+#   workflow-lint   actionlint, zizmor, shellcheck (see the job for the files)
+#   e2e-tests       .github/workflows/e2e.yml (server: e2e/server, emulator: e2e/android,
+#                   journey: playground/src/androidTest/.../GoldenJourneyTest.kt)
+name: CI
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  # Superseded PR runs are cancelled; every main commit and merge-queue entry gets its own run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Run detekt and Android Lint
+        run: ./gradlew :android:detekt :android:lint :playground:detekt :playground:lint
+
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Run ktlint
+        run: ./gradlew :android:ktlintCheck :playground:ktlintCheck
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      # Kotlin warnings are errors and explicit API mode is on (android/build.gradle.kts), so
+      # compiling every variant and the instrumented tests is the check. The playground and its
+      # golden journey are compiled too, so a break shows here rather than only in e2e-tests.
+      - name: Build all variants and the instrumented tests
+        run: ./gradlew :android:assemble :android:assembleDebugAndroidTest :playground:assembleDebug :playground:assembleDebugAndroidTest
+
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          # The action's default is "tools platform-tools". `tools` is obsolete and Google
+          # has delisted it, so sdkmanager exits 1 and fails the step. platform-tools is
+          # installed again by "Install SDK components" below, so this loses nothing.
+          packages: platform-tools
+
+      # Hosted runners already expose /dev/kvm; the emulator only needs permission to use it.
+      # Installing qemu-kvm is not needed, and it has no install candidate on Ubuntu 26.04.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+
+      - name: Install SDK components
+        run: |
+          sdkmanager "platform-tools" "platforms;android-33" "system-images;android-33;google_apis;x86_64"
+          sdkmanager --install "emulator"
+
+      - name: Run JVM unit tests
+        run: ./gradlew :android:testDebugUnitTest
+
+      # All script tests run here, so fork PRs run them too.
+      - name: Test the release scripts
+        run: python3 -m unittest discover -s scripts/release
+
+      - name: Test the PR Check Summary script
+        run: .github/scripts/pr-check-summary.test.sh
+
+      - name: Test the E2E harness scripts
+        run: |
+          for t in e2e/*/test/*.sh; do
+            echo "::group::$t"
+            "$t"
+            echo "::endgroup::"
+          done
+
+      # jacocoAndroidTestReport runs connectedDebugAndroidTest, then writes the coverage report
+      # the sonarqube job reads.
+      - name: Run instrumented tests on the emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -accel on -no-snapshot
+          disable-animations: true
+          script: adb start-server && adb wait-for-device && until adb shell getprop sys.boot_completed 2>/dev/null | grep -q '^1$'; do echo "Waiting for boot completion..."; sleep 5; done && adb devices && ./gradlew :android:jacocoAndroidTestReport && (adb emu kill || true) && sleep 5
+
+      - name: Upload test results and coverage
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android-test-results
+          path: |
+            android/build/outputs/androidTest-results/connected
+            android/build/reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  api-check:
+    name: api-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      # On failure: if the API change is intended, run `./gradlew :android:updateKotlinAbi`
+      # and commit android/api/android.api so the diff shows it.
+      - name: Check the public API against android/api/android.api
+        run: ./gradlew :android:checkKotlinAbi
+
+  package-check:
+    name: package-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      # Publishes to mavenLocal with a throwaway signing key, checks the published POM and AAR
+      # against the Kotlin baseline, and builds a minified consumer app from them.
+      - name: Publish locally and install into a consumer app
+        run: scripts/package-check.sh
+
+  sonarqube:
+    name: sonarqube
+    needs: unit-tests
+    # A PR from a fork gets no secrets, so there is no token to scan with.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Download test results and coverage
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: android-test-results
+          path: android/build
+
+      # Sonar reads the compiled classes; the coverage comes from the unit-tests job.
+      - name: Compile the SDK
+        run: ./gradlew :android:compileDebugKotlin
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.organization=formbricks
+            -Dsonar.projectKey=formbricks_android
+            -Dsonar.java.binaries=android/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes
+            -Dsonar.sources=android/src/main/java
+            -Dsonar.tests=android/src/androidTest/java
+            -Dsonar.coverage.jacoco.xmlReportPaths=android/build/reports/jacoco/jacocoAndroidTestReport/jacocoAndroidTestReport.xml
+            -Dsonar.qualitygate.wait=true
+
+  e2e-tests:
+    name: e2e-tests
+    # A PR from a fork gets no secrets, so there is no Enterprise license to test with.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # actionlint 1.7.12 rejects the `$/` form zizmor suggests.
+    uses: ./.github/workflows/e2e.yml # zizmor: ignore[self-repository]
+    secrets:
+      ENTERPRISE_LICENSE_KEY: ${{ secrets.ENTERPRISE_LICENSE_KEY }}
+
+  dependency-review:
+    name: dependency-review
+    # Reviews the dependency diff of a PR or a merge-queue entry; a push to main has none.
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          head-ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+
+  workflow-lint:
+    name: workflow-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run actionlint
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+        with:
+          version: 1.7.12
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          version: 1.32.0
+          # Fail the job on findings instead of uploading them to code scanning.
+          advanced-security: false
+
+      # shellcheck is preinstalled on the runner. actionlint already checks the run: blocks.
+      - name: Run shellcheck on the shell scripts
+        run: |
+          shellcheck .github/scripts/*.sh scripts/*.sh
+          find e2e -name '*.sh' -exec shellcheck {} +
+
+  pr-check-summary:
+    name: PR Check Summary
+    if: always()
+    needs:
+      - lint
+      - format
+      - build
+      - unit-tests
+      - api-check
+      - package-check
+      - sonarqube
+      - e2e-tests
+      - dependency-review
+      - workflow-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: audit
+
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Require every check to pass
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          EVENT_NAME: ${{ github.event_name }}
+          IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: .github/scripts/pr-check-summary.sh

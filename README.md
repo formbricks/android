@@ -95,11 +95,13 @@ We welcome issues and pull requests on our GitHub repository.
 
 ### Running Tests
 
-To run the instrumented tests, make sure you have an Android emulator running or a physical device connected, then execute:
+To run the SDK's instrumented tests, make sure you have an Android emulator running or a physical device connected, then execute:
 
 ```bash
-./gradlew connectedDebugAndroidTest
+./gradlew :android:connectedDebugAndroidTest
 ```
+
+A bare `./gradlew connectedDebugAndroidTest` also runs the playground's golden journey, which needs the E2E server (see `.github/workflows/e2e.yml` and `e2e/`).
 
 ### Generating Coverage Reports
 

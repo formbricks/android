@@ -6,6 +6,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.formbricks.android.Formbricks
 import com.formbricks.android.manager.UserManager
 import com.formbricks.android.model.user.AttributeValue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,9 +19,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Drives [UpdateQueue] without a network. The sync seam is swapped for a recorder, the debounce
@@ -29,9 +31,11 @@ class UpdateQueueInstrumentedTest {
     /** Stands in for `UserManager.syncUser`: records the request instead of sending it. */
     private class RecordingSyncer {
         private val calls = AtomicInteger(0)
-        private val monitor = java.lang.Object()
+        private val lock = ReentrantLock()
+        private val recorded = lock.newCondition()
 
         @Volatile var lastUserId: String? = null
+
         @Volatile var lastAttributes: Map<String, AttributeValue>? = null
 
         val callCount: Int get() = calls.get()
@@ -40,17 +44,16 @@ class UpdateQueueInstrumentedTest {
             lastUserId = id
             lastAttributes = attributes
             calls.incrementAndGet()
-            synchronized(monitor) { monitor.notifyAll() }
+            lock.withLock { recorded.signalAll() }
         }
 
         /** True once at least [count] requests were recorded, false if [timeoutMs] ran out first. */
         fun awaitCalls(count: Int, timeoutMs: Long): Boolean {
-            val deadline = System.currentTimeMillis() + timeoutMs
-            synchronized(monitor) {
+            var remainingNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMs)
+            lock.withLock {
                 while (calls.get() < count) {
-                    val remaining = deadline - System.currentTimeMillis()
-                    if (remaining <= 0) return false
-                    monitor.wait(remaining)
+                    if (remainingNanos <= 0) return false
+                    remainingNanos = recorded.awaitNanos(remainingNanos)
                 }
             }
             return true
@@ -60,6 +63,7 @@ class UpdateQueueInstrumentedTest {
     /** Captures a `waitForPendingWork` callback so its outcome can be asserted on the test thread. */
     private class Waiter {
         private val latch = CountDownLatch(1)
+
         @Volatile private var result: Boolean? = null
 
         val callback: (Boolean) -> Unit = {
@@ -83,8 +87,8 @@ class UpdateQueueInstrumentedTest {
     fun setup() {
         Formbricks.applicationContext = InstrumentationRegistry.getInstrumentation().targetContext
         originalSyncUser = UpdateQueue.syncUser
-        originalDebounceMs = UpdateQueue.DEBOUNCE_INTERVAL_MS
-        originalTimeoutMs = UpdateQueue.PENDING_UPDATE_TIMEOUT_MS
+        originalDebounceMs = UpdateQueue.debounceIntervalMs
+        originalTimeoutMs = UpdateQueue.pendingUpdateTimeoutMs
         syncer = RecordingSyncer()
         UpdateQueue.syncUser = syncer::record
         resetAll()
@@ -94,8 +98,8 @@ class UpdateQueueInstrumentedTest {
     fun tearDown() {
         resetAll()
         UpdateQueue.syncUser = originalSyncUser
-        UpdateQueue.DEBOUNCE_INTERVAL_MS = originalDebounceMs
-        UpdateQueue.PENDING_UPDATE_TIMEOUT_MS = originalTimeoutMs
+        UpdateQueue.debounceIntervalMs = originalDebounceMs
+        UpdateQueue.pendingUpdateTimeoutMs = originalTimeoutMs
     }
 
     private fun resetAll() {
@@ -161,7 +165,7 @@ class UpdateQueueInstrumentedTest {
      */
     @Test
     fun waitDoesNotHangForAnAnonymousUser() {
-        UpdateQueue.PENDING_UPDATE_TIMEOUT_MS = 30_000
+        UpdateQueue.pendingUpdateTimeoutMs = 30_000
         UpdateQueue.setAttributes(mapOf("plan" to AttributeValue.string("pro")))
 
         val waiter = Waiter()
@@ -174,7 +178,7 @@ class UpdateQueueInstrumentedTest {
     /** A request that never answers must not park `track()` forever. */
     @Test
     fun waitTimesOutWhenTheSyncNeverAnswers() {
-        UpdateQueue.PENDING_UPDATE_TIMEOUT_MS = 100
+        UpdateQueue.pendingUpdateTimeoutMs = 100
         UpdateQueue.setUserId("user123")
 
         val waiter = Waiter()
@@ -194,7 +198,7 @@ class UpdateQueueInstrumentedTest {
      */
     @Test
     fun attributeSetDuringAnInFlightSyncIsStillSent() {
-        UpdateQueue.DEBOUNCE_INTERVAL_MS = 50
+        UpdateQueue.debounceIntervalMs = 50
         UpdateQueue.setUserId("user123")
         UpdateQueue.setAttributes(mapOf("plan" to AttributeValue.string("pro")))
 
@@ -221,7 +225,7 @@ class UpdateQueueInstrumentedTest {
      */
     @Test
     fun commitIsDeferredWhileASyncIsInFlight() {
-        UpdateQueue.DEBOUNCE_INTERVAL_MS = 50
+        UpdateQueue.debounceIntervalMs = 50
         UpdateQueue.setUserId("user123")
 
         val first = Waiter()
@@ -240,13 +244,16 @@ class UpdateQueueInstrumentedTest {
         UpdateQueue.syncDidFinish(success = true)
         assertEquals(true, first.await())
         assertEquals(true, second.await())
-        assertTrue("The deferred commit is replayed once the request lands", syncer.awaitCalls(2, 2_000))
+        assertTrue(
+            "The deferred commit is replayed once the request lands",
+            syncer.awaitCalls(2, 2_000)
+        )
     }
 
     /** Failed values are handed back and ride along with the next commit, without a self-retry. */
     @Test
     fun failedValuesAreHandedBackForTheNextCommit() {
-        UpdateQueue.DEBOUNCE_INTERVAL_MS = 50
+        UpdateQueue.debounceIntervalMs = 50
         UpdateQueue.setUserId("user123")
         UpdateQueue.setAttributes(mapOf("plan" to AttributeValue.string("pro")))
 
@@ -272,7 +279,7 @@ class UpdateQueueInstrumentedTest {
     /** The ordinary path, no wait involved: the timer alone still sends. */
     @Test
     fun setUserIdCommitsAfterTheDebounce() {
-        UpdateQueue.DEBOUNCE_INTERVAL_MS = 50
+        UpdateQueue.debounceIntervalMs = 50
         UpdateQueue.setUserId("user123")
         UpdateQueue.addAttribute("plan", AttributeValue.string("pro"))
 

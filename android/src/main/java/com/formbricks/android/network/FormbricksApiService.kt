@@ -2,39 +2,46 @@ package com.formbricks.android.network
 
 import com.formbricks.android.api.error.FormbricksAPIError
 import com.formbricks.android.logger.Logger
+import com.formbricks.android.model.user.PostUserBody
+import com.formbricks.android.model.user.UserResponse
 import com.formbricks.android.model.workspace.Segment
 import com.formbricks.android.model.workspace.SegmentDeserializer
 import com.formbricks.android.model.workspace.WorkspaceDataHolder
 import com.formbricks.android.model.workspace.WorkspaceResponse
-import com.formbricks.android.model.user.PostUserBody
-import com.formbricks.android.model.user.UserResponse
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import retrofit2.Call
 import retrofit2.Retrofit
 
-open class FormbricksApiService {
+public open class FormbricksApiService {
     private var retrofit: Retrofit? = null
 
     private val gson: Gson = GsonBuilder()
         .registerTypeAdapter(Segment::class.java, SegmentDeserializer())
         .create()
 
-    fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
+    public fun initialize(appUrl: String, isLoggingEnabled: Boolean) {
         val builder = FormbricksRetrofitBuilder(appUrl, isLoggingEnabled).getBuilder()
         if (builder != null) {
             retrofit = builder.build()
         } else {
             // Builder returned null due to HTTP URL - log error and skip initialization
-            val error = RuntimeException("Failed to initialize API service due to invalid URL configuration. Only HTTPS URLs are allowed.")
+            val error =
+                RuntimeException(
+                    "Failed to initialize API service due to invalid URL configuration. Only HTTPS URLs are allowed."
+                )
             Logger.e(error)
             retrofit = null
         }
     }
 
-    open fun getWorkspaceStateObject(workspaceId: String): Result<WorkspaceDataHolder> {
+    public open fun getWorkspaceStateObject(workspaceId: String): Result<WorkspaceDataHolder> {
         return try {
-            val retrofitInstance = retrofit ?: return Result.failure(RuntimeException("API service not initialized due to invalid URL"))
+            val retrofitInstance =
+                retrofit
+                    ?: return Result.failure(
+                        RuntimeException("API service not initialized due to invalid URL")
+                    )
             val result = execute {
                 retrofitInstance.create(FormbricksService::class.java)
                     .getWorkspaceState(workspaceId)
@@ -64,7 +71,8 @@ open class FormbricksApiService {
     private fun normalizeWorkspaceKeys(resultMap: Map<String, Any>): Map<String, Any> {
         val outer = resultMap["data"] as? Map<String, Any> ?: return resultMap
         val inner = outer["data"] as? Map<String, Any> ?: return resultMap
-        val replacement = inner["settings"] ?: inner["workspace"] ?: inner["project"] ?: return resultMap
+        val replacement =
+            inner["settings"] ?: inner["workspace"] ?: inner["project"] ?: return resultMap
         val newInner = inner.toMutableMap().apply {
             remove("workspace")
             remove("project")
@@ -74,8 +82,12 @@ open class FormbricksApiService {
         return resultMap.toMutableMap().apply { put("data", newOuter) }
     }
 
-    open fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> {
-        val retrofitInstance = retrofit ?: return Result.failure(RuntimeException("API service not initialized due to invalid URL"))
+    public open fun postUser(workspaceId: String, body: PostUserBody): Result<UserResponse> {
+        val retrofitInstance =
+            retrofit
+                ?: return Result.failure(
+                    RuntimeException("API service not initialized due to invalid URL")
+                )
         return execute {
             retrofitInstance.create(FormbricksService::class.java)
                 .postUser(workspaceId, body)
@@ -88,7 +100,6 @@ open class FormbricksApiService {
             val body = call.body()
             if (body == null) {
                 Result.failure(RuntimeException("Invalid response"))
-
             } else {
                 Result.success(body)
             }
