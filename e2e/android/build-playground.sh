@@ -7,10 +7,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 repo_root="$(cd "${E2E_ANDROID_DIR}/../.." && pwd)"
-gradle_args=()
-while IFS= read -r line; do gradle_args+=("${line}"); done < <(
-  playground_gradle_args "${E2E_EMULATOR_URL}" "$(server_workspace_id)"
-)
+# A plain assignment so set -e stops on a failure (see run-journey.sh).
+workspace_id="$(server_workspace_id)"
+gradle_args_lines="$(playground_gradle_args "${E2E_EMULATOR_URL}" "${workspace_id}")"
+mapfile -t gradle_args <<<"${gradle_args_lines}"
 
 log "Building the playground for ${E2E_EMULATOR_URL}"
 cd "${repo_root}"

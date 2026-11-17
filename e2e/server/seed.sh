@@ -32,7 +32,7 @@ save SURVEY_ID "${survey_id}"
 authzed_drain_outbox
 
 log "Targeting the survey to ${E2E_ATTRIBUTE_KEY} = ${E2E_ATTRIBUTE_VALUE}"
-updated="$(build_segment_filter_sql "${E2E_WORKSPACE_ID}" "${survey_id}" | psql_exec -f - 2>&1)"
+updated="$(build_segment_filter_sql "${E2E_WORKSPACE_ID}" "${survey_id}" | psql_exec -f - 2>&1)" || true
 [[ "${updated}" == *"UPDATE 1"* ]] || die "expected to update the survey's private segment once, got: ${updated}"
 
 log "Creating the contact attribute key ${E2E_ATTRIBUTE_KEY} (needs the Contacts license)"

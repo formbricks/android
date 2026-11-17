@@ -21,7 +21,8 @@ booted() { [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
 for _ in $(seq 1 150); do booted && break; sleep 2; done
 booted || die "the emulator did not finish booting"
 log "Restarting adbd as root"
-adb root >/dev/null
+# A non-rootable image fails here; the id check below reports it with the reason.
+adb root >/dev/null || true
 adb wait-for-device
 for _ in $(seq 1 30); do
   [[ "$(adb shell id -u 2>/dev/null | tr -d '\r')" == "0" ]] && break

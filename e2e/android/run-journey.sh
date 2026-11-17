@@ -18,10 +18,10 @@ results_dir="${repo_root}/playground/build/outputs/androidTest-results/connected
 
 "${E2E_ANDROID_DIR}/install-ca.sh"
 
-gradle_args=()
-while IFS= read -r line; do gradle_args+=("${line}"); done < <(
-  journey_gradle_args "${E2E_EMULATOR_URL}" "${E2E_WORKSPACE_ID}" "${E2E_USER_ID}" "${E2E_FEEDBACK}"
-)
+# A plain assignment, not `< <(...)`: set -e does not see a failure inside process substitution,
+# and an empty argument list would run Gradle's `help` task and pass without testing anything.
+gradle_args_lines="$(journey_gradle_args "${E2E_EMULATOR_URL}" "${E2E_WORKSPACE_ID}" "${E2E_USER_ID}" "${E2E_FEEDBACK}")"
+mapfile -t gradle_args <<<"${gradle_args_lines}"
 
 attempt() {
   local n="$1" status=0
