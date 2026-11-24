@@ -23,6 +23,8 @@ buildscript {
             // Not from AGP directly: commons-compress 1.26+ depends on it, so the floor above
             // brings it onto this classpath.
             add("classpath", "org.apache.commons:commons-lang3:${libs.versions.commonsLang3.get()}")
+            // AGP's sdk-common and the lint tool it carries depend on guava.
+            add("classpath", "com.google.guava:guava:${libs.versions.guava.get()}")
             // AGP 9.4.1 still resolves 2.2.10, which has an unsafe-deserialization flaw in the
             // Kotlin build cache (fixed in 2.4.20-Beta1). It is already 2.4.20 in :android.
             add("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlin.get()}")
@@ -40,7 +42,7 @@ plugins {
 // None of these is a dependency of the SDK itself - they are pulled in by the Android Gradle
 // Plugin's Unified Test Platform (netty, protobuf), by Dokka's engine (jackson, jsoup, freemarker),
 // by the Kotlin plugin's signing helpers (Bouncy Castle) and by the Android lint tool (httpclient,
-// commons-lang3, Bouncy Castle again), so the published AAR and its POM are unaffected.
+// commons-lang3, guava, Bouncy Castle again), so the published AAR and its POM are unaffected.
 //
 // Every project gets these, because both modules resolve AGP's tooling for themselves: while this
 // block lived in android/build.gradle.kts, :playground kept its own unfloored copy of the lint
@@ -73,7 +75,10 @@ val moduleFloors = mapOf(
     // (via commons-compress). commons-compress and commons-codec share the
     // org.apache.commons group, hence the per-module floor.
     "org.apache.httpcomponents:httpclient" to libs.versions.httpclient.get(),
-    "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get()
+    "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
+    // AGP's lint tool and analytics libraries pull guava. The group also holds
+    // failureaccess and listenablefuture (pinned at 1.0), which must not move.
+    "com.google.guava:guava" to libs.versions.guava.get()
 )
 
 fun isBelowFloor(current: String?, floor: String): Boolean {
