@@ -46,10 +46,13 @@ ktlint = "1.8.0"
 #   - build.gradle.kts (root buildscript) - AGP's own plugin classpath. gRPC/Netty, Bouncy
 #     Castle, commons-compress (and its commons-lang3), jose4j, JDOM and the Kotlin Gradle
 #     plugin (AGP 9 still ships 2.2.10; `kotlin` above is the floor) live here.
-#   - android/build.gradle.kts (resolutionStrategy) - the :android project's configurations,
-#     including AGP's Unified Test Platform, Dokka's engine (jackson, jsoup, freemarker) and
-#     the Kotlin plugin's signing helpers (Bouncy Castle again) and the Android lint tool
-#     (httpclient via httpmime, commons-lang3 via commons-compress).
+#   - build.gradle.kts (root `subprojects` block, resolutionStrategy) - every module's
+#     configurations, including AGP's Unified Test Platform, Dokka's engine (jackson, jsoup,
+#     freemarker), the Kotlin plugin's signing helpers (Bouncy Castle again) and the Android
+#     lint tool (bouncycastle via sdk-common, httpclient via httpmime, commons-lang3 via
+#     commons-compress). It covers all modules on purpose: when it was scoped to :android,
+#     :playground still resolved the lint toolchain unfloored and Dependabot kept those
+#     alerts open.
 #
 # Dependabot reports both, attributing every alert to settings.gradle.kts - check which
 # classpath a version is on before adding a floor.
