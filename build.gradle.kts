@@ -1,11 +1,11 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 // The Android Gradle Plugin drags its own tooling onto this build script's classpath: gRPC and
-// Netty (io.grpc:grpc-netty), Bouncy Castle (com.android.tools:sdk-common), commons-compress
-// (:repository), jose4j (bundletool), JDOM (jetifier) and the Kotlin Gradle plugin. The floors in
-// the `subprojects` block below cannot reach any of it - that block configures each project's own
-// configurations, which are resolved separately, so Netty was still landing at 4.1.93.Final
-// there while the floor read 4.1.138.Final.
+// Netty (io.grpc:grpc-netty), Bouncy Castle and guava (com.android.tools:sdk-common, bundletool),
+// commons-compress (:repository), jose4j (bundletool), JDOM (jetifier) and the Kotlin Gradle
+// plugin. The floors in the `subprojects` block below cannot reach any of it - that block
+// configures each project's own configurations, which are resolved separately, so Netty was
+// still landing at 4.1.93.Final there while the floor read 4.1.138.Final.
 //
 // Platforms and constraints only ever raise a version, so a newer one shipped by a future AGP
 // still wins. AGP 9 drops gRPC outright, which retires the Netty half of this entirely.
@@ -23,7 +23,7 @@ buildscript {
             // Not from AGP directly: commons-compress 1.26+ depends on it, so the floor above
             // brings it onto this classpath.
             add("classpath", "org.apache.commons:commons-lang3:${libs.versions.commonsLang3.get()}")
-            // AGP's sdk-common and the lint tool it carries depend on guava.
+            // AGP's sdk-common and bundletool depend on guava.
             add("classpath", "com.google.guava:guava:${libs.versions.guava.get()}")
             // AGP 9.4.1 still resolves 2.2.10, which has an unsafe-deserialization flaw in the
             // Kotlin build cache (fixed in 2.4.20-Beta1). It is already 2.4.20 in :android.
@@ -76,8 +76,9 @@ val moduleFloors = mapOf(
     // org.apache.commons group, hence the per-module floor.
     "org.apache.httpcomponents:httpclient" to libs.versions.httpclient.get(),
     "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
-    // AGP's lint tool and analytics libraries pull guava. The group also holds
-    // failureaccess and listenablefuture (pinned at 1.0), which must not move.
+    // AGP's lint tool and analytics libraries pull guava. A group-wide floor would also
+    // resolve failureaccess 1.0.3 and androidx's listenablefuture 1.0 to 33.7.2-jre, which
+    // do not exist, so the floor is per module.
     "com.google.guava:guava" to libs.versions.guava.get()
 )
 
