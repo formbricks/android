@@ -6,9 +6,9 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 // The Dokka Gradle plugin puts Dokka's engine, and with it Jackson, on this build script's
-// own classpath, which the project-level resolutionStrategy below cannot reach. Importing the
+// own classpath, which the floor block in the root build.gradle.kts cannot reach. Importing the
 // Jackson BOM as a platform here adds version constraints to that classpath before the
-// plugins block is resolved. Like the floors below, this only ever raises: a newer version
+// plugins block is resolved. Like those floors, this only ever raises: a newer version
 // requested by a future Dokka release still wins.
 buildscript {
     dependencies {
@@ -57,7 +57,7 @@ jacoco {
 }
 
 // The toolchain security floors live in the root build script's `subprojects` block, so that
-// every module gets them. See build.gradle.kts.
+// every module gets them. See the root `build.gradle.kts`.
 
 android {
     namespace = "com.formbricks.android"
@@ -194,7 +194,7 @@ mavenPublishing {
     publishToMavenCentral()
 
     // AGP's own withJavadocJar() runs a bundled Dokka 1.4.32 engine on a detached
-    // configuration that neither the dependency report nor the floors above can reach (old
+    // configuration that neither the dependency report nor the security floors can reach (old
     // Jackson included), so the javadoc jar is built from Dokka 2.x above and attached to
     // the publication instead.
     configure(
