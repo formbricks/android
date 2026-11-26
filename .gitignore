@@ -24,3 +24,6 @@ generate-*-coverage.sh
 # Generated files
 **/build/
 **/reports/
+
+# Local agent tickets (see docs/agents/issue-tracker.md)
+.scratch/
